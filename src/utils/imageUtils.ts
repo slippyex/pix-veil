@@ -151,7 +151,7 @@ export async function injectDataIntoBuffer(
     const endBitPosition = startBitPosition + bitsUsed;
 
     // If debugVisual is enabled, add red and blue blocks
-    if (debugVisual) {
+    if (debugVisual && !isDistributionMap) {
         logger.debug(`Adding debug visual blocks to buffer.`);
         addDebugBlocks(
             imageData,

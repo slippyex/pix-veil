@@ -13,7 +13,7 @@ import { encrypt, generateChecksum } from './utils/cryptoUtils';
 
 const brotliCompress = promisify(zlib.brotliCompress);
 
-const COMPRESSION_LEVEL = 9;
+const COMPRESSION_LEVEL = 7;
 const ADAPTIVE_FILTER = true;
 
 // Define maximum and minimum number of chunks per PNG
