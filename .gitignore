@@ -7,5 +7,5 @@ input-file
 input-pngs
 output-file
 output-pngs
-tests/fixed_images
-tests/test_env
+tests/test_input
+tests/test_output
