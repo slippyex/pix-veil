@@ -13,6 +13,6 @@ export const config = {
         maxChunkSize: 4096,
         minChunkSize: 16
     },
-    distributionMapFile: 'distribution_map.txt',
-    bistPerChannelForDistributionMap: 2
+    distributionMapFile: 'distribution_map',
+    bitsPerChannelForDistributionMap: 2
 };

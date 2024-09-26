@@ -40,7 +40,7 @@ describe('Codec tests', () => {
             outputFolder: encodedFolder,
             password,
             verbose: true,
-            debugVisual: true,
+            debugVisual: false,
             logger
         });
 
@@ -56,7 +56,6 @@ describe('Codec tests', () => {
             outputFile: decodedFile,
             password,
             verbose: true,
-            debugVisual: true,
             logger
         });
 
@@ -79,7 +78,6 @@ describe('Codec tests', () => {
                 outputFile: wrongDecodedFile,
                 password: wrongPassword,
                 verbose: false,
-                debugVisual: false,
                 logger
             })
         ).rejects.toThrow();
@@ -114,7 +112,6 @@ describe('Codec tests', () => {
                 outputFile: tamperedDecodedFile,
                 password,
                 verbose: false,
-                debugVisual: false,
                 logger
             })
         ).rejects.toThrow('Data integrity check failed');

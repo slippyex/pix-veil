@@ -145,7 +145,7 @@ export async function encode({
                 pngFile: png.file,
                 startPosition: randomPosition.start,
                 endPosition: randomPosition.end,
-                bitsPerChannel: config.bistPerChannelForDistributionMap,
+                bitsPerChannel: config.bitsPerChannelForDistributionMap,
                 channelSequence: ['R', 'G', 'B']
             });
 
@@ -277,12 +277,12 @@ export async function encode({
         // Step 8: Create and inject distribution map
         if (verbose) logger.info('Creating and injecting the distribution map...');
         const serializedMap = createDistributionMap(distributionMapEntries, checksum);
-        const distributionMapOutputPath = path.join(outputFolder, `distribution.db`);
+        const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + `.db`);
         fs.writeFileSync(distributionMapOutputPath, encrypt(await brotliCompress(serializedMap), password));
 
         // Step 9: Dump the distribution map as a human-readable text file
         if (verbose) logger.info('Creating a human-readable distribution map text file...');
-        const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile);
+        const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
         const distributionMapText = generateDistributionMapText(distributionMapEntries, checksum);
         fs.writeFileSync(distributionMapTextPath, distributionMapText);
         if (verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);

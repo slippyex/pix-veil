@@ -46,7 +46,6 @@ export interface IDecodeOptions {
     outputFile: string;
     password: string;
     verbose: boolean;
-    debugVisual: boolean;
     logger: ILogger;
 }
 export interface IUsedPng {

@@ -174,6 +174,7 @@ export async function injectDataIntoBuffer(
  * @returns Buffer containing the extracted data.
  */
 export async function extractDataFromBuffer(
+    pngFile: string,
     imageData: Buffer,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
@@ -221,7 +222,7 @@ export async function extractDataFromBuffer(
         const channelIndex = pixelNumber * channels + channelOffset;
 
         if (channelIndex >= imageData.length) {
-            throw new Error('Channel index out of bounds during extraction.');
+            throw new Error(`${pngFile} :: Channel index out of bounds during extraction.`);
         }
 
         // Extract bitsPerChannel bits from the channel's LSBs
