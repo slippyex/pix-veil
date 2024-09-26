@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 describe('Codec tests', () => {
-    const inputFile = path.join(__dirname, 'test_input', 'files', 'yarn.lock');
+    const inputFile = path.join(__dirname, 'test_input', 'files', 'secret.pdf');
     const inputPngFolder = path.join(__dirname, 'test_input', 'images');
 
     const encodedFolder = path.join(__dirname, 'test_output', 'encoded');
@@ -32,8 +32,8 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup output folders
-        //        fs.rmSync(encodedFolder, { recursive: true, force: true });
-        fs.rmSync(decodedFolder, { recursive: true, force: true });
+         fs.rmSync(encodedFolder, { recursive: true, force: true });
+         fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
     it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {
