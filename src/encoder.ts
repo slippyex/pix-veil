@@ -277,67 +277,8 @@ export async function encode({
         // Step 8: Create and inject distribution map
         if (verbose) logger.info('Creating and injecting the distribution map...');
         const serializedMap = createDistributionMap(distributionMapEntries, checksum);
-        const mapSize = serializedMap.length;
-
-        // Choose a random position in the distributionMapPng
-        const distributionMapOutputPath = path.join(outputFolder, `${distributionMapPng}`);
-        const distributionMapImage = sharp(distributionMapOutputPath).removeAlpha().toColourspace('srgb');
-        const { data: distributionMapImageData, info: mapInfo } = await distributionMapImage
-            .raw()
-            .toBuffer({ resolveWithObject: true });
-        const { channels: mapChannels, width: mapWidth, height: mapHeight } = mapInfo;
-
-        // TODO: Calculate embeddable bits and then bytes
-        const totalEmbeddableBits = 16384 * 3 * config.bistPerChannelForDistributionMap;
-        const distributionMapCapacityBytes = Math.floor(totalEmbeddableBits / 8);
-
-        console.log(`Total Embeddable Bytes for Distribution Map: ${distributionMapCapacityBytes} bytes`);
-
-        if (serializedMap.length > distributionMapCapacityBytes) {
-            throw new Error('Distribution map size exceeds the embedding capacity of the designated PNG.');
-        }
-
-        // Choose a random start position
-        const startPosition = Math.floor(Math.random() * (distributionMapCapacityBytes - mapSize));
-        const endPosition = startPosition + mapSize;
-
-        logger.debug(
-            `Embedding distribution map at position ${startPosition} to ${endPosition} in "${distributionMapPng}".`
-        );
-
-        // Inject the distribution map into the image data
-        await injectDataIntoBuffer(
-            distributionMapImageData,
-            serializedMap,
-            config.bistPerChannelForDistributionMap,
-            ['R', 'G', 'B'],
-            startPosition,
-            debugVisual,
-            logger,
-            mapWidth,
-            mapHeight,
-            mapChannels
-        );
-
-        // Save the modified distribution map PNG
-        const modifiedDistributionMapImage = sharp(distributionMapImageData, {
-            raw: {
-                width: mapWidth,
-                height: mapHeight,
-                channels: mapChannels
-            }
-        })
-            .toColourspace('srgb')
-            .png({
-                compressionLevel: config.imageCompression.compressionLevel,
-                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
-                palette: false
-            });
-
-        const outputDistributionMapBuffer = await modifiedDistributionMapImage.toBuffer();
-        fs.writeFileSync(distributionMapOutputPath, outputDistributionMapBuffer);
-
-        if (verbose) logger.info(`Injected distribution map into "${distributionMapPng}" and saved to output folder.`);
+        const distributionMapOutputPath = path.join(outputFolder, `distribution.db`);
+        fs.writeFileSync(distributionMapOutputPath, encrypt(await brotliCompress(serializedMap), password));
 
         // Step 9: Dump the distribution map as a human-readable text file
         if (verbose) logger.info('Creating a human-readable distribution map text file...');
@@ -348,7 +289,7 @@ export async function encode({
 
         logger.info('Encoding completed successfully.');
     } catch (error) {
-        logger.error(`Encoding error: ${error}`);
+        logger.error(`Encoding failed: ${error}`);
         throw error;
     }
 }

@@ -20,24 +20,20 @@ export async function decode({ inputFolder, outputFile, password, verbose, debug
     try {
         if (verbose) logger.info('Starting decoding process...');
 
-        // Step 1: Locate the distribution map PNG
-        if (verbose) logger.info('Locating distribution map PNG...');
-        const distributionMapPng = findDistributionMapPng(inputFolder);
-        const distributionMapPngPath = path.join(inputFolder, distributionMapPng);
+        // Step 1: read, decrypt and decompress distribution map
+        const distributionMapPath = path.join(inputFolder, 'distribution.db');
+        const rawDistributionMap = decrypt(fs.readFileSync(distributionMapPath), password);
+        const distributionMap = deserializeDistributionMap(await brotliDecompress(rawDistributionMap));
 
-        // Step 2: Read the distribution map from the PNG
-        if (verbose) logger.info('Extracting distribution map from PNG...');
-        const distributionMap = await extractDistributionMap(distributionMapPngPath, logger);
-
-        // Step 3: Extract data chunks based on the distribution map
+        // Step 2: Extract data chunks based on the distribution map
         if (verbose) logger.info('Extracting data chunks from PNG images...');
         const encryptedData = await extractChunks(distributionMap, inputFolder, logger);
 
-        // Step 4: Decrypt the encrypted data
+        // Step 3: Decrypt the encrypted data
         if (verbose) logger.info('Decrypting the encrypted data...');
         const decryptedData = decrypt(encryptedData, password);
 
-        // Step 5: Verify checksum
+        // Step 4: Verify checksum
         if (verbose) logger.info('Verifying data integrity...');
         verifyChecksum(decryptedData, distributionMap.checksum);
 
@@ -45,13 +41,13 @@ export async function decode({ inputFolder, outputFile, password, verbose, debug
         if (verbose) logger.info('Decompressing data...');
         const decompressedData = await brotliDecompress(decryptedData);
 
-        // Step 7: Write the output file
+        // Step 6: Write the output file
         if (verbose) logger.info('Writing the output file...');
         fs.writeFileSync(outputFile, decompressedData);
         if (verbose) logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
-    } catch (error: any) {
-        logger.error(`Decoding failed: ${error.message}`);
-        process.exit(1);
+    } catch (error) {
+        logger.error(`Decoding failed: ${error}`);
+        throw error
     }
 }
 

@@ -237,9 +237,9 @@ export async function extractDataFromBuffer(
             extractedBitIndex++;
         }
 
-        logger.debug(
-            `Extracted bits ${bits.toString(2).padStart(bitsPerChannel, '0')} from channel ${channel} at index ${channelIndex}.`
-        );
+        // logger.debug(
+        //     `Extracted bits ${bits.toString(2).padStart(bitsPerChannel, '0')} from channel ${channel} at index ${channelIndex}.`
+        // );
     }
 
     logger.debug(`Data extraction completed. Extracted ${extractedBitIndex} bits.`);
