@@ -4,29 +4,17 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { promisify } from 'util';
+import _ from 'lodash';
 
 import sharp from 'sharp';
-import { getCachedImageTones, injectDataIntoBuffer } from './utils/imageUtils';
-import { Chunk, DistributionMapEntry, EncodeOptions } from './@types/types';
-import { createDistributionMap } from './utils/mapUtils';
+import { getCachedImageTones, injectDataIntoBuffer } from './utils/image/imageUtils';
+import { Chunk, DistributionMapEntry, EncodeOptions, IUsedPng } from './@types/';
+import { createDistributionMap, generateDistributionMapText } from './utils/distributionMap/mapUtils';
 import { encrypt, generateChecksum } from './utils/cryptoUtils';
+import { config } from './constants';
+import { getRandomPosition } from './utils/image/imageHelper';
 
 const brotliCompress = promisify(zlib.brotliCompress);
-
-const COMPRESSION_LEVEL = 7;
-const ADAPTIVE_FILTER = true;
-
-// Define maximum and minimum number of chunks per PNG
-const MAX_CHUNKS_PER_PNG = 16;
-const MIN_CHUNKS_PER_PNG = 1;
-
-// Define maximum and minimum chunk sizes
-const MIN_CHUNK_SIZE = 16;
-const MAX_CHUNK_SIZE = 4096;
-
-// Define the name for the human-readable distribution map
-const DISTRIBUTION_MAP_TEXT = 'distribution_map.txt';
-const BITS_PER_CHANNEL_FOR_MAP = 2;
 
 export async function encode({
     inputFile,
@@ -62,7 +50,10 @@ export async function encode({
         while (offset < encryptedData.length) {
             const remaining = encryptedData.length - offset;
             const size = Math.min(
-                MIN_CHUNK_SIZE * Math.ceil(Math.random() * (MAX_CHUNK_SIZE / MIN_CHUNK_SIZE)),
+                config.chunksDefinition.minChunkSize *
+                    Math.ceil(
+                        Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
+                    ),
                 remaining
             );
             const chunkData = encryptedData.subarray(offset, offset + size);
@@ -108,7 +99,7 @@ export async function encode({
         if (verbose) logger.info('Distributing chunks across PNG images...');
 
         const distributionMapEntries: DistributionMapEntry[] = [];
-        const usedPngs: { [key: string]: { usedCapacity: number; chunkCount: number; chunks: Chunk[] } } = {};
+        const usedPngs: Record<string, IUsedPng> = {};
 
         // Initialize usedPngs with usedCapacity, chunkCount, and chunks array
         for (const png of pngCapacities) {
@@ -116,10 +107,10 @@ export async function encode({
         }
 
         // Shuffle the chunks to randomize distribution
-        const shuffledChunks = shuffleArray(chunks);
+        const shuffledChunks = _.shuffle(chunks);
 
         // Shuffle the PNGs to ensure random assignment
-        const shuffledPngCapacities = shuffleArray(pngCapacities);
+        const shuffledPngCapacities = _.shuffle(pngCapacities);
 
         // Assign chunks in a round-robin fashion to ensure balanced distribution
         let pngIndex = 0;
@@ -128,7 +119,7 @@ export async function encode({
             pngIndex++;
 
             // Check if PNG can receive more chunks
-            if (usedPngs[png.file].chunkCount >= MAX_CHUNKS_PER_PNG) {
+            if (usedPngs[png.file].chunkCount >= config.chunksDefinition.maxChunksPerPng) {
                 continue; // Skip this PNG as it reached the maximum chunk limit
             }
 
@@ -154,7 +145,7 @@ export async function encode({
                 pngFile: png.file,
                 startPosition: randomPosition.start,
                 endPosition: randomPosition.end,
-                bitsPerChannel: 2, // Using 2 bits per channel as set earlier
+                bitsPerChannel: config.bistPerChannelForDistributionMap,
                 channelSequence: ['R', 'G', 'B']
             });
 
@@ -167,7 +158,7 @@ export async function encode({
 
         // Ensure each PNG has at least one chunk
         for (const png of shuffledPngCapacities) {
-            if (usedPngs[png.file].chunkCount < MIN_CHUNKS_PER_PNG) {
+            if (usedPngs[png.file].chunkCount < config.chunksDefinition.minChunksPerPng) {
                 if (shuffledChunks.length === 0) break; // No chunks left to assign
 
                 const chunk = shuffledChunks.shift();
@@ -220,7 +211,7 @@ export async function encode({
         }
 
         // Group distribution map entries by PNG file
-        const pngToChunksMap: { [key: string]: DistributionMapEntry[] } = {};
+        const pngToChunksMap: Record<string, DistributionMapEntry[]> = {};
         distributionMapEntries.forEach(entry => {
             if (!pngToChunksMap[entry.pngFile]) {
                 pngToChunksMap[entry.pngFile] = [];
@@ -270,8 +261,8 @@ export async function encode({
             })
                 .toColourspace('srgb')
                 .png({
-                    compressionLevel: COMPRESSION_LEVEL,
-                    adaptiveFiltering: ADAPTIVE_FILTER,
+                    compressionLevel: config.imageCompression.compressionLevel,
+                    adaptiveFiltering: config.imageCompression.adaptiveFiltering,
                     palette: false
                 });
 
@@ -290,22 +281,24 @@ export async function encode({
 
         // Choose a random position in the distributionMapPng
         const distributionMapOutputPath = path.join(outputFolder, `${distributionMapPng}`);
-        const mapImage = sharp(distributionMapOutputPath).removeAlpha().toColourspace('srgb');
-        const { data: mapImageData, info: mapInfo } = await mapImage.raw().toBuffer({ resolveWithObject: true });
+        const distributionMapImage = sharp(distributionMapOutputPath).removeAlpha().toColourspace('srgb');
+        const { data: distributionMapImageData, info: mapInfo } = await distributionMapImage
+            .raw()
+            .toBuffer({ resolveWithObject: true });
         const { channels: mapChannels, width: mapWidth, height: mapHeight } = mapInfo;
 
         // TODO: Calculate embeddable bits and then bytes
-        const totalEmbeddableBits = 16384 * 3 * BITS_PER_CHANNEL_FOR_MAP;
-        const mapCapacityBytes = Math.floor(totalEmbeddableBits / 8);
+        const totalEmbeddableBits = 16384 * 3 * config.bistPerChannelForDistributionMap;
+        const distributionMapCapacityBytes = Math.floor(totalEmbeddableBits / 8);
 
-        console.log(`Total Embeddable Bytes for Distribution Map: ${mapCapacityBytes} bytes`);
+        console.log(`Total Embeddable Bytes for Distribution Map: ${distributionMapCapacityBytes} bytes`);
 
-        if (serializedMap.length > mapCapacityBytes) {
+        if (serializedMap.length > distributionMapCapacityBytes) {
             throw new Error('Distribution map size exceeds the embedding capacity of the designated PNG.');
         }
 
         // Choose a random start position
-        const startPosition = Math.floor(Math.random() * (mapCapacityBytes - mapSize));
+        const startPosition = Math.floor(Math.random() * (distributionMapCapacityBytes - mapSize));
         const endPosition = startPosition + mapSize;
 
         logger.debug(
@@ -314,9 +307,9 @@ export async function encode({
 
         // Inject the distribution map into the image data
         await injectDataIntoBuffer(
-            mapImageData,
+            distributionMapImageData,
             serializedMap,
-            2, // bitsPerChannelForMap
+            config.bistPerChannelForDistributionMap,
             ['R', 'G', 'B'],
             startPosition,
             debugVisual,
@@ -327,7 +320,7 @@ export async function encode({
         );
 
         // Save the modified distribution map PNG
-        const modifiedMapImage = sharp(mapImageData, {
+        const modifiedDistributionMapImage = sharp(distributionMapImageData, {
             raw: {
                 width: mapWidth,
                 height: mapHeight,
@@ -336,80 +329,26 @@ export async function encode({
         })
             .toColourspace('srgb')
             .png({
-                compressionLevel: COMPRESSION_LEVEL,
-                adaptiveFiltering: ADAPTIVE_FILTER,
+                compressionLevel: config.imageCompression.compressionLevel,
+                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
                 palette: false
             });
 
-        const outputMapBuffer = await modifiedMapImage.toBuffer();
-        fs.writeFileSync(distributionMapOutputPath, outputMapBuffer);
+        const outputDistributionMapBuffer = await modifiedDistributionMapImage.toBuffer();
+        fs.writeFileSync(distributionMapOutputPath, outputDistributionMapBuffer);
 
         if (verbose) logger.info(`Injected distribution map into "${distributionMapPng}" and saved to output folder.`);
 
         // Step 9: Dump the distribution map as a human-readable text file
         if (verbose) logger.info('Creating a human-readable distribution map text file...');
-        const distributionMapTextPath = path.join(outputFolder, DISTRIBUTION_MAP_TEXT);
+        const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile);
         const distributionMapText = generateDistributionMapText(distributionMapEntries, checksum);
         fs.writeFileSync(distributionMapTextPath, distributionMapText);
         if (verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 
         logger.info('Encoding completed successfully.');
-    } catch (error) {}
-}
-
-/**
- * Shuffles an array using Fisher-Yates algorithm.
- */
-function shuffleArray<T>(array: T[]): T[] {
-    const shuffled = array.slice(); // Create a copy
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    } catch (error) {
+        logger.error(`Encoding error: ${error}`);
+        throw error;
     }
-    return shuffled;
-}
-
-/**
- * Generates a random start and end position within the image capacity for a chunk.
- * Ensures that the chunk does not exceed the image capacity.
- */
-function getRandomPosition(imageCapacity: number, chunkSize: number): { start: number; end: number } {
-    const maxStart = imageCapacity - chunkSize;
-    if (maxStart <= 0) {
-        return { start: 0, end: chunkSize };
-    }
-    const start = Math.floor(Math.random() * maxStart);
-    const end = start + chunkSize;
-    return { start, end };
-}
-
-/**
- * Generates a human-readable distribution map text.
- */
-function generateDistributionMapText(entries: DistributionMapEntry[], checksum: string): string {
-    let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
-
-    const pngMap: { [key: string]: DistributionMapEntry[] } = {};
-
-    entries.forEach(entry => {
-        if (!pngMap[entry.pngFile]) {
-            pngMap[entry.pngFile] = [];
-        }
-        pngMap[entry.pngFile].push(entry);
-    });
-
-    for (const png in pngMap) {
-        text += `PNG File: ${png}\n`;
-        text += `Chunks Embedded: ${pngMap[png].length}\n`;
-        text += `Details:\n`;
-        pngMap[png].forEach(entry => {
-            const length = entry.endPosition - entry.startPosition;
-            text += `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startPosition}-${entry.endPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${entry.channelSequence.join(', ')}\n`;
-        });
-        text += `\n`;
-    }
-
-    text += `Checksum: ${checksum}\n`;
-
-    return text;
 }

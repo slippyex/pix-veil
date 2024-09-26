@@ -1,12 +1,13 @@
-// shared/utils/Logger.ts
+// src/utils/Logger.ts
 
 import chalk from 'chalk';
+import { ILogger } from '../@types';
 
-export class Logger {
-    public debugMessages: string[] = [];
-    public errorMessages: string[] = [];
+export class Logger implements ILogger {
+    debugMessages: string[] = [];
+    errorMessages: string[] = [];
 
-    constructor(private readonly verbose = false) {}
+    constructor(readonly verbose = false) {}
 
     info(message: string) {
         console.log(chalk.blue(`[INFO] ${message}`));

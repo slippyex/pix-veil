@@ -43,8 +43,8 @@ program
                 debugVisual,
                 logger
             });
-        } catch (error: any) {
-            logger.error(`Encoding failed: ${error.message}`);
+        } catch (error) {
+            logger.error(`Encoding failed: ${error}`);
             process.exit(1);
         }
     });
@@ -74,8 +74,8 @@ program
                 debugVisual,
                 logger
             });
-        } catch (error: any) {
-            logger.error(`Decoding failed: ${error.message}`);
+        } catch (error) {
+            logger.error(`Decoding failed: ${error}`);
             process.exit(1);
         }
     });

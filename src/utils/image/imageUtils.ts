@@ -1,15 +1,10 @@
-// src/imageUtils.ts
+// src/utils/image/imageUtils.ts
 
 import sharp from 'sharp';
-import { ChannelSequence, ImageCapacity } from '../@types/types';
-import { Logger } from './Logger';
-
-/**
- * Interface for caching image tones to avoid redundant processing.
- */
-interface ImageToneCache {
-    [imagePath: string]: ImageCapacity;
-}
+import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types';
+import { Logger } from '../Logger';
+import { addDebugBlocks } from './debug';
+import { getChannelOffset } from './imageHelper';
 
 /**
  * In-memory cache for image tones.
@@ -20,15 +15,13 @@ const toneCache: ImageToneCache = {};
  * Analyze the image to categorize pixels into low, mid, and high-tone areas.
  * Utilizes caching to avoid redundant computations.
  */
-export async function getCachedImageTones(imagePath: string, logger: Logger): Promise<ImageCapacity> {
+export async function getCachedImageTones(imagePath: string, logger: ILogger): Promise<ImageCapacity> {
     if (toneCache[imagePath]) {
         logger.debug(`Retrieved cached tones for "${imagePath}".`);
         return toneCache[imagePath];
     }
 
-    const image = sharp(imagePath)
-        .removeAlpha() // Remove alpha channel
-        .toColourspace('srgb'); // Use 'srgb' consistently
+    const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
 
     const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
     const { channels } = info;
@@ -104,7 +97,9 @@ export async function injectDataIntoBuffer(
     }
 
     logger.debug(
-        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at bit position ${startBitPosition} with ${bitsPerChannel} bits per channel.`
+        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at bit position ${
+            startBitPosition
+        } with ${bitsPerChannel} bits per channel.`
     );
 
     let dataBitIndex = 0; // Track the number of bits injected
@@ -142,8 +137,6 @@ export async function injectDataIntoBuffer(
         // Inject the bits into the channel's LSBs
         const mask = (1 << bitsPerChannel) - 1;
         imageData[channelIndex] = (imageData[channelIndex] & ~mask) | (bits & mask);
-
-        //    logger.debug(`Injected bits ${bits.toString(2).padStart(bitsPerChannel, '0')} into channel ${channel} at index ${channelIndex}.`);
     }
 
     // Calculate bits used, accounting for any padding bits
@@ -170,26 +163,6 @@ export async function injectDataIntoBuffer(
 }
 
 /**
- * Helper function to get the channel offset based on the channel name.
- * @param channel - The channel name ('R', 'G', 'B', 'A').
- * @returns The channel offset index.
- */
-function getChannelOffset(channel: ChannelSequence): number {
-    switch (channel) {
-        case 'R':
-            return 0;
-        case 'G':
-            return 1;
-        case 'B':
-            return 2;
-        case 'A':
-            return 3;
-        default:
-            throw new Error(`Invalid channel specified: ${channel}`);
-    }
-}
-
-/**
  * Extracts data from the image buffer using LSB steganography.
  * @param imageData - Raw image buffer data.
  * @param bitsPerChannel - Number of bits per channel to extract.
@@ -206,7 +179,7 @@ export async function extractDataFromBuffer(
     channelSequence: ChannelSequence[],
     startBitPosition: number,
     bitCount: number,
-    logger: Logger,
+    logger: ILogger,
     channels: number // Number of channels in the image
 ): Promise<Buffer> {
     // Input Validation
@@ -272,79 +245,4 @@ export async function extractDataFromBuffer(
     logger.debug(`Data extraction completed. Extracted ${extractedBitIndex} bits.`);
 
     return extractedData;
-}
-
-// Function to calculate (x, y) from bit position
-export const getPixelIndex = (
-    width: number,
-    bitPosition: number,
-    bitsPerChannel: number,
-    channelSequence: ChannelSequence[]
-): { x: number; y: number } => {
-    const channelIndex = Math.floor(bitPosition / bitsPerChannel);
-    const pixelNumber = Math.floor(channelIndex / channelSequence.length);
-    const x = pixelNumber % width;
-    const y = Math.floor(pixelNumber / width);
-    return { x, y };
-};
-
-/**
- * Adds debug visual blocks (red and blue) to the image buffer.
- * @param imageData - Raw image buffer data.
- * @param width - Image width.
- * @param height - Image height.
- * @param channels - Number of channels in the image.
- * @param startBitPosition - Bit position where data injection starts.
- * @param endBitPosition - Bit position where data injection ends.
- * @param bitsPerChannel - Number of bits per channel used.
- * @param channelSequence - Sequence of channels used.
- * @param logger - Logger instance for debugging.
- */
-function addDebugBlocks(
-    imageData: Buffer,
-    width: number,
-    height: number,
-    channels: number,
-    startBitPosition: number,
-    endBitPosition: number,
-    bitsPerChannel: number,
-    channelSequence: ChannelSequence[],
-    logger: Logger
-): void {
-    // Define the size and color of the blocks
-    const blockSize = 8;
-    const red = { R: 255, G: 0, B: 0 };
-    const blue = { R: 0, G: 0, B: 255 };
-
-    // Calculate start and end (x, y) positions
-    const startPos = getPixelIndex(width, startBitPosition, bitsPerChannel, channelSequence);
-    const endPos = getPixelIndex(width, endBitPosition, bitsPerChannel, channelSequence);
-
-    // Add 8x8 red block at the start position
-    logger.debug(`Adding red block at start position: (${startPos.x}, ${startPos.y}).`);
-    for (let y = startPos.y; y < Math.min(startPos.y + blockSize, height); y++) {
-        for (let x = startPos.x; x < Math.min(startPos.x + blockSize, width); x++) {
-            const idx = (y * width + x) * channels;
-            imageData[idx] = red.R;
-            imageData[idx + 1] = red.G;
-            imageData[idx + 2] = red.B;
-            if (channels === 4) {
-                imageData[idx + 3] = 255; // Preserve alpha
-            }
-        }
-    }
-
-    // Add 8x8 blue block at the end position
-    logger.debug(`Adding blue block at end position: (${endPos.x}, ${endPos.y}).`);
-    for (let y = endPos.y; y < Math.min(endPos.y + blockSize, height); y++) {
-        for (let x = endPos.x; x < Math.min(endPos.x + blockSize, width); x++) {
-            const idx = (y * width + x) * channels;
-            imageData[idx] = blue.R;
-            imageData[idx + 1] = blue.G;
-            imageData[idx + 2] = blue.B;
-            if (channels === 4) {
-                imageData[idx + 3] = 255; // Preserve alpha
-            }
-        }
-    }
 }

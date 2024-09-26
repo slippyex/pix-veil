@@ -1,6 +1,7 @@
-// src/mapHelpers.ts
-import { ChannelSequence, DistributionMap, DistributionMapEntry } from '../@types/types';
-import { MAGIC_BYTE } from '../constants/MagicBytes';
+// src/utils/distributionMap/mapHelpers.ts
+
+import { ChannelSequence, DistributionMap, DistributionMapEntry } from '../../@types';
+import { MAGIC_BYTE } from '../../constants';
 
 /**
  * Serializes the distribution map into a buffer with Magic Byte and Size Field.
@@ -74,10 +75,14 @@ function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
 
 function channelValue(channel: string): number {
     switch (channel) {
-        case 'R': return 0x0;
-        case 'G': return 0x1;
-        case 'B': return 0x2;
-        default: return 0x0; // Default fallback to 'R'
+        case 'R':
+            return 0x0;
+        case 'G':
+            return 0x1;
+        case 'B':
+            return 0x2;
+        default:
+            return 0x0; // Default fallback to 'R'
     }
 }
 
@@ -174,10 +179,14 @@ function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequ
 
 function channelFromValue(value: number): ChannelSequence {
     switch (value) {
-        case 0x0: return 'R';
-        case 0x1: return 'G';
-        case 0x2: return 'B';
-        default: return 'R'; // Default fallback
+        case 0x0:
+            return 'R';
+        case 0x1:
+            return 'G';
+        case 0x2:
+            return 'B';
+        default:
+            return 'R'; // Default fallback
     }
 }
 

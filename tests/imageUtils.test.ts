@@ -5,13 +5,9 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import { Logger } from '../src/utils/Logger';
-import {
-    extractDataFromBuffer,
-    getCachedImageTones,
-    getPixelIndex,
-    injectDataIntoBuffer
-} from '../src/utils/imageUtils';
-import { ChannelSequence } from '../src/@types/types';
+import { extractDataFromBuffer, getCachedImageTones, injectDataIntoBuffer } from '../src/utils/image/imageUtils';
+import { ChannelSequence } from '../src/@types/';
+import { getPixelIndex } from '../src/utils/image/imageHelper';
 
 describe('imageUtils Module', () => {
     let logger: Logger;

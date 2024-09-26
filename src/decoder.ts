@@ -6,12 +6,12 @@ import sharp from 'sharp';
 import { promisify } from 'util';
 
 import zlib from 'zlib';
-import { DecodeOptions, DistributionMap } from './@types/types';
+import { DecodeOptions, DistributionMap, ILogger } from './@types/';
 import { decrypt, verifyChecksum } from './utils/cryptoUtils';
 import { Logger } from './utils/Logger';
-import { MAGIC_BYTE } from './constants/MagicBytes';
-import { extractDataFromBuffer } from './utils/imageUtils';
-import { deserializeDistributionMap } from './utils/mapHelpers';
+import { MAGIC_BYTE } from './constants';
+import { extractDataFromBuffer } from './utils/image/imageUtils';
+import { deserializeDistributionMap } from './utils/distributionMap/mapHelpers';
 
 const brotliDecompress = promisify(zlib.brotliDecompress);
 const bitsPerChannelForMap = 2;
@@ -22,16 +22,16 @@ export async function decode({ inputFolder, outputFile, password, verbose, debug
 
         // Step 1: Locate the distribution map PNG
         if (verbose) logger.info('Locating distribution map PNG...');
-        const distributionMapPng = findDistributionMapPng(inputFolder, logger);
+        const distributionMapPng = findDistributionMapPng(inputFolder);
         const distributionMapPngPath = path.join(inputFolder, distributionMapPng);
 
         // Step 2: Read the distribution map from the PNG
         if (verbose) logger.info('Extracting distribution map from PNG...');
-        const distributionMap = await extractDistributionMap(distributionMapPngPath, verbose, logger);
+        const distributionMap = await extractDistributionMap(distributionMapPngPath, logger);
 
         // Step 3: Extract data chunks based on the distribution map
         if (verbose) logger.info('Extracting data chunks from PNG images...');
-        const encryptedData = await extractChunks(distributionMap, inputFolder, verbose, logger);
+        const encryptedData = await extractChunks(distributionMap, inputFolder, logger);
 
         // Step 4: Decrypt the encrypted data
         if (verbose) logger.info('Decrypting the encrypted data...');
@@ -59,7 +59,7 @@ export async function decode({ inputFolder, outputFile, password, verbose, debug
  * Finds the PNG file designated to carry the distribution map.
  * Assuming it's the first `.bak.png` file.
  */
-function findDistributionMapPng(inputFolder: string, logger: Logger): string {
+function findDistributionMapPng(inputFolder: string): string {
     const pngFiles = fs.readdirSync(inputFolder).filter(file => file.endsWith('.bak.png'));
     if (pngFiles.length === 0) throw new Error('No distribution map PNG found in the input folder.');
     return pngFiles[0]; // Assuming the first `.bak.png` is the distribution map carrier
@@ -68,14 +68,12 @@ function findDistributionMapPng(inputFolder: string, logger: Logger): string {
 /**
  * Extracts the distribution map from the specified PNG.
  * @param pngPath - Path to the distribution map PNG.
- * @param verbose - Verbosity flag for logging.
  * @param logger - Logger instance for debugging.
  * @returns Parsed DistributionMap object.
  */
-async function extractDistributionMap(pngPath: string, verbose: boolean, logger: Logger): Promise<DistributionMap> {
+async function extractDistributionMap(pngPath: string, logger: Logger): Promise<DistributionMap> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
-    const { channels, width, height } = info;
 
     // Convert image data to buffer of bits
     // Since we are using 2 bits per channel, and data is byte-aligned, we can process accordingly
@@ -87,7 +85,6 @@ async function extractDistributionMap(pngPath: string, verbose: boolean, logger:
     // Convert the image data to bits
     const totalBytes = imageData.length;
     const bitsPerChannel = bitsPerChannelForMap; // 2 bits per channel
-    const bitsPerPixel = bitsPerChannel * channels; // 6 bits per pixel
 
     // Search for the Magic Byte in the bitstream
     let magicFound = false;
@@ -152,25 +149,17 @@ async function extractDistributionMap(pngPath: string, verbose: boolean, logger:
     );
 
     // Deserialize the distribution map
-    const distributionMap = deserializeDistributionMap(Buffer.concat([magicBuffer, sizeBytes, contentBytes]));
-
-    return distributionMap;
+    return deserializeDistributionMap(Buffer.concat([magicBuffer, sizeBytes, contentBytes]));
 }
 
 /**
  * Extracts data chunks based on the distribution map.
  * @param distributionMap - Parsed distribution map containing chunk locations.
  * @param inputFolder - Path to the folder containing PNG files.
- * @param verbose - Verbosity flag for logging.
  * @param logger - Logger instance for debugging.
  * @returns Buffer containing the reassembled encrypted data.
  */
-async function extractChunks(
-    distributionMap: DistributionMap,
-    inputFolder: string,
-    verbose: boolean,
-    logger: Logger
-): Promise<Buffer> {
+async function extractChunks(distributionMap: DistributionMap, inputFolder: string, logger: Logger): Promise<Buffer> {
     let encryptedDataArray: Buffer[] = [];
 
     for (const entry of distributionMap.entries) {
@@ -206,7 +195,5 @@ async function extractChunks(
     }
 
     // Concatenate all chunks to form the encrypted data
-    const encryptedData = Buffer.concat(encryptedDataArray);
-
-    return encryptedData;
+    return Buffer.concat(encryptedDataArray);
 }

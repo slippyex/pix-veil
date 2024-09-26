@@ -1,6 +1,4 @@
-// src/types.ts
-
-import { Logger } from './shared/utils/Logger';
+// src/@types/index.ts
 
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
@@ -23,6 +21,10 @@ export interface DistributionMap {
     checksum: string;
 }
 
+export interface ImageToneCache {
+    [imagePath: string]: ImageCapacity;
+}
+
 export interface ImageCapacity {
     low: number;
     mid: number;
@@ -36,7 +38,7 @@ export interface EncodeOptions {
     password: string;
     verbose: boolean;
     debugVisual: boolean;
-    logger: Logger;
+    logger: ILogger;
 }
 
 export interface DecodeOptions {
@@ -45,5 +47,26 @@ export interface DecodeOptions {
     password: string;
     verbose: boolean;
     debugVisual: boolean;
-    logger: Logger;
+    logger: ILogger;
+}
+export interface IUsedPng {
+    usedCapacity: number;
+    chunkCount: number;
+    chunks: Chunk[];
+}
+
+export interface ILogger {
+    debugMessages: string[];
+    errorMessages: string[];
+    readonly verbose: boolean;
+
+    info(message: string): void;
+
+    success(message: string): void;
+
+    warn(message: string): void;
+
+    error(message: string): void;
+
+    debug(message: string): void;
 }

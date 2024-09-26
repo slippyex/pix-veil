@@ -1,7 +1,7 @@
 // tests/mapUtils.test.ts
 
-import { DistributionMapEntry } from '../src/@types/types';
-import { createDistributionMap, parseDistributionMap } from '../src/utils/mapUtils';
+import { DistributionMapEntry } from '../src/@types/';
+import { createDistributionMap, parseDistributionMap } from '../src/utils/distributionMap/mapUtils';
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
