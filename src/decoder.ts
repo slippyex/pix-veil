@@ -7,7 +7,7 @@ import { promisify } from 'util';
 
 import zlib from 'zlib';
 import { IDecodeOptions, IDistributionMap, IDistributionMapEntry } from './@types/';
-import { decrypt, verifyChecksum } from './utils/cryptoUtils';
+import { decrypt, generateChecksum, verifyChecksum } from './utils/cryptoUtils';
 import { Logger } from './utils/Logger';
 import { config } from './constants';
 import { extractDataFromBuffer } from './utils/image/imageUtils';
@@ -31,25 +31,28 @@ export async function decode({ inputFolder, outputFile, password, verbose, logge
         const rawDistributionMapDecompressed = await brotliDecompress(rawDistributionMapDecrypted);
         const distributionMap = deserializeDistributionMap(rawDistributionMapDecompressed);
 
-        // Step 3: Extract data chunks based on the distribution map
+        // Step 2: Extract data chunks based on the distribution map
         if (verbose) logger.info('Extracting data chunks from PNG images...');
         const encryptedData = await extractChunks(distributionMap, inputFolder, logger);
+
+        // Step 3: Verify checksum on the encrypted data
+        if (verbose) logger.info('Verifying data integrity...');
+        const isChecksumValid = verifyChecksum(encryptedData, distributionMap.checksum);
+        logger.debug(`Expected Checksum: ${distributionMap.checksum}`);
+        logger.debug(`Computed Checksum: ${generateChecksum(encryptedData)}`);
+        if (!isChecksumValid) {
+            throw new Error('Data integrity check failed. The data may be corrupted or tampered with.');
+        }
 
         // Step 4: Decrypt the encrypted data
         if (verbose) logger.info('Decrypting the encrypted data...');
         const decryptedData = decrypt(encryptedData, password);
 
-        // Step 5: Verify checksum
-        if (verbose) logger.info('Verifying data integrity...');
-        if (!verifyChecksum(decryptedData, distributionMap.checksum)) {
-            throw new Error('Data integrity check failed. The data may be corrupted or tampered with.');
-        }
-
-        // Step 6: Decompress Data
+        // Step 5: Decompress Data
         if (verbose) logger.info('Decompressing data...');
         const decompressedData = await brotliDecompress(decryptedData);
 
-        // Step 7: Write the output file
+        // Step 6: Write the output file
         if (verbose) logger.info('Writing the output file...');
         fs.writeFileSync(outputFile, decompressedData);
         if (verbose) logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
@@ -81,8 +84,8 @@ async function extractChunks(distributionMap: IDistributionMap, inputFolder: str
         const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
         const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
-        // Calculate the number of bits to extract
-        const chunkBits = (entry.endPosition - entry.startPosition) * config.bitsPerChannelForDistributionMap;
+        // Calculate the number of bits to extract based on bitsPerChannel in the distribution map
+        const chunkBits = (entry.endPosition - entry.startPosition) * entry.bitsPerChannel;
 
         // Extract data
         const chunkBuffer = await extractDataFromBuffer(
@@ -105,14 +108,18 @@ async function extractChunks(distributionMap: IDistributionMap, inputFolder: str
     // Verify that chunkIds are consecutive and start from 0
     for (let i = 0; i < encryptedDataArray.length; i++) {
         if (encryptedDataArray[i].chunkId !== i) {
-            throw new Error(`Missing or out-of-order chunk detected. Expected chunkId ${i}, found ${encryptedDataArray[i].chunkId}.`);
+            throw new Error(
+                `Missing or out-of-order chunk detected. Expected chunkId ${i}, found ${encryptedDataArray[i].chunkId}.`
+            );
         }
     }
 
     // Concatenate all chunks to form the encrypted data
     const concatenatedEncryptedData = Buffer.concat(encryptedDataArray.map(chunk => chunk.data));
 
-    logger.debug(`All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`);
+    logger.debug(
+        `All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`
+    );
 
     return concatenatedEncryptedData;
 }

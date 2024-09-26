@@ -17,14 +17,14 @@ import { getRandomPosition } from './utils/image/imageHelper';
 const brotliCompress = promisify(zlib.brotliCompress);
 
 export async function encode({
-                                 inputFile,
-                                 inputPngFolder,
-                                 outputFolder,
-                                 password,
-                                 verbose,
-                                 debugVisual,
-                                 logger
-                             }: IEncodeOptions) {
+    inputFile,
+    inputPngFolder,
+    outputFolder,
+    password,
+    verbose,
+    debugVisual,
+    logger
+}: IEncodeOptions) {
     try {
         if (verbose) logger.info('Starting encoding process...');
 
@@ -53,9 +53,9 @@ export async function encode({
             const remaining = encryptedData.length - offset;
             const size = Math.min(
                 config.chunksDefinition.minChunkSize *
-                Math.ceil(
-                    Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
-                ),
+                    Math.ceil(
+                        Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
+                    ),
                 remaining
             );
             const chunkData = encryptedData.subarray(offset, offset + size);
@@ -109,6 +109,14 @@ export async function encode({
             usedPngs[png.file] = { usedCapacity: 0, chunkCount: 0, chunks: [] };
         }
 
+        // Initialize usedPositions to track channel usage per PNG
+        const usedPositions: Record<string, boolean[]> = {};
+        for (const png of pngCapacities) {
+            const capacity = await getCachedImageTones(path.join(inputPngFolder, png.file), logger);
+            const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // R, G, B
+            usedPositions[png.file] = new Array(totalChannels).fill(false);
+        }
+
         // Shuffle the chunks to randomize distribution
         const shuffledChunks = _.shuffle(chunks);
 
@@ -133,40 +141,51 @@ export async function encode({
                 continue;
             }
 
+            // Calculate channels needed for this chunk
+            const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+            const channelsNeeded = Math.ceil((nextChunk.data.length * 8) / bitsPerChannel);
+
+            // Get total embeddable channels from capacity
+            const capacity = await getCachedImageTones(path.join(inputPngFolder, png.file), logger);
+            const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
+
+            // Find a non-overlapping position
+            let randomPosition;
+            try {
+                randomPosition = getRandomPosition(
+                    totalChannels,
+                    nextChunk.data.length,
+                    bitsPerChannel,
+                    usedPositions[png.file]
+                );
+            } catch (error) {
+                logger.warn(
+                    `Unable to find non-overlapping position for chunk ${nextChunk.id} in "${png.file}". Skipping this PNG.`
+                );
+                continue; // Skip this PNG for this chunk
+            }
+
+            const { start, end } = randomPosition;
+
             // Assign the chunk to this PNG
             const chunk = shuffledChunks.shift()!;
             usedPngs[png.file].usedCapacity += chunk.data.length;
             usedPngs[png.file].chunkCount += 1;
             usedPngs[png.file].chunks.push(chunk);
 
-            // Calculate channels needed for this chunk
-            const bitsPerChannel = config.bitsPerChannelForDistributionMap;
-            const channelsNeeded = Math.ceil((chunk.data.length * 8) / bitsPerChannel);
-
-            // Get total embeddable channels from capacity
-            const capacity = (await getCachedImageTones(path.join(inputPngFolder, png.file), logger));
-            const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
-
-            // Randomize the position within the image for this chunk
-            const randomPosition = getRandomPosition(totalChannels, channelsNeeded);
-
-            // Ensure endPosition does not exceed total channels
-            const startPosition = randomPosition.start;
-            const endPosition = Math.min(randomPosition.start + channelsNeeded, totalChannels);
-
             // Create distribution map entry
             distributionMapEntries.push({
                 chunkId: chunk.id,
                 pngFile: png.file,
-                startPosition, // Now in channels
-                endPosition,   // Now in channels
-                bitsPerChannel: config.bitsPerChannelForDistributionMap,
+                startPosition: start, // Now in channels
+                endPosition: end, // Now in channels
+                bitsPerChannel: bitsPerChannel,
                 channelSequence: ['R', 'G', 'B']
             });
 
             if (verbose) {
                 logger.info(
-                    `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${startPosition}-${endPosition}`
+                    `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`
                 );
             }
         }
@@ -184,38 +203,45 @@ export async function encode({
                     continue;
                 }
 
-                usedPngs[png.file].usedCapacity += chunk.data.length;
-                usedPngs[png.file].chunkCount += 1;
-                usedPngs[png.file].chunks.push(chunk);
-
                 // Calculate channels needed for this chunk
                 const bitsPerChannel = config.bitsPerChannelForDistributionMap;
                 const channelsNeeded = Math.ceil((chunk.data.length * 8) / bitsPerChannel);
 
-                // Get total embeddable channels from capacity
-                const capacity = (await getCachedImageTones(path.join(inputPngFolder, png.file), logger));
-                const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
+                // Find a non-overlapping position
+                let randomPosition;
+                try {
+                    randomPosition = getRandomPosition(
+                        (usedPngs[png.file].usedCapacity + chunk.data.length) * 3,
+                        chunk.data.length,
+                        bitsPerChannel,
+                        usedPositions[png.file]
+                    );
+                } catch (error) {
+                    logger.warn(
+                        `Unable to find non-overlapping position for chunk ${chunk.id} in "${png.file}". Skipping assignment.`
+                    );
+                    continue; // Skip this PNG for this chunk
+                }
 
-                // Randomize the position within the image for this chunk
-                const randomPosition = getRandomPosition(totalChannels, channelsNeeded);
+                const { start, end } = randomPosition;
 
-                // Ensure endPosition does not exceed total channels
-                const startPosition = randomPosition.start;
-                const endPosition = Math.min(randomPosition.start + channelsNeeded, totalChannels);
+                usedPngs[png.file].usedCapacity += chunk.data.length;
+                usedPngs[png.file].chunkCount += 1;
+                usedPngs[png.file].chunks.push(chunk);
 
                 // Create distribution map entry
                 distributionMapEntries.push({
                     chunkId: chunk.id,
                     pngFile: png.file,
-                    startPosition, // Now in channels
-                    endPosition,   // Now in channels
-                    bitsPerChannel: 2,
+                    startPosition: start, // Now in channels
+                    endPosition: end, // Now in channels
+                    bitsPerChannel: 2, // As per the original code
                     channelSequence: ['R', 'G', 'B']
                 });
 
                 if (verbose) {
                     logger.info(
-                        `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${startPosition}-${endPosition}`
+                        `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${start}-${end}`
                     );
                 }
             }

@@ -32,7 +32,7 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup output folders
-//        fs.rmSync(encodedFolder, { recursive: true, force: true });
+        //        fs.rmSync(encodedFolder, { recursive: true, force: true });
         fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
@@ -89,5 +89,4 @@ describe('Codec tests', () => {
         // Ensure the wrong decoded file was not created
         expect(fs.existsSync(wrongDecodedFile)).toBe(false);
     });
-
 });

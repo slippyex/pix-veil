@@ -2,14 +2,21 @@
 
 import { ChannelSequence } from '../../@types';
 
-// Function to calculate (x, y) from bit position
+/**
+ * Calculates (x, y) coordinates from a given channel position.
+ * @param width - Image width.
+ * @param channelPosition - Position in channels.
+ * @param bitsPerChannel - Number of bits per channel used.
+ * @param channelSequence - Sequence of channels used.
+ * @returns Object containing x and y coordinates.
+ */
 export function getPixelIndex(
     width: number,
-    bitPosition: number,
+    channelPosition: number,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[]
 ): { x: number; y: number } {
-    const channelIndex = Math.floor(bitPosition / bitsPerChannel);
+    const channelIndex = Math.floor(channelPosition / bitsPerChannel);
     const pixelNumber = Math.floor(channelIndex / channelSequence.length);
     const x = pixelNumber % width;
     const y = Math.floor(pixelNumber / width);
@@ -37,15 +44,60 @@ export function getChannelOffset(channel: ChannelSequence): number {
 }
 
 /**
+ * Generates a non-overlapping start and end position within the image capacity for a chunk.
+ * Ensures that the chunk does not exceed the image capacity and does not overlap with existing chunks.
+ * @param used - Array tracking used channel positions.
+ * @param totalChannels - Total number of channels in the image.
+ * @param channelsNeeded - Number of channels required for the chunk.
+ * @returns Object containing start and end positions, or null if no position found.
+ */
+export function getNonOverlappingPosition(
+    used: boolean[],
+    totalChannels: number,
+    channelsNeeded: number
+): { start: number; end: number } | null {
+    const maxStart = totalChannels - channelsNeeded;
+    const attempts = 1000; // Prevent infinite loops
+    for (let i = 0; i < attempts; i++) {
+        const start = Math.floor(Math.random() * maxStart);
+        let overlap = false;
+        for (let j = start; j < start + channelsNeeded; j++) {
+            if (used[j]) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap) {
+            // Mark positions as used
+            for (let j = start; j < start + channelsNeeded; j++) {
+                used[j] = true;
+            }
+            return { start, end: start + channelsNeeded };
+        }
+    }
+    return null; // No available position found
+}
+
+/**
  * Generates a random start and end position within the image capacity for a chunk.
  * Ensures that the chunk does not exceed the image capacity.
+ * @param imageCapacity - Total capacity in channels.
+ * @param chunkSize - Size of the chunk in bytes.
+ * @param bitsPerChannel - Number of bits per channel used.
+ * @param used - Array tracking used channel positions.
+ * @returns Object containing start and end positions.
  */
-export function getRandomPosition(imageCapacity: number, chunkSize: number): { start: number; end: number } {
-    const maxStart = imageCapacity - chunkSize;
-    if (maxStart <= 0) {
-        return { start: 0, end: chunkSize };
+export function getRandomPosition(
+    imageCapacity: number,
+    chunkSize: number,
+    bitsPerChannel: number,
+    used: boolean[]
+): { start: number; end: number } {
+    const channelsNeeded = Math.ceil((chunkSize * 8) / bitsPerChannel);
+    const position = getNonOverlappingPosition(used, imageCapacity, channelsNeeded);
+    if (position) {
+        return position;
+    } else {
+        throw new Error('Unable to find a non-overlapping position for the chunk.');
     }
-    const start = Math.floor(Math.random() * maxStart);
-    const end = start + chunkSize;
-    return { start, end };
 }
