@@ -5,6 +5,12 @@ import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@
 import { Logger } from '../Logger';
 import { addDebugBlocks } from './debug';
 import { getChannelOffset } from './imageHelper';
+import {
+    extractBits,
+    insertBits,
+    serializeChannelSequence,
+    deserializeChannelSequence
+} from '../bitUtils';
 
 /**
  * In-memory cache for image tones.
@@ -110,7 +116,7 @@ export async function injectDataIntoBuffer(
             if (dataBitIndex < totalDataBits) {
                 const byteIndex = Math.floor(dataBitIndex / 8);
                 const bitIndex = 7 - (dataBitIndex % 8);
-                const bit = (data[byteIndex] >> bitIndex) & 0x1;
+                const bit = extractBits(data[byteIndex], bitIndex, 1);
                 bits = (bits << 1) | bit;
                 dataBitIndex++;
             } else {
@@ -133,9 +139,10 @@ export async function injectDataIntoBuffer(
             throw new Error(`Channel index out of bounds during injection at channel position ${currentChannelPos}.`);
         }
 
-        // Inject the bits into the channel's LSBs
-        const mask = (1 << bitsPerChannel) - 1;
-        imageData[channelIndex] = (imageData[channelIndex] & ~mask) | (bits & mask);
+        // Inject the bits into the channel's LSBs using bitUtils
+        const originalByte = imageData[channelIndex];
+        const modifiedByte = insertBits(originalByte, bits, 0, bitsPerChannel);
+        imageData[channelIndex] = modifiedByte;
     }
 
     // Calculate bits used, accounting for any padding bits
@@ -231,8 +238,8 @@ export async function extractDataFromBuffer(
             );
         }
 
-        // Extract bitsPerChannel bits from the channel's LSBs
-        const bits = imageData[channelIndex] & ((1 << bitsPerChannel) - 1);
+        // Extract bitsPerChannel bits from the channel's LSBs using bitUtils
+        const bits = extractBits(imageData[channelIndex], 0, bitsPerChannel);
 
         // Append the extracted bits to the output buffer
         for (let b = bitsPerChannel - 1; b >= 0; b--) {

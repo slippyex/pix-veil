@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { Logger } from '../src/utils/Logger';
 import seedrandom from 'seedrandom';
+import {IChunk, IDistributionMapEntry} from "../src/@types";
 
 jest.setTimeout(60 * 1000);
 
@@ -91,4 +92,29 @@ describe('Codec tests', () => {
         // Ensure the wrong decoded file was not created
         expect(fs.existsSync(wrongDecodedFile)).toBe(false);
     });
+
+    it('should correctly map chunkId to chunk data', async () => {
+        const logger = new Logger(true);
+        const chunks: IChunk[] = [
+            { id: 0, data: Buffer.from('Chunk0') },
+            { id: 1, data: Buffer.from('Chunk1') }
+        ];
+
+        // Simulate distributionMapEntries
+        const distributionMapEntries: IDistributionMapEntry[] = [
+            { chunkId: 0, pngFile: 'image1.png', startPosition: 0, endPosition: 10, bitsPerChannel: 2, channelSequence: ['R', 'G', 'B'] },
+            { chunkId: 1, pngFile: 'image2.png', startPosition: 10, endPosition: 20, bitsPerChannel: 2, channelSequence: ['G', 'B', 'R'] }
+        ];
+
+        // Create a chunkMap
+        const chunkMap = new Map<number, Buffer>();
+        chunks.forEach(chunk => chunkMap.set(chunk.id, chunk.data));
+
+        // Assert that chunkMap contains all necessary entries
+        distributionMapEntries.forEach(entry => {
+            expect(chunkMap.has(entry.chunkId)).toBe(true);
+            expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find(c => c.id === entry.chunkId)?.data);
+        });
+    });
+
 });
