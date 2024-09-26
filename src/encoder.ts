@@ -3,18 +3,15 @@
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
-import { promisify } from 'util';
 import _ from 'lodash';
 
 import sharp from 'sharp';
 import { getCachedImageTones, injectDataIntoBuffer } from './utils/image/imageUtils';
-import {ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, IUsedPng} from './@types/';
+import { ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, IUsedPng } from './@types/';
 import { createDistributionMap, generateDistributionMapText } from './utils/distributionMap/mapUtils';
 import { encrypt, generateChecksum } from './utils/cryptoUtils';
 import { config } from './constants';
 import { getRandomPosition } from './utils/image/imageHelper';
-
-const brotliCompress = promisify(zlib.brotliCompress);
 
 export async function encode({
     inputFile,
@@ -31,7 +28,7 @@ export async function encode({
         // Step 1: Read and compress the input file
         if (verbose) logger.info('Reading and compressing the input file...');
         const fileData = fs.readFileSync(inputFile);
-        const compressedData = await brotliCompress(fileData);
+        const compressedData = zlib.brotliCompressSync(fileData);
 
         // Step 2: Encrypt the compressed data
         if (verbose) logger.info('Encrypting the compressed data...');
@@ -74,7 +71,6 @@ export async function encode({
             throw new Error(
                 'At least two PNG files are required (one for distribution map and at least one for data).'
             );
-
 
         // Step 5: Calculate capacity for each data PNG
         const pngCapacities = await Promise.all(
@@ -171,7 +167,6 @@ export async function encode({
             usedPngs[png.file].usedCapacity += chunk.data.length;
             usedPngs[png.file].chunkCount += 1;
             usedPngs[png.file].chunks.push(chunk);
-
 
             // Create distribution map entry
             distributionMapEntries.push({
@@ -274,7 +269,7 @@ export async function encode({
         // Step 8: Create and inject distribution map
         if (verbose) logger.info('Creating and injecting the distribution map...');
         const serializedMap = createDistributionMap(distributionMapEntries, checksum);
-        const distributionMapCompressed = await brotliCompress(serializedMap);
+        const distributionMapCompressed = zlib.brotliCompressSync(serializedMap);
         const encryptedMap = encrypt(distributionMapCompressed, password);
         const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + '.db');
         fs.writeFileSync(distributionMapOutputPath, encryptedMap);

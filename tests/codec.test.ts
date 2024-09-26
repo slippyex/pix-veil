@@ -34,8 +34,8 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup output folders
-//         fs.rmSync(encodedFolder, { recursive: true, force: true });
-         fs.rmSync(decodedFolder, { recursive: true, force: true });
+        //         fs.rmSync(encodedFolder, { recursive: true, force: true });
+        fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
     it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {

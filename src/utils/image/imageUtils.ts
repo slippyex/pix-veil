@@ -5,7 +5,6 @@ import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@
 import { Logger } from '../Logger';
 import { addDebugBlocks } from './debug';
 import { getChannelOffset } from './imageHelper';
-import { getRandomPosition } from './imageHelper';
 
 /**
  * In-memory cache for image tones.

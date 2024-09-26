@@ -3,17 +3,14 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { promisify } from 'util';
 
 import zlib from 'zlib';
-import { IDecodeOptions, IDistributionMap, IDistributionMapEntry } from './@types/';
+import { IDecodeOptions, IDistributionMap } from './@types/';
 import { decrypt, generateChecksum, verifyChecksum } from './utils/cryptoUtils';
 import { Logger } from './utils/Logger';
 import { config } from './constants';
 import { extractDataFromBuffer } from './utils/image/imageUtils';
 import { deserializeDistributionMap } from './utils/distributionMap/mapHelpers';
-
-const brotliDecompress = promisify(zlib.brotliDecompress);
 
 export async function decode({ inputFolder, outputFile, password, verbose, logger }: IDecodeOptions) {
     try {
@@ -28,7 +25,7 @@ export async function decode({ inputFolder, outputFile, password, verbose, logge
         if (verbose) logger.info('Reading and processing the distribution map...');
         const rawDistributionMapEncrypted = fs.readFileSync(distributionMapPath);
         const rawDistributionMapDecrypted = decrypt(rawDistributionMapEncrypted, password);
-        const rawDistributionMapDecompressed = await brotliDecompress(rawDistributionMapDecrypted);
+        const rawDistributionMapDecompressed = zlib.brotliDecompressSync(rawDistributionMapDecrypted);
         const distributionMap = deserializeDistributionMap(rawDistributionMapDecompressed);
 
         // Step 2: Extract data chunks based on the distribution map
@@ -50,7 +47,7 @@ export async function decode({ inputFolder, outputFile, password, verbose, logge
 
         // Step 5: Decompress Data
         if (verbose) logger.info('Decompressing data...');
-        const decompressedData = await brotliDecompress(decryptedData);
+        const decompressedData = zlib.brotliDecompressSync(decryptedData);
 
         // Step 6: Write the output file
         if (verbose) logger.info('Writing the output file...');
