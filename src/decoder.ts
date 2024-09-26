@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import { promisify } from 'util';
 
 import zlib from 'zlib';
-import { DecodeOptions, DistributionMap, ILogger } from './@types/';
+import { IDecodeOptions, IDistributionMap, ILogger } from './@types/';
 import { decrypt, verifyChecksum } from './utils/cryptoUtils';
 import { Logger } from './utils/Logger';
 import { MAGIC_BYTE } from './constants';
@@ -16,7 +16,7 @@ import { deserializeDistributionMap } from './utils/distributionMap/mapHelpers';
 const brotliDecompress = promisify(zlib.brotliDecompress);
 const bitsPerChannelForMap = 2;
 
-export async function decode({ inputFolder, outputFile, password, verbose, debugVisual, logger }: DecodeOptions) {
+export async function decode({ inputFolder, outputFile, password, verbose, debugVisual, logger }: IDecodeOptions) {
     try {
         if (verbose) logger.info('Starting decoding process...');
 
@@ -71,7 +71,7 @@ function findDistributionMapPng(inputFolder: string): string {
  * @param logger - Logger instance for debugging.
  * @returns Parsed DistributionMap object.
  */
-async function extractDistributionMap(pngPath: string, logger: Logger): Promise<DistributionMap> {
+async function extractDistributionMap(pngPath: string, logger: Logger): Promise<IDistributionMap> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
@@ -159,7 +159,7 @@ async function extractDistributionMap(pngPath: string, logger: Logger): Promise<
  * @param logger - Logger instance for debugging.
  * @returns Buffer containing the reassembled encrypted data.
  */
-async function extractChunks(distributionMap: DistributionMap, inputFolder: string, logger: Logger): Promise<Buffer> {
+async function extractChunks(distributionMap: IDistributionMap, inputFolder: string, logger: Logger): Promise<Buffer> {
     let encryptedDataArray: Buffer[] = [];
 
     for (const entry of distributionMap.entries) {

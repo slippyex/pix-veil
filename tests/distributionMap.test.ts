@@ -1,11 +1,11 @@
 // tests/mapUtils.test.ts
 
-import { DistributionMapEntry } from '../src/@types/';
+import { IDistributionMapEntry } from '../src/@types/';
 import { createDistributionMap, parseDistributionMap } from '../src/utils/distributionMap/mapUtils';
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
-        const entries: DistributionMapEntry[] = [
+        const entries: IDistributionMapEntry[] = [
             {
                 chunkId: 1,
                 pngFile: 'image1.png',

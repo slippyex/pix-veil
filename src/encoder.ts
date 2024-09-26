@@ -8,7 +8,7 @@ import _ from 'lodash';
 
 import sharp from 'sharp';
 import { getCachedImageTones, injectDataIntoBuffer } from './utils/image/imageUtils';
-import { Chunk, DistributionMapEntry, EncodeOptions, IUsedPng } from './@types/';
+import { IChunk, IDistributionMapEntry, IEncodeOptions, IUsedPng } from './@types/';
 import { createDistributionMap, generateDistributionMapText } from './utils/distributionMap/mapUtils';
 import { encrypt, generateChecksum } from './utils/cryptoUtils';
 import { config } from './constants';
@@ -24,7 +24,7 @@ export async function encode({
     verbose,
     debugVisual,
     logger
-}: EncodeOptions) {
+}: IEncodeOptions) {
     try {
         if (verbose) logger.info('Starting encoding process...');
 
@@ -43,7 +43,7 @@ export async function encode({
 
         // Step 3: Split into chunks
         if (verbose) logger.info('Splitting encrypted data into chunks...');
-        const chunks: Chunk[] = [];
+        const chunks: IChunk[] = [];
         let offset = 0;
         let chunkId = 0;
 
@@ -98,7 +98,7 @@ export async function encode({
         // Step 6: Distribute chunks ensuring each PNG has at least one and up to 16 chunks
         if (verbose) logger.info('Distributing chunks across PNG images...');
 
-        const distributionMapEntries: DistributionMapEntry[] = [];
+        const distributionMapEntries: IDistributionMapEntry[] = [];
         const usedPngs: Record<string, IUsedPng> = {};
 
         // Initialize usedPngs with usedCapacity, chunkCount, and chunks array
@@ -211,7 +211,7 @@ export async function encode({
         }
 
         // Group distribution map entries by PNG file
-        const pngToChunksMap: Record<string, DistributionMapEntry[]> = {};
+        const pngToChunksMap: Record<string, IDistributionMapEntry[]> = {};
         distributionMapEntries.forEach(entry => {
             if (!pngToChunksMap[entry.pngFile]) {
                 pngToChunksMap[entry.pngFile] = [];

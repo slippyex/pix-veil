@@ -1,7 +1,7 @@
 // src/utils/distributionMap/mapUtils.ts
 
 import { serializeDistributionMap, deserializeDistributionMap } from './mapHelpers';
-import { DistributionMap, DistributionMapEntry } from '../../@types';
+import { IDistributionMap, IDistributionMapEntry } from '../../@types';
 
 /**
  * Creates a distribution map buffer with a header containing magic bytes and map length.
@@ -9,8 +9,8 @@ import { DistributionMap, DistributionMapEntry } from '../../@types';
  * @param checksum - Checksum string for data integrity.
  * @returns Buffer containing the structured distribution map.
  */
-export function createDistributionMap(entries: DistributionMapEntry[], checksum: string): Buffer {
-    const distributionMap: DistributionMap = { entries, checksum };
+export function createDistributionMap(entries: IDistributionMapEntry[], checksum: string): Buffer {
+    const distributionMap: IDistributionMap = { entries, checksum };
     return serializeDistributionMap(distributionMap);
 }
 
@@ -19,17 +19,17 @@ export function createDistributionMap(entries: DistributionMapEntry[], checksum:
  * @param buffer - Buffer containing the serialized distribution map.
  * @returns Parsed DistributionMap object.
  */
-export function parseDistributionMap(buffer: Buffer): DistributionMap {
+export function parseDistributionMap(buffer: Buffer): IDistributionMap {
     return deserializeDistributionMap(buffer);
 }
 
 /**
  * Generates a human-readable distribution map text.
  */
-export function generateDistributionMapText(entries: DistributionMapEntry[], checksum: string): string {
+export function generateDistributionMapText(entries: IDistributionMapEntry[], checksum: string): string {
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
 
-    const pngMap: Record<string, DistributionMapEntry[]> = {};
+    const pngMap: Record<string, IDistributionMapEntry[]> = {};
 
     entries.forEach(entry => {
         if (!pngMap[entry.pngFile]) {

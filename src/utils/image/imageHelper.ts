@@ -1,8 +1,8 @@
 // src/utils/image/imageHelper.ts
 
-// Function to calculate (x, y) from bit position
 import { ChannelSequence } from '../../@types';
 
+// Function to calculate (x, y) from bit position
 export function getPixelIndex(
     width: number,
     bitPosition: number,

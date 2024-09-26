@@ -2,12 +2,12 @@
 
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
-export interface Chunk {
+export interface IChunk {
     id: number;
     data: Buffer;
 }
 
-export interface DistributionMapEntry {
+export interface IDistributionMapEntry {
     chunkId: number;
     pngFile: string;
     startPosition: number;
@@ -16,8 +16,8 @@ export interface DistributionMapEntry {
     channelSequence: ChannelSequence[];
 }
 
-export interface DistributionMap {
-    entries: DistributionMapEntry[];
+export interface IDistributionMap {
+    entries: IDistributionMapEntry[];
     checksum: string;
 }
 
@@ -31,7 +31,7 @@ export interface ImageCapacity {
     high: number;
 }
 
-export interface EncodeOptions {
+export interface IEncodeOptions {
     inputFile: string;
     inputPngFolder: string;
     outputFolder: string;
@@ -41,7 +41,7 @@ export interface EncodeOptions {
     logger: ILogger;
 }
 
-export interface DecodeOptions {
+export interface IDecodeOptions {
     inputFolder: string;
     outputFile: string;
     password: string;
@@ -52,7 +52,7 @@ export interface DecodeOptions {
 export interface IUsedPng {
     usedCapacity: number;
     chunkCount: number;
-    chunks: Chunk[];
+    chunks: IChunk[];
 }
 
 export interface ILogger {

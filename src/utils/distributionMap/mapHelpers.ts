@@ -1,6 +1,6 @@
 // src/utils/distributionMap/mapHelpers.ts
 
-import { ChannelSequence, DistributionMap, DistributionMapEntry } from '../../@types';
+import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types';
 import { MAGIC_BYTE } from '../../constants';
 
 /**
@@ -8,7 +8,7 @@ import { MAGIC_BYTE } from '../../constants';
  * @param distributionMap - The DistributionMap object to serialize.
  * @returns Buffer containing the serialized distribution map.
  */
-export function serializeDistributionMap(distributionMap: DistributionMap): Buffer {
+export function serializeDistributionMap(distributionMap: IDistributionMap): Buffer {
     const mapBufferArray: Buffer[] = [];
     const entryCountBuffer = Buffer.alloc(4);
     entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
@@ -28,7 +28,7 @@ export function serializeDistributionMap(distributionMap: DistributionMap): Buff
     return Buffer.concat([MAGIC_BYTE, sizeBuffer, mapContent]);
 }
 
-function serializeEntry(entry: DistributionMapEntry): Buffer {
+function serializeEntry(entry: IDistributionMapEntry): Buffer {
     const entryBufferArray: Buffer[] = [];
 
     const chunkIdBuffer = Buffer.alloc(4);
@@ -99,7 +99,7 @@ function serializeChecksum(checksum: string): Buffer[] {
  * @param buffer - Buffer containing the serialized distribution map.
  * @returns Parsed DistributionMap object.
  */
-export function deserializeDistributionMap(buffer: Buffer): DistributionMap {
+export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     const magicLength = MAGIC_BYTE.length;
     validateMagicBytes(buffer);
 
@@ -110,7 +110,7 @@ export function deserializeDistributionMap(buffer: Buffer): DistributionMap {
     const entryCount = readUInt32BE(mapContent, offset);
     offset += 4;
 
-    const entries: DistributionMapEntry[] = [];
+    const entries: IDistributionMapEntry[] = [];
     for (let i = 0; i < entryCount; i++) {
         const entry = deserializeEntry(mapContent, offset);
         entries.push(entry.entry);
