@@ -9,7 +9,7 @@ import zlib from 'zlib';
 import { IDecodeOptions, IDistributionMap, ILogger } from './@types/';
 import { decrypt, verifyChecksum } from './utils/cryptoUtils';
 import { Logger } from './utils/Logger';
-import {config} from './constants';
+import { config } from './constants';
 import { extractDataFromBuffer } from './utils/image/imageUtils';
 import { deserializeDistributionMap } from './utils/distributionMap/mapHelpers';
 
@@ -46,10 +46,9 @@ export async function decode({ inputFolder, outputFile, password, verbose, logge
         if (verbose) logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
     } catch (error) {
         logger.error(`Decoding failed: ${error}`);
-        throw error
+        throw error;
     }
 }
-
 
 /**
  * Extracts data chunks based on the distribution map.
