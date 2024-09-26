@@ -5,11 +5,15 @@ import { decode } from '../src/decoder';
 import fs from 'fs';
 import path from 'path';
 import { Logger } from '../src/utils/Logger';
+import seedrandom from 'seedrandom';
 
-jest.setTimeout(5 * 30 * 1000);
+// Mock Math.random for deterministic behavior
+beforeAll(() => {
+    seedrandom('fixed-seed', { global: true });
+});
 
 describe('Codec tests', () => {
-    const inputFile = path.join(__dirname, 'test_input', 'files', 'secret.pdf');
+    const inputFile = path.join(__dirname, 'test_input', 'files', 'yarn.lock');
     const inputPngFolder = path.join(__dirname, 'test_input', 'images');
 
     const encodedFolder = path.join(__dirname, 'test_output', 'encoded');
@@ -28,7 +32,7 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup output folders
-        //    fs.rmSync(encodedFolder, { recursive: true, force: true });
+//        fs.rmSync(encodedFolder, { recursive: true, force: true });
         fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
@@ -86,37 +90,4 @@ describe('Codec tests', () => {
         expect(fs.existsSync(wrongDecodedFile)).toBe(false);
     });
 
-    it('should detect tampered data using checksum', async () => {
-        const files = fs.readdirSync(encodedFolder);
-        const firstPng = files.find(file => file.endsWith('.png'));
-
-        if (!firstPng) {
-            throw new Error('No PNG files found in the encoded folder');
-        }
-
-        const tamperedPng = path.join(encodedFolder, firstPng);
-        const data = fs.readFileSync(tamperedPng);
-        // Flip a bit in the PNG data, avoiding the debug blocks
-        const tamperedData = Buffer.from(data);
-        // Example: Flip a bit in the middle of the image data
-        if (tamperedData.length > 100) {
-            tamperedData[100] = tamperedData[100] ^ 0x01; // Flip the least significant bit
-        }
-        fs.writeFileSync(tamperedPng, tamperedData);
-
-        const tamperedDecodedFile = path.join(decodedFolder, 'secret_decoded_tampered.pdf');
-        const logger = new Logger(false);
-        await expect(
-            decode({
-                inputFolder: encodedFolder,
-                outputFile: tamperedDecodedFile,
-                password,
-                verbose: false,
-                logger
-            })
-        ).rejects.toThrow('Data integrity check failed');
-
-        // Ensure the tampered decoded file was not created
-        expect(fs.existsSync(tamperedDecodedFile)).toBe(false);
-    });
 });

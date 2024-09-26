@@ -33,5 +33,6 @@ export function generateChecksum(buffer: Buffer): string {
  */
 export function verifyChecksum(buffer: Buffer, checksum: string): boolean {
     const computedChecksum = generateChecksum(buffer);
+    console.log(computedChecksum);
     return computedChecksum === checksum;
 }

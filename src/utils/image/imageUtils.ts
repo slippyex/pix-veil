@@ -54,7 +54,7 @@ export async function getCachedImageTones(imagePath: string, logger: ILogger): P
  * @param data - Data to inject.
  * @param bitsPerChannel - Number of bits per channel to use.
  * @param channelSequence - Sequence of channels to inject into.
- * @param startBitPosition - Bit position to start injection.
+ * @param startChannelPosition - Channel index to start injection.
  * @param debugVisual - Whether to add debug visual blocks.
  * @param logger - Logger instance for debugging.
  * @param width - Image width.
@@ -67,7 +67,7 @@ export async function injectDataIntoBuffer(
     data: Buffer,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
-    startBitPosition: number,
+    startChannelPosition: number,
     debugVisual: boolean,
     logger: Logger,
     width: number,
@@ -85,21 +85,20 @@ export async function injectDataIntoBuffer(
     }
 
     const totalDataBits = data.length * 8;
+    const channelsNeeded = Math.ceil(totalDataBits / bitsPerChannel);
     const totalAvailableChannels = Math.floor(imageData.length / channels) * channelSequence.length;
     const totalAvailableBits = totalAvailableChannels * bitsPerChannel;
 
-    if (startBitPosition < 0 || startBitPosition >= totalAvailableBits) {
-        throw new Error('startBitPosition is out of bounds.');
+    if (startChannelPosition < 0 || startChannelPosition >= Math.floor(totalAvailableBits / bitsPerChannel)) {
+        throw new Error('startChannelPosition is out of bounds.');
     }
 
-    if (totalDataBits > totalAvailableBits - startBitPosition) {
+    if (totalDataBits > totalAvailableBits - (startChannelPosition * bitsPerChannel)) {
         throw new Error('Not enough space to inject all data.');
     }
 
     logger.debug(
-        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at bit position ${
-            startBitPosition
-        } with ${bitsPerChannel} bits per channel.`
+        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`
     );
 
     let dataBitIndex = 0; // Track the number of bits injected
@@ -119,19 +118,19 @@ export async function injectDataIntoBuffer(
             }
         }
 
-        // Calculate the current bit position in the image
-        const currentBitPos = startBitPosition + Math.floor(i / bitsPerChannel);
+        // Calculate the current channel position in the image
+        const currentChannelPos = startChannelPosition + Math.floor(i / bitsPerChannel);
 
         // Determine the channel to inject into
-        const channelSequenceIndex = currentBitPos % channelSequence.length;
-        const pixelNumber = Math.floor(currentBitPos / channelSequence.length);
+        const channelSequenceIndex = currentChannelPos % channelSequence.length;
+        const pixelNumber = Math.floor(currentChannelPos / channelSequence.length);
         const channel = channelSequence[channelSequenceIndex];
         const channelOffset = getChannelOffset(channel);
 
         const channelIndex = pixelNumber * channels + channelOffset;
 
         if (channelIndex >= imageData.length) {
-            throw new Error('Channel index out of bounds during injection.');
+            throw new Error(`Channel index out of bounds during injection at channel position ${currentChannelPos}.`);
         }
 
         // Inject the bits into the channel's LSBs
@@ -141,7 +140,7 @@ export async function injectDataIntoBuffer(
 
     // Calculate bits used, accounting for any padding bits
     const bitsUsed = Math.ceil(totalDataBits / bitsPerChannel) * bitsPerChannel;
-    const endBitPosition = startBitPosition + bitsUsed;
+    const endChannelPosition = startChannelPosition + Math.ceil(bitsUsed / bitsPerChannel);
 
     // If debugVisual is enabled, add red and blue blocks
     if (debugVisual && !isDistributionMap) {
@@ -151,23 +150,24 @@ export async function injectDataIntoBuffer(
             width,
             height,
             channels,
-            startBitPosition,
-            endBitPosition,
+            startChannelPosition,
+            endChannelPosition,
             bitsPerChannel,
             channelSequence,
             logger
         );
     }
 
-    logger.debug(`Data injection completed. Start Bit: ${startBitPosition}, End Bit: ${endBitPosition}.`);
+    logger.debug(`Data injection completed. Start Channel: ${startChannelPosition}, End Channel: ${endChannelPosition}.`);
 }
 
 /**
  * Extracts data from the image buffer using LSB steganography.
+ * @param pngFile - Name of the PNG file (for error messages).
  * @param imageData - Raw image buffer data.
  * @param bitsPerChannel - Number of bits per channel to extract.
  * @param channelSequence - Sequence of channels to extract from.
- * @param startBitPosition - Bit position to start extraction.
+ * @param startChannelPosition - Channel index to start extraction.
  * @param bitCount - Total number of bits to extract.
  * @param logger - Logger instance for debugging.
  * @param channels - Number of channels in the image.
@@ -178,7 +178,7 @@ export async function extractDataFromBuffer(
     imageData: Buffer,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
-    startBitPosition: number,
+    startChannelPosition: number,
     bitCount: number,
     logger: ILogger,
     channels: number // Number of channels in the image
@@ -192,18 +192,19 @@ export async function extractDataFromBuffer(
         throw new Error('channelSequence cannot be empty.');
     }
 
-    const totalAvailableBits = Math.floor(imageData.length / channels) * channelSequence.length * bitsPerChannel;
+    const totalAvailableChannels = Math.floor(imageData.length / channels) * channelSequence.length;
+    const totalAvailableBits = totalAvailableChannels * bitsPerChannel;
 
-    if (startBitPosition < 0 || startBitPosition >= totalAvailableBits) {
-        throw new Error('startBitPosition is out of bounds.');
+    if (startChannelPosition < 0 || startChannelPosition >= Math.floor(totalAvailableBits / bitsPerChannel)) {
+        throw new Error('startChannelPosition is out of bounds.');
     }
 
-    if (bitCount > totalAvailableBits - startBitPosition) {
+    if (bitCount > totalAvailableBits - (startChannelPosition * bitsPerChannel)) {
         throw new Error('Not enough bits available to extract.');
     }
 
     logger.debug(
-        `Extracting ${bitCount} bits from buffer starting at bit position ${startBitPosition} with ${bitsPerChannel} bits per channel.`
+        `Extracting ${bitCount} bits from buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`
     );
 
     const extractedData = Buffer.alloc(Math.ceil(bitCount / 8), 0);
@@ -211,18 +212,19 @@ export async function extractDataFromBuffer(
 
     for (let i = 0; i < bitCount; i += bitsPerChannel) {
         // Calculate the current bit position in the image
-        const currentBitPos = startBitPosition + Math.floor(i / bitsPerChannel);
+        const currentBitPos = (startChannelPosition * bitsPerChannel) + i;
 
         // Determine the channel to extract from
-        const channelSequenceIndex = currentBitPos % channelSequence.length;
-        const pixelNumber = Math.floor(currentBitPos / channelSequence.length);
+        const currentChannelPos = Math.floor(currentBitPos / bitsPerChannel);
+        const channelSequenceIndex = currentChannelPos % channelSequence.length;
+        const pixelNumber = Math.floor(currentChannelPos / channelSequence.length);
         const channel = channelSequence[channelSequenceIndex];
         const channelOffset = getChannelOffset(channel);
 
         const channelIndex = pixelNumber * channels + channelOffset;
 
         if (channelIndex >= imageData.length) {
-            throw new Error(`${pngFile} :: Channel index out of bounds during extraction.`);
+            throw new Error(`${pngFile} :: Channel index out of bounds during extraction at channel position ${currentChannelPos}.`);
         }
 
         // Extract bitsPerChannel bits from the channel's LSBs
@@ -237,10 +239,6 @@ export async function extractDataFromBuffer(
             extractedData[byteIndex] |= bit << bitIndexInByte;
             extractedBitIndex++;
         }
-
-        // logger.debug(
-        //     `Extracted bits ${bits.toString(2).padStart(bitsPerChannel, '0')} from channel ${channel} at index ${channelIndex}.`
-        // );
     }
 
     logger.debug(`Data extraction completed. Extracted ${extractedBitIndex} bits.`);

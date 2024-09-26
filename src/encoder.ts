@@ -17,14 +17,14 @@ import { getRandomPosition } from './utils/image/imageHelper';
 const brotliCompress = promisify(zlib.brotliCompress);
 
 export async function encode({
-    inputFile,
-    inputPngFolder,
-    outputFolder,
-    password,
-    verbose,
-    debugVisual,
-    logger
-}: IEncodeOptions) {
+                                 inputFile,
+                                 inputPngFolder,
+                                 outputFolder,
+                                 password,
+                                 verbose,
+                                 debugVisual,
+                                 logger
+                             }: IEncodeOptions) {
     try {
         if (verbose) logger.info('Starting encoding process...');
 
@@ -39,7 +39,9 @@ export async function encode({
 
         // Generate checksum for data integrity
         const checksum = generateChecksum(encryptedData);
-        if (verbose) logger.info('Checksum generated for data integrity.');
+        if (verbose) logger.info('Checksum generated for data integrity: ' + checksum);
+
+        fs.writeFileSync(path.join(outputFolder, 'packed.dat'), encryptedData);
 
         // Step 3: Split into chunks
         if (verbose) logger.info('Splitting encrypted data into chunks...');
@@ -51,9 +53,9 @@ export async function encode({
             const remaining = encryptedData.length - offset;
             const size = Math.min(
                 config.chunksDefinition.minChunkSize *
-                    Math.ceil(
-                        Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
-                    ),
+                Math.ceil(
+                    Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
+                ),
                 remaining
             );
             const chunkData = encryptedData.subarray(offset, offset + size);
@@ -83,10 +85,11 @@ export async function encode({
                 const pngPath = path.join(inputPngFolder, png);
                 const capacity = await getCachedImageTones(pngPath, logger); // Use cached tones
                 // Using 2 bits per channel on all RGB channels
-                const bitsPerChannel = 2;
-                const totalEmbeddableBytes = Math.floor(
-                    ((capacity.low + capacity.mid + capacity.high) * 3 * bitsPerChannel) / 8
-                );
+                const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+                const channelsPerPixel = 3; // R, G, B
+                const totalEmbeddableChannels = (capacity.low + capacity.mid + capacity.high) * channelsPerPixel;
+                const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // Number of channels needed to embed one byte
+                const totalEmbeddableBytes = Math.floor(totalEmbeddableChannels / channelsNeededPerByte);
                 if (verbose) logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
                 return {
                     file: png,
@@ -136,22 +139,34 @@ export async function encode({
             usedPngs[png.file].chunkCount += 1;
             usedPngs[png.file].chunks.push(chunk);
 
+            // Calculate channels needed for this chunk
+            const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+            const channelsNeeded = Math.ceil((chunk.data.length * 8) / bitsPerChannel);
+
+            // Get total embeddable channels from capacity
+            const capacity = (await getCachedImageTones(path.join(inputPngFolder, png.file), logger));
+            const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
+
             // Randomize the position within the image for this chunk
-            const randomPosition = getRandomPosition(png.capacity, chunk.data.length);
+            const randomPosition = getRandomPosition(totalChannels, channelsNeeded);
+
+            // Ensure endPosition does not exceed total channels
+            const startPosition = randomPosition.start;
+            const endPosition = Math.min(randomPosition.start + channelsNeeded, totalChannels);
 
             // Create distribution map entry
             distributionMapEntries.push({
                 chunkId: chunk.id,
                 pngFile: png.file,
-                startPosition: randomPosition.start,
-                endPosition: randomPosition.end,
+                startPosition, // Now in channels
+                endPosition,   // Now in channels
                 bitsPerChannel: config.bitsPerChannelForDistributionMap,
                 channelSequence: ['R', 'G', 'B']
             });
 
             if (verbose) {
                 logger.info(
-                    `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${randomPosition.start}-${randomPosition.end}`
+                    `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${startPosition}-${endPosition}`
                 );
             }
         }
@@ -173,22 +188,34 @@ export async function encode({
                 usedPngs[png.file].chunkCount += 1;
                 usedPngs[png.file].chunks.push(chunk);
 
+                // Calculate channels needed for this chunk
+                const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+                const channelsNeeded = Math.ceil((chunk.data.length * 8) / bitsPerChannel);
+
+                // Get total embeddable channels from capacity
+                const capacity = (await getCachedImageTones(path.join(inputPngFolder, png.file), logger));
+                const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
+
                 // Randomize the position within the image for this chunk
-                const randomPosition = getRandomPosition(png.capacity, chunk.data.length);
+                const randomPosition = getRandomPosition(totalChannels, channelsNeeded);
+
+                // Ensure endPosition does not exceed total channels
+                const startPosition = randomPosition.start;
+                const endPosition = Math.min(randomPosition.start + channelsNeeded, totalChannels);
 
                 // Create distribution map entry
                 distributionMapEntries.push({
                     chunkId: chunk.id,
                     pngFile: png.file,
-                    startPosition: randomPosition.start,
-                    endPosition: randomPosition.end,
+                    startPosition, // Now in channels
+                    endPosition,   // Now in channels
                     bitsPerChannel: 2,
                     channelSequence: ['R', 'G', 'B']
                 });
 
                 if (verbose) {
                     logger.info(
-                        `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${randomPosition.start}-${randomPosition.end}`
+                        `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${startPosition}-${endPosition}`
                     );
                 }
             }
@@ -227,7 +254,7 @@ export async function encode({
             // Load the PNG image once
             const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
             const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
-            const { channels, width, height } = info;
+            const { channels: imageChannels, width, height } = info;
 
             // Iterate over each chunk assigned to this PNG
             for (const entry of entries) {
@@ -247,7 +274,7 @@ export async function encode({
                     logger,
                     width,
                     height,
-                    channels
+                    imageChannels
                 );
             }
 
@@ -256,7 +283,7 @@ export async function encode({
                 raw: {
                     width: width,
                     height: height,
-                    channels: channels
+                    channels: imageChannels
                 }
             })
                 .toColourspace('srgb')
@@ -277,8 +304,10 @@ export async function encode({
         // Step 8: Create and inject distribution map
         if (verbose) logger.info('Creating and injecting the distribution map...');
         const serializedMap = createDistributionMap(distributionMapEntries, checksum);
-        const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + `.db`);
-        fs.writeFileSync(distributionMapOutputPath, encrypt(await brotliCompress(serializedMap), password));
+        const distributionMapCompressed = await brotliCompress(serializedMap);
+        const encryptedMap = encrypt(distributionMapCompressed, password);
+        const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + '.db');
+        fs.writeFileSync(distributionMapOutputPath, encryptedMap);
 
         // Step 9: Dump the distribution map as a human-readable text file
         if (verbose) logger.info('Creating a human-readable distribution map text file...');

@@ -71,7 +71,6 @@ program
                 outputFile,
                 password,
                 verbose,
-                debugVisual,
                 logger
             });
         } catch (error) {

@@ -1,4 +1,4 @@
-// src/__tests__/imageUtils.test.ts
+// src/tests/imageUtils.test.ts
 
 import sharp from 'sharp';
 
@@ -154,6 +154,7 @@ describe('imageUtils Module', () => {
 
             // Extract data from the buffer
             const extractedData = await extractDataFromBuffer(
+                'test.png',
                 injectedImageBuffer,
                 bitsPerChannel,
                 channelSequence,
@@ -239,6 +240,7 @@ describe('imageUtils Module', () => {
 
             // Extract data
             const extractedData = await extractDataFromBuffer(
+                'test.png',
                 originalData,
                 bitsPerChannelTest,
                 channelSequenceTest,
@@ -425,7 +427,7 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('startBitPosition is out of bounds.');
+            ).rejects.toThrow('startChannelPosition is out of bounds.');
         });
 
         it('should throw an error for invalid channel in channelSequence', async () => {
