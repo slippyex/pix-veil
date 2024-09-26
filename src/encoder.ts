@@ -8,7 +8,7 @@ import _ from 'lodash';
 
 import sharp from 'sharp';
 import { getCachedImageTones, injectDataIntoBuffer } from './utils/image/imageUtils';
-import { IChunk, IDistributionMapEntry, IEncodeOptions, IUsedPng } from './@types/';
+import {ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, IUsedPng} from './@types/';
 import { createDistributionMap, generateDistributionMapText } from './utils/distributionMap/mapUtils';
 import { encrypt, generateChecksum } from './utils/cryptoUtils';
 import { config } from './constants';
@@ -75,13 +75,10 @@ export async function encode({
                 'At least two PNG files are required (one for distribution map and at least one for data).'
             );
 
-        // Assign the first PNG as the distribution map container
-        const distributionMapPng = pngFiles[0];
-        const dataPngFiles = pngFiles.slice(1); // Remaining PNGs for data
 
         // Step 5: Calculate capacity for each data PNG
         const pngCapacities = await Promise.all(
-            dataPngFiles.map(async png => {
+            pngFiles.map(async png => {
                 const pngPath = path.join(inputPngFolder, png);
                 const capacity = await getCachedImageTones(pngPath, logger); // Use cached tones
                 // Using 2 bits per channel on all RGB channels
@@ -145,9 +142,11 @@ export async function encode({
             const bitsPerChannel = config.bitsPerChannelForDistributionMap;
             const channelsNeeded = Math.ceil((nextChunk.data.length * 8) / bitsPerChannel);
 
+            const channelSequence = _.shuffle(['R', 'G', 'B']) as ChannelSequence[];
+
             // Get total embeddable channels from capacity
             const capacity = await getCachedImageTones(path.join(inputPngFolder, png.file), logger);
-            const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // 3 channels: R, G, B
+            const totalChannels = (capacity.low + capacity.mid + capacity.high) * channelSequence.length; // 3 channels: R, G, B
 
             // Find a non-overlapping position
             let randomPosition;
@@ -173,6 +172,7 @@ export async function encode({
             usedPngs[png.file].chunkCount += 1;
             usedPngs[png.file].chunks.push(chunk);
 
+
             // Create distribution map entry
             distributionMapEntries.push({
                 chunkId: chunk.id,
@@ -180,70 +180,13 @@ export async function encode({
                 startPosition: start, // Now in channels
                 endPosition: end, // Now in channels
                 bitsPerChannel: bitsPerChannel,
-                channelSequence: ['R', 'G', 'B']
+                channelSequence
             });
 
             if (verbose) {
                 logger.info(
                     `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`
                 );
-            }
-        }
-
-        // Ensure each PNG has at least one chunk
-        for (const png of shuffledPngCapacities) {
-            if (usedPngs[png.file].chunkCount < config.chunksDefinition.minChunksPerPng) {
-                if (shuffledChunks.length === 0) break; // No chunks left to assign
-
-                const chunk = shuffledChunks.shift();
-                if (!chunk) break; // No chunks left
-
-                if (usedPngs[png.file].usedCapacity + chunk.data.length > png.capacity) {
-                    logger.warn(`Unable to assign chunk ${chunk?.id} to "${png.file}" due to insufficient capacity.`);
-                    continue;
-                }
-
-                // Calculate channels needed for this chunk
-                const bitsPerChannel = config.bitsPerChannelForDistributionMap;
-                const channelsNeeded = Math.ceil((chunk.data.length * 8) / bitsPerChannel);
-
-                // Find a non-overlapping position
-                let randomPosition;
-                try {
-                    randomPosition = getRandomPosition(
-                        (usedPngs[png.file].usedCapacity + chunk.data.length) * 3,
-                        chunk.data.length,
-                        bitsPerChannel,
-                        usedPositions[png.file]
-                    );
-                } catch (error) {
-                    logger.warn(
-                        `Unable to find non-overlapping position for chunk ${chunk.id} in "${png.file}". Skipping assignment.`
-                    );
-                    continue; // Skip this PNG for this chunk
-                }
-
-                const { start, end } = randomPosition;
-
-                usedPngs[png.file].usedCapacity += chunk.data.length;
-                usedPngs[png.file].chunkCount += 1;
-                usedPngs[png.file].chunks.push(chunk);
-
-                // Create distribution map entry
-                distributionMapEntries.push({
-                    chunkId: chunk.id,
-                    pngFile: png.file,
-                    startPosition: start, // Now in channels
-                    endPosition: end, // Now in channels
-                    bitsPerChannel: 2, // As per the original code
-                    channelSequence: ['R', 'G', 'B']
-                });
-
-                if (verbose) {
-                    logger.info(
-                        `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with 2 bits per channel. Position: ${start}-${end}`
-                    );
-                }
             }
         }
 
@@ -300,7 +243,8 @@ export async function encode({
                     logger,
                     width,
                     height,
-                    imageChannels
+                    imageChannels,
+                    entry.startPosition + chunk.data.length
                 );
             }
 
