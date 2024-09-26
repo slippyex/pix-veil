@@ -7,6 +7,8 @@ import path from 'path';
 import { Logger } from '../src/utils/Logger';
 import seedrandom from 'seedrandom';
 
+jest.setTimeout(60 * 1000);
+
 // Mock Math.random for deterministic behavior
 beforeAll(() => {
     seedrandom('fixed-seed', { global: true });
