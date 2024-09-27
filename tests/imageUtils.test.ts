@@ -142,7 +142,7 @@ describe('imageUtils Module', () => {
             const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
             // Inject data into the buffer
-            await injectDataIntoBuffer(
+            injectDataIntoBuffer(
                 data,
                 dataToInject,
                 bitsPerChannel,
@@ -159,7 +159,7 @@ describe('imageUtils Module', () => {
             const injectedImageBuffer = Buffer.from(data);
 
             // Extract data from the buffer
-            const extractedData = await extractDataFromBuffer(
+            const extractedData = extractDataFromBuffer(
                 'test.png',
                 injectedImageBuffer,
                 bitsPerChannel,
@@ -198,7 +198,7 @@ describe('imageUtils Module', () => {
 
             const { data: smallData, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     smallData,
                     data,
@@ -211,7 +211,7 @@ describe('imageUtils Module', () => {
                     info.height,
                     info.channels as 1 | 2 | 3 | 4
                 )
-            ).rejects.toThrow('Channel positions are out of bounds for data injection.');
+            ).toThrow('Channel positions are out of bounds for data injection.');
 
             // Cleanup small image
             if (fs.existsSync(smallImagePath)) {
@@ -231,7 +231,7 @@ describe('imageUtils Module', () => {
             const { data: originalData, info } = await image.raw().toBuffer({ resolveWithObject: true });
 
             // Inject data
-            await injectDataIntoBuffer(
+            injectDataIntoBuffer(
                 originalData,
                 data,
                 bitsPerChannelTest,
@@ -245,7 +245,7 @@ describe('imageUtils Module', () => {
             );
 
             // Extract data
-            const extractedData = await extractDataFromBuffer(
+            const extractedData = extractDataFromBuffer(
                 'test.png',
                 originalData,
                 bitsPerChannelTest,
@@ -304,7 +304,7 @@ describe('imageUtils Module', () => {
             const data = Buffer.from('Test Data', 'utf-8');
 
             // Invalid bitsPerChannel values
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     originalImageBuffer,
                     data,
@@ -317,9 +317,9 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('bitsPerChannel must be between 1 and 8.');
+            ).toThrow('bitsPerChannel must be between 1 and 8.');
 
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     originalImageBuffer,
                     data,
@@ -332,13 +332,13 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('bitsPerChannel must be between 1 and 8.');
+            ).toThrow('bitsPerChannel must be between 1 and 8.');
         });
 
         it('should throw an error for empty channelSequence', async () => {
             const data = Buffer.from('Test Data', 'utf-8');
 
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     originalImageBuffer,
                     data,
@@ -351,7 +351,7 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('channelSequence cannot be empty.');
+            ).toThrow('channelSequence cannot be empty.');
         });
 
         it('should throw an error for out-of-bounds startBitPosition', async () => {
@@ -359,7 +359,7 @@ describe('imageUtils Module', () => {
 
             const outOfBoundsStartBitPosition = Math.floor(width * height * channels); // For bitsPerChannel=1
 
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     originalImageBuffer,
                     data,
@@ -372,14 +372,14 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('Channel positions are out of bounds for data injection.');
+            ).toThrow('Channel positions are out of bounds for data injection.');
         });
 
         it('should throw an error for invalid channel in channelSequence', async () => {
             const data = Buffer.from('Test Data', 'utf-8');
             const invalidChannelSequence: ChannelSequence[] = ['R', 'G', 'X'] as unknown as ChannelSequence[]; // 'X' is invalid
 
-            await expect(
+            expect(() =>
                 injectDataIntoBuffer(
                     originalImageBuffer,
                     data,
@@ -392,7 +392,7 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('Invalid channel specified: X');
+            ).toThrow('Invalid channel specified: X');
         });
     });
 });

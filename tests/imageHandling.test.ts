@@ -18,7 +18,7 @@ describe('Image Utilities with Various Image Types', () => {
         // Create a grayscale image (1 channel)
         const grayscaleWidth = 8;
         const grayscaleHeight = 8;
-        const grayscaleChannels: 1 = 1;
+        const grayscaleChannels = 1;
         const grayscaleBuffer = Buffer.alloc(grayscaleWidth * grayscaleHeight * grayscaleChannels, 128); // Medium gray
 
         const grayscaleImagePath = path.join(__dirname, 'test_output', 'grayscale_image.png');
@@ -49,7 +49,7 @@ describe('Image Utilities with Various Image Types', () => {
         // Create an RGBA image (4 channels)
         const rgbaWidth = 8;
         const rgbaHeight = 8;
-        const rgbaChannels: 4 = 4;
+        const rgbaChannels = 4;
         const rgbaBuffer = Buffer.alloc(rgbaWidth * rgbaHeight * rgbaChannels, 255); // White with full alpha
 
         const rgbaImagePath = path.join(__dirname, 'test_output', 'rgba_image.png');
