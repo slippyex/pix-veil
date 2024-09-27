@@ -5,6 +5,7 @@ import { createDistributionMap, parseDistributionMap } from '../src/utils/distri
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
+        const originalFilename = 'file.ext';
         const entries: IDistributionMapEntry[] = [
             {
                 chunkId: 1,
@@ -25,7 +26,7 @@ describe('Distribution Map Serialization', () => {
         ];
         const checksum = 'abcdef1234567890';
 
-        const serialized = createDistributionMap(entries, checksum);
+        const serialized = createDistributionMap(entries, originalFilename, checksum);
         const deserialized = parseDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);

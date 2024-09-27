@@ -6,11 +6,12 @@ import { IDistributionMap, IDistributionMapEntry } from '../../@types';
 /**
  * Creates a distribution map buffer with a header containing magic bytes and map length.
  * @param entries - Array of distribution map entries.
+ * @param originalFilename - Original input file name
  * @param checksum - Checksum string for data integrity.
  * @returns Buffer containing the structured distribution map.
  */
-export function createDistributionMap(entries: IDistributionMapEntry[], checksum: string): Buffer {
-    const distributionMap: IDistributionMap = { entries, checksum };
+export function createDistributionMap(entries: IDistributionMapEntry[], originalFilename: string, checksum: string): Buffer {
+    const distributionMap: IDistributionMap = { entries, originalFilename, checksum };
     return serializeDistributionMap(distributionMap);
 }
 

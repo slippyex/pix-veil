@@ -23,6 +23,8 @@ export async function encode(options: IEncodeOptions) {
     const { inputFile, inputPngFolder, outputFolder, password, verbose, debugVisual, logger } = options;
     try {
         if (verbose) logger.info('Starting encoding process...');
+        // Capture only the filename (no path) using path.basename
+        const originalFilename = path.basename(inputFile);  // This ensures only the file name without the path
 
         // Step 1: Read and compress the input file
         const compressedData = readAndCompressInputFile(inputFile, logger);
@@ -48,7 +50,7 @@ export async function encode(options: IEncodeOptions) {
         await injectChunksIntoPngs(distributionMapEntries, chunkMap, inputPngFolder, outputFolder, debugVisual, logger);
 
         // Step 7: Create and store the distribution map
-        await createAndStoreDistributionMap(distributionMapEntries, checksum, password, outputFolder, logger);
+        await createAndStoreDistributionMap(distributionMapEntries, originalFilename, checksum, password, outputFolder, logger);
 
         // Step 8: Generate human-readable distribution map text file
         await createHumanReadableDistributionMap(distributionMapEntries, checksum, outputFolder, logger);
@@ -377,6 +379,7 @@ async function injectChunksIntoPngs(
 /**
  * Creates and stores the distribution map.
  * @param distributionMapEntries - Array of distribution map entries.
+ * @param inputFile - Original input file name
  * @param checksum - Checksum of the encrypted data.
  * @param password - Password used for encryption.
  * @param outputFolder - Path to the output folder.
@@ -384,13 +387,14 @@ async function injectChunksIntoPngs(
  */
 async function createAndStoreDistributionMap(
     distributionMapEntries: IDistributionMapEntry[],
+    inputFile: string,
     checksum: string,
     password: string,
     outputFolder: string,
     logger: Logger
 ): Promise<void> {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
-    const serializedMap = createDistributionMap(distributionMapEntries, checksum);
+    const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum);
     const distributionMapCompressed = zlib.brotliCompressSync(serializedMap);
     const encryptedMap = encrypt(distributionMapCompressed, password);
     const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + '.db');

@@ -62,7 +62,7 @@ describe('Codec tests', () => {
             inputFolder: encodedFolder,
             outputFile: decodedFile,
             password,
-            verbose: true,
+            verbose: false,
             logger
         });
 

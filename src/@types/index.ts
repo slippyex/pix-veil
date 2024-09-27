@@ -18,6 +18,7 @@ export interface IDistributionMapEntry {
 
 export interface IDistributionMap {
     entries: IDistributionMapEntry[];
+    originalFilename: string;
     checksum: string;
 }
 
