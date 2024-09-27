@@ -57,21 +57,13 @@ export function getNonOverlappingPosition(
     channelsNeeded: number
 ): { start: number; end: number } | null {
     const maxStart = totalChannels - channelsNeeded;
-    const attempts = 1000; // Prevent infinite loops
+    const attempts = 100; // Prevent infinite loops
     for (let i = 0; i < attempts; i++) {
         const start = Math.floor(Math.random() * maxStart);
-        let overlap = false;
-        for (let j = start; j < start + channelsNeeded; j++) {
-            if (used[j]) {
-                overlap = true;
-                break;
-            }
-        }
+        const overlap = used.slice(start, start + channelsNeeded).some(channel => channel);
         if (!overlap) {
             // Mark positions as used
-            for (let j = start; j < start + channelsNeeded; j++) {
-                used[j] = true;
-            }
+            used.fill(true, start, start + channelsNeeded);
             return { start, end: start + channelsNeeded };
         }
     }

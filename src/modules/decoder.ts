@@ -18,7 +18,7 @@ export async function decode(options: IDecodeOptions) {
     try {
         if (verbose) logger.info('Starting decoding process...');
 
-        const distributionMap = await readAndProcessDistributionMap(inputFolder, password, logger);
+        const distributionMap = readAndProcessDistributionMap(inputFolder, password, logger);
         const encryptedData = await extractChunks(distributionMap, inputFolder, logger);
         verifyDataIntegrity(encryptedData, distributionMap.checksum, logger);
         const decryptedData = decryptData(encryptedData, password, logger);
@@ -36,11 +36,7 @@ export async function decode(options: IDecodeOptions) {
 /**
  * Reads, decrypts, decompresses, and deserializes the distribution map.
  */
-async function readAndProcessDistributionMap(
-    inputFolder: string,
-    password: string,
-    logger: ILogger
-): Promise<IDistributionMap> {
+function readAndProcessDistributionMap(inputFolder: string, password: string, logger: ILogger): IDistributionMap {
     const distributionMapPath = path.join(inputFolder, config.distributionMapFile + '.db');
     if (!filePathExists(distributionMapPath)) {
         throw new Error(`Distribution map file "${config.distributionMapFile}.db" not found in input folder.`);
@@ -57,7 +53,7 @@ async function readAndProcessDistributionMap(
  * Extracts data chunks based on the distribution map.
  */
 async function extractChunks(distributionMap: IDistributionMap, inputFolder: string, logger: ILogger): Promise<Buffer> {
-    let encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
+    const encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
 
     for (const entry of distributionMap.entries) {
         const pngPath = path.join(inputFolder, entry.pngFile);
@@ -75,7 +71,7 @@ async function extractChunks(distributionMap: IDistributionMap, inputFolder: str
         const chunkBits = (entry.endPosition - entry.startPosition) * entry.bitsPerChannel;
 
         // Extract data
-        const chunkBuffer = await extractDataFromBuffer(
+        const chunkBuffer = extractDataFromBuffer(
             entry.pngFile,
             imageData,
             entry.bitsPerChannel,

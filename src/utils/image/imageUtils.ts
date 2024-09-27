@@ -63,7 +63,7 @@ export async function getCachedImageTones(imagePath: string, logger: ILogger): P
  * @param height - Image height.
  * @param channels - Number of channels in the image.
  */
-export async function injectDataIntoBuffer(
+export function injectDataIntoBuffer(
     imageData: Buffer,
     data: Buffer,
     bitsPerChannel: number,
@@ -75,7 +75,7 @@ export async function injectDataIntoBuffer(
     height: number,
     channels: 1 | 2 | 3 | 4,
     endChannelPosition?: number // Optional parameter for debug visuals
-): Promise<void> {
+) {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {
         throw new Error('bitsPerChannel must be between 1 and 8.');
@@ -178,7 +178,7 @@ export async function injectDataIntoBuffer(
  * @param channels - Number of channels in the image.
  * @returns Buffer containing the extracted data.
  */
-export async function extractDataFromBuffer(
+export function extractDataFromBuffer(
     pngFile: string,
     imageData: Buffer,
     bitsPerChannel: number,
@@ -187,7 +187,7 @@ export async function extractDataFromBuffer(
     bitCount: number,
     logger: ILogger,
     channels: number // Number of channels in the image
-): Promise<Buffer> {
+): Buffer {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {
         throw new Error('bitsPerChannel must be between 1 and 8.');

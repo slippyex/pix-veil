@@ -1,6 +1,7 @@
 import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
 import { MAGIC_BYTE } from '../../config.ts';
 import { Buffer } from 'node:buffer';
+import { deserializeUInt32, deserializeUInt8, serializeUInt32, serializeUInt8 } from '../misc/serializationHelpers.ts';
 
 /**
  * Serializes the distribution map into a buffer with Magic Byte and Size Field.
@@ -66,33 +67,23 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
     const buffers: Buffer[] = [];
 
     // Serialize chunkId (4 bytes)
-    const chunkIdBuffer = Buffer.alloc(4);
-    chunkIdBuffer.writeUInt32BE(entry.chunkId, 0);
-    buffers.push(chunkIdBuffer);
+    buffers.push(serializeUInt32(entry.chunkId));
 
     // Serialize pngFile (filename)
     buffers.push(serializeString(entry.pngFile));
 
     // Serialize startPosition and endPosition (4 bytes each)
-    const positionsBuffer = Buffer.alloc(8);
-    positionsBuffer.writeUInt32BE(entry.startPosition, 0);
-    positionsBuffer.writeUInt32BE(entry.endPosition, 4);
-    buffers.push(positionsBuffer);
+    buffers.push(serializeUInt32(entry.startPosition));
+    buffers.push(serializeUInt32(entry.endPosition));
 
     // Serialize bitsPerChannel (1 byte)
-    const bitsPerChannelBuffer = Buffer.alloc(1);
-    bitsPerChannelBuffer.writeUInt8(entry.bitsPerChannel, 0);
-    buffers.push(bitsPerChannelBuffer);
+    buffers.push(serializeUInt8(entry.bitsPerChannel));
 
     // Serialize channelSequence length (1 byte)
-    const channelSeqLength = entry.channelSequence.length;
-    const channelSeqLengthBuffer = Buffer.alloc(1);
-    channelSeqLengthBuffer.writeUInt8(channelSeqLength, 0);
-    buffers.push(channelSeqLengthBuffer);
+    buffers.push(serializeUInt8(entry.channelSequence.length));
 
     // Serialize channelSequence
-    const channelSeqBuffer = serializeChannelSequence(entry.channelSequence);
-    buffers.push(channelSeqBuffer);
+    buffers.push(serializeChannelSequence(entry.channelSequence));
 
     return Buffer.concat(buffers);
 }
@@ -105,31 +96,27 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
  */
 function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributionMapEntry; newOffset: number } {
     // Deserialize chunkId
-    const chunkId = buffer.readUInt32BE(offset);
-    offset += 4;
+    const { value: chunkId, newOffset: offset1 } = deserializeUInt32(buffer, offset);
 
     // Deserialize pngFile (filename)
-    const { value: pngFile, newOffset: filenameOffset } = deserializeString(buffer, offset);
-    offset = filenameOffset;
+    const { value: pngFile, newOffset: offset2 } = deserializeString(buffer, offset1);
 
-    // Deserialize startPosition and endPosition
-    const startPosition = buffer.readUInt32BE(offset);
-    const endPosition = buffer.readUInt32BE(offset + 4);
-    offset += 8;
+    // Deserialize startPosition
+    const { value: startPosition, newOffset: offset3 } = deserializeUInt32(buffer, offset2);
+
+    // Deserialize endPosition
+    const { value: endPosition, newOffset: offset4 } = deserializeUInt32(buffer, offset3);
 
     // Deserialize bitsPerChannel
-    const bitsPerChannel = buffer.readUInt8(offset);
-    offset += 1;
+    const { value: bitsPerChannel, newOffset: offset5 } = deserializeUInt8(buffer, offset4);
 
     // Deserialize channelSeqLength
-    const channelSeqLength = buffer.readUInt8(offset);
-    offset += 1;
+    const { value: channelSeqLength, newOffset: offset6 } = deserializeUInt8(buffer, offset5);
 
     // Deserialize channelSequence
     const channelSeqBufferLength = Math.ceil(channelSeqLength / 4);
-    const channelSeqBuffer = buffer.subarray(offset, offset + channelSeqBufferLength);
-    offset += channelSeqBufferLength;
-
+    const channelSeqBuffer = buffer.subarray(offset6, offset6 + channelSeqBufferLength);
+    const newOffset = offset6 + channelSeqBufferLength;
     const channelSequence = deserializeChannelSequence(channelSeqBuffer, channelSeqLength);
 
     const entry: IDistributionMapEntry = {
@@ -141,7 +128,7 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
         channelSequence
     };
 
-    return { entry, newOffset: offset };
+    return { entry, newOffset };
 }
 
 /**
