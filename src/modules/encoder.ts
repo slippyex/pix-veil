@@ -160,7 +160,7 @@ async function analyzePngCapacities(
     if (pngFiles.length < 2)
         throw new Error('At least two PNG files are required (one for distribution map and at least one for data).');
 
-    return Promise.all(
+    return await Promise.all(
         pngFiles.map(async png => {
             const pngPath = path.join(inputPngFolder, png);
             const capacity = await getCachedImageTones(pngPath, logger); // Use cached tones
