@@ -1,10 +1,11 @@
 // src/index.ts
 
 import { Command } from 'commander';
-import path from 'path';
-import { encode } from './modules/encoder';
-import { decode } from './modules/decoder';
-import { getLogger } from './utils/misc/logUtils';
+import path from 'node:path';
+import { encode } from './modules/encoder.ts';
+import { decode } from './modules/decoder.ts';
+import { getLogger } from './utils/misc/logUtils.ts';
+import process from 'node:process';
 
 const program = new Command();
 

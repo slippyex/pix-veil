@@ -1,6 +1,7 @@
 // src/utils/misc/storageUtils.ts
 
-import fs from 'fs';
+import { Buffer } from 'node:buffer';
+import fs from 'node:fs';
 
 /**
  * Ensures that the output directory exists; if not, creates it.

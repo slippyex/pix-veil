@@ -1,6 +1,7 @@
 // src/utils/misc/compressUtils.ts
 
-import zlib from 'zlib';
+import { Buffer } from 'node:buffer';
+import zlib from 'node:zlib';
 
 /**
  * Compresses the input buffer using Brotli compression algorithm.

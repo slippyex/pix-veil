@@ -1,22 +1,23 @@
 // src/modules/encoder.ts
 
-import path from 'path';
+import path from 'node:path';
 import _ from 'lodash';
 
 import sharp from 'sharp';
-import { getCachedImageTones, injectDataIntoBuffer } from '../utils/image/imageUtils';
-import { ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, ILogger, IUsedPng } from '../@types';
-import { createDistributionMap, generateDistributionMapText } from '../utils/distributionMap/mapUtils';
-import { encrypt, generateChecksum } from '../utils/misc/cryptoUtils';
-import { config } from '../config';
-import { getRandomPosition } from '../utils/image/imageHelper';
+import { getCachedImageTones, injectDataIntoBuffer } from '../utils/image/imageUtils.ts';
+import { ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, ILogger, IUsedPng } from '../@types/index.ts';
+import { createDistributionMap, generateDistributionMapText } from '../utils/distributionMap/mapUtils.ts';
+import { encrypt, generateChecksum } from '../utils/misc/cryptoUtils.ts';
+import { config } from '../config.ts';
+import { getRandomPosition } from '../utils/image/imageHelper.ts';
 import {
     ensureOutputDirectory,
     readBufferFromFile,
     readDirectory,
     writeBufferToFile
-} from '../utils/misc/storageUtils';
-import { compressBuffer } from '../utils/misc/compressUtils';
+} from '../utils/misc/storageUtils.ts';
+import { compressBuffer } from '../utils/misc/compressUtils.ts';
+import { Buffer } from 'node:buffer';
 
 /**
  * Encodes a file into PNG images using steganography.

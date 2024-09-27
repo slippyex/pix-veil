@@ -1,7 +1,8 @@
 // src/utils/image/debugHelper.ts
 
-import { ChannelSequence, ILogger } from '../../@types';
-import { getPixelIndex } from './imageHelper';
+import { Buffer } from 'node:buffer';
+import { ChannelSequence, ILogger } from '../../@types/index.ts';
+import { getPixelIndex } from './imageHelper.ts';
 
 /**
  * Adds debug visual blocks (red and blue) to the image buffer.

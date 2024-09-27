@@ -1,6 +1,6 @@
 // src/utils/image/imageHelper.ts
 
-import { ChannelSequence } from '../../@types';
+import { ChannelSequence } from '../../@types/index.ts';
 
 /**
  * Calculates (x, y) coordinates from a given channel position.

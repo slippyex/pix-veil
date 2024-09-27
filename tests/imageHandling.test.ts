@@ -1,11 +1,17 @@
 // src/tests/imageUtils.test.ts
 
-import path from 'path';
-import { getCachedImageTones } from '../src/utils/image/imageUtils';
+import { describe, it } from 'jsr:@std/testing/bdd';
+import { expect } from 'jsr:@std/expect';
+
+import { getCachedImageTones } from '../src/utils/image/imageUtils.ts';
 import sharp from 'sharp';
 
-import fs from 'fs';
-import { getLogger } from '../src/utils/misc/logUtils';
+import fs from 'node:fs';
+import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { Buffer } from 'node:buffer';
+import * as path from 'jsr:@std/path';
+
+const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
 describe('Image Utilities with Various Image Types', () => {
     it('should handle grayscale images correctly', async () => {

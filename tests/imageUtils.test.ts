@@ -1,13 +1,19 @@
 // src/tests/imageUtils.test.ts
+import { describe, it, beforeAll, afterAll } from 'jsr:@std/testing/bdd';
+import { expect } from 'jsr:@std/expect';
 
 import sharp from 'sharp';
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
 
-import { extractDataFromBuffer, getCachedImageTones, injectDataIntoBuffer } from '../src/utils/image/imageUtils';
-import { ChannelSequence, ILogger } from '../src/@types/';
-import { getLogger } from '../src/utils/misc/logUtils';
+import { extractDataFromBuffer, getCachedImageTones, injectDataIntoBuffer } from '../src/utils/image/imageUtils.ts';
+import { ChannelSequence, ILogger } from '../src/@types/index.ts';
+import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { Buffer } from 'node:buffer';
+
+import * as path from 'jsr:@std/path';
+
+const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
 describe('imageUtils Module', () => {
     let logger: ILogger;

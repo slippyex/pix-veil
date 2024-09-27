@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test-jest": "jest",
+    "test": "deno test --allow-read --allow-ffi --allow-write",
     "format": "prettier --write '{src,tests}/**/*.ts'"
   },
   "keywords": [],

@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts",
+    "test": "deno test --allow-read --allow-ffi --allow-write"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/path": "jsr:@std/path@^1.0.6"
+  }
+}

@@ -1,5 +1,7 @@
 // src/@types/index.ts
 
+import type { Buffer } from 'node:buffer';
+
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
 export interface IChunk {

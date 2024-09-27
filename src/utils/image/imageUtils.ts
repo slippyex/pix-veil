@@ -1,10 +1,11 @@
 // src/utils/image/imageUtils.ts
 
 import sharp from 'sharp';
-import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types';
-import { addDebugBlocks } from './debugHelper';
-import { getChannelOffset } from './imageHelper';
-import { extractBits, insertBits } from '../misc/bitUtils';
+import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
+import { addDebugBlocks } from './debugHelper.ts';
+import { getChannelOffset } from './imageHelper.ts';
+import { extractBits, insertBits } from '../misc/bitUtils.ts';
+import { Buffer } from 'node:buffer';
 
 /**
  * In-memory cache for image tones.

@@ -1,14 +1,19 @@
 // test/codec.test.ts
+import { describe, it, beforeAll, afterAll } from 'jsr:@std/testing/bdd';
+import { expect } from 'jsr:@std/expect';
 
-import { encode } from '../src/modules/encoder';
-import { decode } from '../src/modules/decoder';
-import fs from 'fs';
-import path from 'path';
+import { encode } from '../src/modules/encoder.ts';
+import { decode } from '../src/modules/decoder.ts';
+import fs from 'node:fs';
+
 import seedrandom from 'seedrandom';
-import { IChunk, IDistributionMapEntry } from '../src/@types';
-import { getLogger } from '../src/utils/misc/logUtils';
+import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
+import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { Buffer } from 'node:buffer';
 
-jest.setTimeout(60 * 1000);
+import * as path from 'jsr:@std/path';
+
+const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
 // Mock Math.random for deterministic behavior
 beforeAll(() => {

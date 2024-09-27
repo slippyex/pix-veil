@@ -1,7 +1,8 @@
 // src/utils/distributionMap/mapUtils.ts
 
-import { serializeDistributionMap, deserializeDistributionMap } from './mapHelpers';
-import { IDistributionMap, IDistributionMapEntry } from '../../@types';
+import { serializeDistributionMap, deserializeDistributionMap } from './mapHelpers.ts';
+import { IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import { Buffer } from 'node:buffer';
 
 /**
  * Creates a distribution map buffer with a header containing magic bytes and map length.

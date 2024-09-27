@@ -1,7 +1,7 @@
 // src/utils/misc/logUtils.ts
 
 import chalk from 'chalk';
-import { ILogger } from '../../@types';
+import { ILogger } from '../../@types/index.ts';
 
 const loggerMap: Record<string, ILogger> = {};
 

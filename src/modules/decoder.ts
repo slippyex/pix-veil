@@ -1,15 +1,17 @@
 // src/modules/decoder.ts
 
-import path from 'path';
+import * as path from 'jsr:@std/path';
+
 import sharp from 'sharp';
 
-import { IDecodeOptions, IDistributionMap, ILogger } from '../@types';
-import { decrypt, generateChecksum, verifyChecksum } from '../utils/misc/cryptoUtils';
-import { config } from '../config';
-import { extractDataFromBuffer } from '../utils/image/imageUtils';
-import { deserializeDistributionMap } from '../utils/distributionMap/mapHelpers';
-import { filePathExists, readBufferFromFile, writeBufferToFile } from '../utils/misc/storageUtils';
-import { decompressBuffer } from '../utils/misc/compressUtils';
+import { IDecodeOptions, IDistributionMap, ILogger } from '../@types/index.ts';
+import { decrypt, generateChecksum, verifyChecksum } from '../utils/misc/cryptoUtils.ts';
+import { config } from '../config.ts';
+import { extractDataFromBuffer } from '../utils/image/imageUtils.ts';
+import { deserializeDistributionMap } from '../utils/distributionMap/mapHelpers.ts';
+import { filePathExists, readBufferFromFile, writeBufferToFile } from '../utils/misc/storageUtils.ts';
+import { decompressBuffer } from '../utils/misc/compressUtils.ts';
+import { Buffer } from 'node:buffer';
 
 export async function decode(options: IDecodeOptions) {
     const { inputFolder, outputFolder, password, verbose, logger } = options;

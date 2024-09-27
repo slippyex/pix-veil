@@ -1,6 +1,6 @@
-import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types';
-import { MAGIC_BYTE } from '../../config';
-import { Buffer } from 'buffer';
+import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import { MAGIC_BYTE } from '../../config.ts';
+import { Buffer } from 'node:buffer';
 
 /**
  * Serializes the distribution map into a buffer with Magic Byte and Size Field.
