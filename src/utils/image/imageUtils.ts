@@ -2,15 +2,9 @@
 
 import sharp from 'sharp';
 import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types';
-import { Logger } from '../Logger';
-import { addDebugBlocks } from './debug';
+import { addDebugBlocks } from './debugHelper';
 import { getChannelOffset } from './imageHelper';
-import {
-    extractBits,
-    insertBits,
-    serializeChannelSequence,
-    deserializeChannelSequence
-} from '../bitUtils';
+import { extractBits, insertBits } from '../misc/bitUtils';
 
 /**
  * In-memory cache for image tones.
@@ -75,7 +69,7 @@ export async function injectDataIntoBuffer(
     channelSequence: ChannelSequence[],
     startChannelPosition: number,
     debugVisual: boolean,
-    logger: Logger,
+    logger: ILogger,
     width: number,
     height: number,
     channels: 1 | 2 | 3 | 4,
@@ -142,6 +136,7 @@ export async function injectDataIntoBuffer(
         // Inject the bits into the channel's LSBs using bitUtils
         const originalByte = imageData[channelIndex];
         const modifiedByte = insertBits(originalByte, bits, 0, bitsPerChannel);
+        // logger.debug(`changed byte ${originalByte} to ${modifiedByte}`);
         imageData[channelIndex] = modifiedByte;
     }
 

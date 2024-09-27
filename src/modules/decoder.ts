@@ -1,19 +1,18 @@
-// src/decoder.ts
+// src/modules/decoder.ts
 
-import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 
-import zlib from 'zlib';
-import { IDecodeOptions, IDistributionMap } from './@types/';
-import { decrypt, generateChecksum, verifyChecksum } from './utils/cryptoUtils';
-import { Logger } from './utils/Logger';
-import { config } from './constants';
-import { extractDataFromBuffer } from './utils/image/imageUtils';
-import { deserializeDistributionMap } from './utils/distributionMap/mapHelpers';
+import { IDecodeOptions, IDistributionMap, ILogger } from '../@types';
+import { decrypt, generateChecksum, verifyChecksum } from '../utils/misc/cryptoUtils';
+import { config } from '../config';
+import { extractDataFromBuffer } from '../utils/image/imageUtils';
+import { deserializeDistributionMap } from '../utils/distributionMap/mapHelpers';
+import { filePathExists, readBufferFromFile, writeBufferToFile } from '../utils/misc/storageUtils';
+import { decompressBuffer } from '../utils/misc/compressUtils';
 
 export async function decode(options: IDecodeOptions) {
-    const { inputFolder, outputFile, password, verbose, logger } = options;
+    const { inputFolder, outputFolder, password, verbose, logger } = options;
     try {
         if (verbose) logger.info('Starting decoding process...');
 
@@ -22,6 +21,7 @@ export async function decode(options: IDecodeOptions) {
         verifyDataIntegrity(encryptedData, distributionMap.checksum, logger);
         const decryptedData = decryptData(encryptedData, password, logger);
         const decompressedData = decompressData(decryptedData, logger);
+        const outputFile = path.join(outputFolder, distributionMap.originalFilename);
         writeOutputFile(outputFile, decompressedData, logger);
 
         if (verbose) logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
@@ -37,30 +37,29 @@ export async function decode(options: IDecodeOptions) {
 async function readAndProcessDistributionMap(
     inputFolder: string,
     password: string,
-    logger: Logger
+    logger: ILogger
 ): Promise<IDistributionMap> {
     const distributionMapPath = path.join(inputFolder, config.distributionMapFile + '.db');
-    if (!fs.existsSync(distributionMapPath)) {
+    if (!filePathExists(distributionMapPath)) {
         throw new Error(`Distribution map file "${config.distributionMapFile}.db" not found in input folder.`);
     }
 
     if (logger.verbose) logger.info('Reading and processing the distribution map...');
-    const rawDistributionMapEncrypted = fs.readFileSync(distributionMapPath);
+    const rawDistributionMapEncrypted = readBufferFromFile(distributionMapPath);
     const rawDistributionMapDecrypted = decrypt(rawDistributionMapEncrypted, password);
-    const rawDistributionMapDecompressed = zlib.brotliDecompressSync(rawDistributionMapDecrypted);
-    const distributionMap = deserializeDistributionMap(rawDistributionMapDecompressed);
-    return distributionMap;
+    const rawDistributionMapDecompressed = decompressBuffer(rawDistributionMapDecrypted);
+    return deserializeDistributionMap(rawDistributionMapDecompressed);
 }
 
 /**
  * Extracts data chunks based on the distribution map.
  */
-async function extractChunks(distributionMap: IDistributionMap, inputFolder: string, logger: Logger): Promise<Buffer> {
+async function extractChunks(distributionMap: IDistributionMap, inputFolder: string, logger: ILogger): Promise<Buffer> {
     let encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
 
     for (const entry of distributionMap.entries) {
         const pngPath = path.join(inputFolder, entry.pngFile);
-        if (!fs.existsSync(pngPath)) {
+        if (!filePathExists(pngPath)) {
             throw new Error(`PNG file "${entry.pngFile}" specified in the distribution map does not exist.`);
         }
 
@@ -113,7 +112,7 @@ async function extractChunks(distributionMap: IDistributionMap, inputFolder: str
 /**
  * Verifies the integrity of the encrypted data using checksum.
  */
-function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: Logger): void {
+function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): void {
     if (logger.verbose) logger.info('Verifying data integrity...');
     const isChecksumValid = verifyChecksum(encryptedData, checksum);
     logger.debug(`Expected Checksum: ${checksum}`);
@@ -126,25 +125,23 @@ function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: Lo
 /**
  * Decrypts the encrypted data.
  */
-function decryptData(encryptedData: Buffer, password: string, logger: Logger): Buffer {
+function decryptData(encryptedData: Buffer, password: string, logger: ILogger): Buffer {
     if (logger.verbose) logger.info('Decrypting the encrypted data...');
-    const decryptedData = decrypt(encryptedData, password);
-    return decryptedData;
+    return decrypt(encryptedData, password);
 }
 
 /**
  * Decompresses the decrypted data.
  */
-function decompressData(decryptedData: Buffer, logger: Logger): Buffer {
+function decompressData(decryptedData: Buffer, logger: ILogger): Buffer {
     if (logger.verbose) logger.info('Decompressing data...');
-    const decompressedData = zlib.brotliDecompressSync(decryptedData);
-    return decompressedData;
+    return decompressBuffer(decryptedData);
 }
 
 /**
  * Writes the decompressed data to the output file.
  */
-function writeOutputFile(outputFile: string, decompressedData: Buffer, logger: Logger): void {
+function writeOutputFile(outputFile: string, decompressedData: Buffer, logger: ILogger): void {
     if (logger.verbose) logger.info('Writing the output file...');
-    fs.writeFileSync(outputFile, decompressedData);
+    writeBufferToFile(outputFile, decompressedData);
 }

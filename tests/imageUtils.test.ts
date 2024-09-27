@@ -4,13 +4,13 @@ import sharp from 'sharp';
 
 import fs from 'fs';
 import path from 'path';
-import { Logger } from '../src/utils/Logger';
+
 import { extractDataFromBuffer, getCachedImageTones, injectDataIntoBuffer } from '../src/utils/image/imageUtils';
-import { ChannelSequence } from '../src/@types/';
-import { getPixelIndex } from '../src/utils/image/imageHelper';
+import { ChannelSequence, ILogger } from '../src/@types/';
+import { getLogger } from '../src/utils/misc/logUtils';
 
 describe('imageUtils Module', () => {
-    let logger: Logger;
+    let logger: ILogger;
     let testImagePath: string;
     let width: number;
     let height: number;
@@ -19,7 +19,7 @@ describe('imageUtils Module', () => {
 
     beforeAll(async () => {
         // Initialize the mock logger
-        logger = new Logger();
+        logger = getLogger('test');
 
         // Create a simple test image (e.g., 16x16 pixels, solid color)
         width = 16;
@@ -252,11 +252,10 @@ describe('imageUtils Module', () => {
 
             expect(extractedData).toEqual(data);
         });
-
     });
 
     describe('Edge Cases and Error Handling', () => {
-        let logger: Logger;
+        let logger: ILogger;
         let testImagePath: string;
         let width: number;
         let height: number;
@@ -265,7 +264,7 @@ describe('imageUtils Module', () => {
 
         beforeAll(async () => {
             // Initialize the mock logger
-            logger = new Logger();
+            logger = getLogger('test');
 
             // Create a simple test image (e.g., 16x16 pixels, solid color)
             width = 16;

@@ -10,7 +10,11 @@ import { IDistributionMap, IDistributionMapEntry } from '../../@types';
  * @param checksum - Checksum string for data integrity.
  * @returns Buffer containing the structured distribution map.
  */
-export function createDistributionMap(entries: IDistributionMapEntry[], originalFilename: string, checksum: string): Buffer {
+export function createDistributionMap(
+    entries: IDistributionMapEntry[],
+    originalFilename: string,
+    checksum: string
+): Buffer {
     const distributionMap: IDistributionMap = { entries, originalFilename, checksum };
     return serializeDistributionMap(distributionMap);
 }
@@ -27,7 +31,11 @@ export function parseDistributionMap(buffer: Buffer): IDistributionMap {
 /**
  * Generates a human-readable distribution map text.
  */
-export function generateDistributionMapText(entries: IDistributionMapEntry[], checksum: string): string {
+export function generateDistributionMapText(
+    entries: IDistributionMapEntry[],
+    originalFilename: string,
+    checksum: string
+): string {
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
 
     const pngMap: Record<string, IDistributionMapEntry[]> = {};
@@ -51,6 +59,7 @@ export function generateDistributionMapText(entries: IDistributionMapEntry[], ch
     }
 
     text += `Checksum: ${checksum}\n`;
+    text += `Original Filename: ${originalFilename}\n`;
 
     return text;
 }

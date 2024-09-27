@@ -1,4 +1,4 @@
-// src/utils/image/debug.ts
+// src/utils/image/debugHelper.ts
 
 import { ChannelSequence, ILogger } from '../../@types';
 import { getPixelIndex } from './imageHelper';

@@ -2,9 +2,9 @@
 
 import { Command } from 'commander';
 import path from 'path';
-import { encode } from './encoder';
-import { decode } from './decoder';
-import { Logger } from './utils/Logger';
+import { encode } from './modules/encoder';
+import { decode } from './modules/decoder';
+import { getLogger } from './utils/misc/logUtils';
 
 const program = new Command();
 
@@ -31,7 +31,7 @@ program
         const outputFolder = path.resolve(options.output);
         const password = options.password;
 
-        const logger = new Logger(verbose);
+        const logger = getLogger('encoder', verbose);
 
         try {
             await encode({
@@ -53,22 +53,21 @@ program
     .command('decode')
     .description('Decode a file from PNG images')
     .requiredOption('-i, --input <folder>', 'Input folder with PNG files')
-    .requiredOption('-o, --output <file>', 'Output file path')
+    .requiredOption('-o, --output <folder>', 'Output file path')
     .requiredOption('-w, --password <password>', 'Password for decryption')
     .action(async options => {
-        const debugVisual = program.opts().debugVisual || false; // Not typically needed for decoding
         const verbose = program.opts().verbose || false;
 
         const inputFolder = path.resolve(options.input);
-        const outputFile = path.resolve(options.output);
+        const outputFolder = path.resolve(options.output);
         const password = options.password;
 
-        const logger = new Logger(verbose);
+        const logger = getLogger('decoder', verbose);
 
         try {
             await decode({
                 inputFolder,
-                outputFile,
+                outputFolder,
                 password,
                 verbose,
                 logger

@@ -44,7 +44,7 @@ export interface IEncodeOptions {
 
 export interface IDecodeOptions {
     inputFolder: string;
-    outputFile: string;
+    outputFolder: string;
     password: string;
     verbose: boolean;
     logger: ILogger;

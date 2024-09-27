@@ -1,5 +1,5 @@
 import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types';
-import { MAGIC_BYTE } from '../../constants';
+import { MAGIC_BYTE } from '../../config';
 import { Buffer } from 'buffer';
 
 /**
@@ -17,12 +17,7 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
     const entryCountBuffer = Buffer.alloc(4);
     entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
 
-    const mapContent = Buffer.concat([
-        entryCountBuffer,
-        entriesBuffer,
-        checksumBuffer,
-        originalFilenameBuffer,
-    ]);
+    const mapContent = Buffer.concat([entryCountBuffer, entriesBuffer, checksumBuffer, originalFilenameBuffer]);
 
     const sizeBuffer = Buffer.alloc(4);
     sizeBuffer.writeUInt32BE(mapContent.length, 0);
@@ -143,7 +138,7 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
         startPosition,
         endPosition,
         bitsPerChannel,
-        channelSequence,
+        channelSequence
     };
 
     return { entry, newOffset: offset };
@@ -234,7 +229,9 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
     offset += 2;
 
     if (offset + length > buffer.length) {
-        throw new RangeError(`The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`);
+        throw new RangeError(
+            `The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`
+        );
     }
 
     const value = buffer.subarray(offset, offset + length).toString('utf-8');

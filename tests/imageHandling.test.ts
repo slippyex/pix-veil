@@ -1,10 +1,11 @@
 // src/tests/imageUtils.test.ts
 
-import path from "path";
-import {getCachedImageTones} from "../src/utils/image/imageUtils";
-import sharp from "sharp";
-import {Logger} from "../src/utils/Logger";
-import fs from "fs";
+import path from 'path';
+import { getCachedImageTones } from '../src/utils/image/imageUtils';
+import sharp from 'sharp';
+
+import fs from 'fs';
+import { getLogger } from '../src/utils/misc/logUtils';
 
 describe('Image Utilities with Various Image Types', () => {
     it('should handle grayscale images correctly', async () => {
@@ -25,7 +26,7 @@ describe('Image Utilities with Various Image Types', () => {
             .png()
             .toFile(grayscaleImagePath);
 
-        const capacity = await getCachedImageTones(grayscaleImagePath, new Logger(false));
+        const capacity = await getCachedImageTones(grayscaleImagePath, getLogger('test'));
         expect(capacity).toEqual({
             low: 0,
             mid: grayscaleWidth * grayscaleHeight, // All pixels are mid-tone
@@ -56,7 +57,7 @@ describe('Image Utilities with Various Image Types', () => {
             .png()
             .toFile(rgbaImagePath);
 
-        const capacity = await getCachedImageTones(rgbaImagePath, new Logger(false));
+        const capacity = await getCachedImageTones(rgbaImagePath, getLogger('test'));
         expect(capacity).toEqual({
             low: 0,
             mid: 0,

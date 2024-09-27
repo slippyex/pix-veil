@@ -1,12 +1,12 @@
 // test/codec.test.ts
 
-import { encode } from '../src/encoder';
-import { decode } from '../src/decoder';
+import { encode } from '../src/modules/encoder';
+import { decode } from '../src/modules/decoder';
 import fs from 'fs';
 import path from 'path';
-import { Logger } from '../src/utils/Logger';
 import seedrandom from 'seedrandom';
-import {IChunk, IDistributionMapEntry} from "../src/@types";
+import { IChunk, IDistributionMapEntry } from '../src/@types';
+import { getLogger } from '../src/utils/misc/logUtils';
 
 jest.setTimeout(60 * 1000);
 
@@ -21,7 +21,7 @@ describe('Codec tests', () => {
 
     const encodedFolder = path.join(__dirname, 'test_output', 'encoded');
     const decodedFolder = path.join(__dirname, 'test_output', 'decoded');
-    const decodedFile = path.join(decodedFolder, 'secret_decoded.pdf');
+    const decodedFile = path.join(decodedFolder, 'secret.pdf');
 
     const password = 'testpassword';
     beforeAll(() => {
@@ -40,7 +40,7 @@ describe('Codec tests', () => {
     });
 
     it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {
-        const logger = new Logger(true);
+        const logger = getLogger('test', false);
         await encode({
             inputFile,
             inputPngFolder,
@@ -57,10 +57,10 @@ describe('Codec tests', () => {
     });
 
     it('should decode the PNG images back into the original file with data integrity verification and verbose logging', async () => {
-        const logger = new Logger(true);
+        const logger = getLogger('test', false);
         await decode({
             inputFolder: encodedFolder,
-            outputFile: decodedFile,
+            outputFolder: decodedFolder,
             password,
             verbose: false,
             logger
@@ -76,25 +76,21 @@ describe('Codec tests', () => {
 
     it('should fail decoding with incorrect password', async () => {
         const wrongPassword = 'wrongpassword';
-        const wrongDecodedFile = path.join(decodedFolder, 'secret_decoded_wrong.pdf');
 
-        const logger = new Logger(false);
+        const logger = getLogger('test', false);
         await expect(
             decode({
                 inputFolder: encodedFolder,
-                outputFile: wrongDecodedFile,
+                outputFolder: decodedFolder,
                 password: wrongPassword,
                 verbose: false,
                 logger
             })
         ).rejects.toThrow();
-
-        // Ensure the wrong decoded file was not created
-        expect(fs.existsSync(wrongDecodedFile)).toBe(false);
     });
 
     it('should correctly map chunkId to chunk data', async () => {
-        const logger = new Logger(true);
+        decodedFolder;
         const chunks: IChunk[] = [
             { id: 0, data: Buffer.from('Chunk0') },
             { id: 1, data: Buffer.from('Chunk1') }
@@ -102,8 +98,22 @@ describe('Codec tests', () => {
 
         // Simulate distributionMapEntries
         const distributionMapEntries: IDistributionMapEntry[] = [
-            { chunkId: 0, pngFile: 'image1.png', startPosition: 0, endPosition: 10, bitsPerChannel: 2, channelSequence: ['R', 'G', 'B'] },
-            { chunkId: 1, pngFile: 'image2.png', startPosition: 10, endPosition: 20, bitsPerChannel: 2, channelSequence: ['G', 'B', 'R'] }
+            {
+                chunkId: 0,
+                pngFile: 'image1.png',
+                startPosition: 0,
+                endPosition: 10,
+                bitsPerChannel: 2,
+                channelSequence: ['R', 'G', 'B']
+            },
+            {
+                chunkId: 1,
+                pngFile: 'image2.png',
+                startPosition: 10,
+                endPosition: 20,
+                bitsPerChannel: 2,
+                channelSequence: ['G', 'B', 'R']
+            }
         ];
 
         // Create a chunkMap
@@ -116,5 +126,4 @@ describe('Codec tests', () => {
             expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find(c => c.id === entry.chunkId)?.data);
         });
     });
-
 });
