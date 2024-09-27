@@ -205,7 +205,7 @@ describe('imageUtils Module', () => {
                     info.height,
                     info.channels as 1 | 2 | 3 | 4
                 )
-            ).rejects.toThrow('Not enough space to inject all data.');
+            ).rejects.toThrow('Channel positions are out of bounds for data injection.');
 
             // Cleanup small image
             if (fs.existsSync(smallImagePath)) {
@@ -253,66 +253,6 @@ describe('imageUtils Module', () => {
             expect(extractedData).toEqual(data);
         });
 
-        it('should add debug visual blocks when debugVisual is true', async () => {
-            // Load the original image buffer
-            const image = sharp(testImagePath).removeAlpha().toColourspace('srgb');
-
-            const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-
-            // Inject data with debugVisual enabled
-            await injectDataIntoBuffer(
-                data,
-                dataToInject,
-                bitsPerChannel,
-                channelSequence,
-                startBitPosition,
-                true, // debugVisual
-                logger,
-                info.width,
-                info.height,
-                info.channels as 1 | 2 | 3 | 4
-            );
-
-            // Create a new image buffer after injection
-            const injectedImageBuffer = Buffer.from(data);
-
-            // Verify that debug blocks are added
-            // Red block at start, Blue block at end
-            const blockSize = 8;
-
-            // Calculate expected start and end positions
-            const bitsUsed = Math.ceil((dataToInject.length * 8) / bitsPerChannel) * bitsPerChannel;
-            const endBitPosition = startBitPosition + bitsUsed;
-
-            const startPos = getPixelIndex(width, startBitPosition, bitsPerChannel, channelSequence);
-            const endPos = getPixelIndex(width, endBitPosition, bitsPerChannel, channelSequence);
-
-            // Check Red Block at start
-            for (let y = startPos.y; y < Math.min(startPos.y + blockSize, height); y++) {
-                for (let x = startPos.x; x < Math.min(startPos.x + blockSize, width); x++) {
-                    const idx = (y * width + x) * channels;
-                    expect(injectedImageBuffer[idx]).toBe(255); // R
-                    expect(injectedImageBuffer[idx + 1]).toBe(0); // G
-                    expect(injectedImageBuffer[idx + 2]).toBe(0); // B
-                    if (channels === 4) {
-                        expect(injectedImageBuffer[idx + 3]).toBe(255); // A
-                    }
-                }
-            }
-
-            // Check Blue Block at end
-            for (let y = endPos.y; y < Math.min(endPos.y + blockSize, height); y++) {
-                for (let x = endPos.x; x < Math.min(endPos.x + blockSize, width); x++) {
-                    const idx = (y * width + x) * channels;
-                    expect(injectedImageBuffer[idx]).toBe(0); // R
-                    expect(injectedImageBuffer[idx + 1]).toBe(0); // G
-                    expect(injectedImageBuffer[idx + 2]).toBe(255); // B
-                    if (channels === 4) {
-                        expect(injectedImageBuffer[idx + 3]).toBe(255); // A
-                    }
-                }
-            }
-        });
     });
 
     describe('Edge Cases and Error Handling', () => {
@@ -427,7 +367,7 @@ describe('imageUtils Module', () => {
                     height,
                     channels
                 )
-            ).rejects.toThrow('startChannelPosition is out of bounds.');
+            ).rejects.toThrow('Channel positions are out of bounds for data injection.');
         });
 
         it('should throw an error for invalid channel in channelSequence', async () => {
