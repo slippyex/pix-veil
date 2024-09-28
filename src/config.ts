@@ -16,5 +16,6 @@ export const config = {
         minChunkSize: 16
     },
     distributionMapFile: 'distribution_map',
+    // Using 2 bits per channel on all RGB channels
     bitsPerChannelForDistributionMap: 2
 };

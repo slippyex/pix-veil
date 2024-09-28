@@ -3,7 +3,7 @@ import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { IDistributionMapEntry } from '../src/@types/index.ts';
-import { createDistributionMap, parseDistributionMap } from '../src/utils/distributionMap/mapUtils.ts';
+import { createDistributionMap, parseDistributionMap } from '../src/modules/lib/distributionMap/mapUtils.ts';
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {

@@ -1,8 +1,12 @@
 // src/utils/image/debugHelper.ts
 
 import { Buffer } from 'node:buffer';
-import { ChannelSequence, ILogger } from '../../@types/index.ts';
+import { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { getPixelIndex } from './imageHelper.ts';
+import path from 'node:path';
+import { config } from '../../config.ts';
+import { generateDistributionMapText } from '../../modules/lib/distributionMap/mapUtils.ts';
+import { writeBufferToFile } from '../misc/storageUtils.ts';
 
 /**
  * Adds debug visual blocks (red and blue) to the image buffer.
@@ -63,4 +67,26 @@ export function addDebugBlocks(
             }
         }
     }
+}
+
+/**
+ * Creates a human-readable distribution map text file.
+ * @param distributionMapEntries - Array of distribution map entries.
+ * @param originalFilename - Original Filename
+ * @param checksum - Checksum of the encrypted data.
+ * @param outputFolder - Path to the output folder.
+ * @param logger - Logger instance for debugging.
+ */
+export function createHumanReadableDistributionMap(
+    distributionMapEntries: IDistributionMapEntry[],
+    originalFilename: string,
+    checksum: string,
+    outputFolder: string,
+    logger: ILogger
+) {
+    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
+    const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
+    const distributionMapText = generateDistributionMapText(distributionMapEntries, originalFilename, checksum);
+    writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
+    if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 }

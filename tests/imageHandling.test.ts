@@ -3,7 +3,7 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { getCachedImageTones } from '../src/utils/image/imageUtils.ts';
+import { getCachedImageTones, prewarmImageTonesCache } from '../src/utils/image/imageUtils.ts';
 import sharp from 'sharp';
 
 import fs from 'node:fs';
@@ -12,6 +12,7 @@ import { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
+const logger = getLogger('test');
 
 describe('Image Utilities with Various Image Types', () => {
     it('should handle grayscale images correctly', async () => {
@@ -31,8 +32,9 @@ describe('Image Utilities with Various Image Types', () => {
         })
             .png()
             .toFile(grayscaleImagePath);
+        await prewarmImageTonesCache(path.dirname(grayscaleImagePath), logger);
 
-        const capacity = await getCachedImageTones(grayscaleImagePath, getLogger('test'));
+        const capacity = getCachedImageTones(grayscaleImagePath, logger);
         expect(capacity).toEqual({
             low: 0,
             mid: grayscaleWidth * grayscaleHeight, // All pixels are mid-tone
@@ -62,8 +64,8 @@ describe('Image Utilities with Various Image Types', () => {
         })
             .png()
             .toFile(rgbaImagePath);
-
-        const capacity = await getCachedImageTones(rgbaImagePath, getLogger('test'));
+        await prewarmImageTonesCache(path.dirname(rgbaImagePath), logger);
+        const capacity = getCachedImageTones(rgbaImagePath, logger);
         expect(capacity).toEqual({
             low: 0,
             mid: 0,

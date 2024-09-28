@@ -3,21 +3,17 @@
 import path from 'node:path';
 import _ from 'lodash';
 
-import sharp from 'sharp';
-import { getCachedImageTones, injectDataIntoBuffer } from '../utils/image/imageUtils.ts';
+import { getCachedImageTones, prewarmImageTonesCache } from '../utils/image/imageUtils.ts';
 import { ChannelSequence, IChunk, IDistributionMapEntry, IEncodeOptions, ILogger, IUsedPng } from '../@types/index.ts';
-import { createDistributionMap, generateDistributionMapText } from '../utils/distributionMap/mapUtils.ts';
+import { createAndStoreDistributionMap } from './lib/distributionMap/mapUtils.ts';
 import { encrypt, generateChecksum } from '../utils/misc/cryptoUtils.ts';
 import { config } from '../config.ts';
 import { getRandomPosition } from '../utils/image/imageHelper.ts';
-import {
-    ensureOutputDirectory,
-    readBufferFromFile,
-    readDirectory,
-    writeBufferToFile
-} from '../utils/misc/storageUtils.ts';
+import { readBufferFromFile, readDirectory } from '../utils/misc/storageUtils.ts';
 import { compressBuffer } from '../utils/misc/compressUtils.ts';
 import { Buffer } from 'node:buffer';
+import { injectChunksIntoPngs } from './lib/injection.ts';
+import { createHumanReadableDistributionMap } from '../utils/image/debugHelper.ts';
 
 /**
  * Encodes a file into PNG images using steganography.
@@ -34,27 +30,30 @@ export async function encode(options: IEncodeOptions) {
         const compressedData = readAndCompressInputFile(inputFile, logger);
 
         // Step 2: Encrypt the compressed data and store encrypted data
-        const { encryptedData, checksum } = encryptAndStoreData(compressedData, password, outputFolder, logger);
+        const { encryptedData, checksum } = encryptData(compressedData, password, logger);
 
         // Step 3: Split encrypted data into chunks
         const chunks = splitDataIntoChunks(encryptedData, logger);
 
-        // Step 4: Analyze PNG images for capacity
-        const pngCapacities = await analyzePngCapacities(inputPngFolder, logger);
+        // Step 4: Pre-warm the image tones cache
+        await prewarmImageTonesCache(inputPngFolder, logger);
 
-        // Step 5: Distribute chunks across PNG images and obtain chunk map
-        const { distributionMapEntries, chunkMap } = await distributeChunksAcrossPngs(
+        // Step 5: Analyze PNG images for capacity
+        const pngCapacities = analyzePngCapacities(inputPngFolder, logger);
+
+        // Step 6: Distribute chunks across PNG images and obtain chunk map
+        const { distributionMapEntries, chunkMap } = distributeChunksAcrossPngs(
             chunks,
             pngCapacities,
             inputPngFolder,
             logger
         );
 
-        // Step 6: Inject chunks into PNG images
+        // Step 7: Inject chunks into PNG images
         await injectChunksIntoPngs(distributionMapEntries, chunkMap, inputPngFolder, outputFolder, debugVisual, logger);
 
-        // Step 7: Create and store the distribution map
-        createAndStoreDistributionMap(
+        // Step 8: Create and store the distribution map
+        const encryptedMapContent = createAndStoreDistributionMap(
             distributionMapEntries,
             originalFilename,
             checksum,
@@ -63,7 +62,7 @@ export async function encode(options: IEncodeOptions) {
             logger
         );
 
-        // Step 8: Generate human-readable distribution map text file
+        // Step 9: Generate human-readable distribution map text file
         createHumanReadableDistributionMap(distributionMapEntries, originalFilename, checksum, outputFolder, logger);
 
         logger.info('Encoding completed successfully.');
@@ -89,21 +88,18 @@ function readAndCompressInputFile(inputFile: string, logger: ILogger): Buffer {
  * Encrypts the compressed data, generates checksum, and stores encrypted data.
  * @param compressedData - Compressed data buffer.
  * @param password - Password for encryption.
- * @param outputFolder - Path to the output folder.
  * @param logger - Logger instance for debugging.
  * @returns Object containing encrypted data and its checksum.
  */
-function encryptAndStoreData(
+function encryptData(
     compressedData: Buffer,
     password: string,
-    outputFolder: string,
     logger: ILogger
 ): { encryptedData: Buffer; checksum: string } {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
     const encryptedData = encrypt(compressedData, password);
     const checksum = generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
-    writeBufferToFile(path.join(outputFolder, 'packed.dat'), encryptedData);
     return { encryptedData, checksum };
 }
 
@@ -143,10 +139,7 @@ function splitDataIntoChunks(encryptedData: Buffer, logger: ILogger): IChunk[] {
  * @param logger - Logger instance for debugging.
  * @returns Array of PNG capacities.
  */
-async function analyzePngCapacities(
-    inputPngFolder: string,
-    logger: ILogger
-): Promise<{ file: string; capacity: number }[]> {
+function analyzePngCapacities(inputPngFolder: string, logger: ILogger): { file: string; capacity: number }[] {
     if (logger.verbose) logger.info('Analyzing PNG images for capacity...');
     const pngFiles = readDirectory(inputPngFolder).filter(file => file.endsWith('.png'));
     if (pngFiles.length === 0) throw new Error('No PNG files found in the input folder.');
@@ -154,23 +147,20 @@ async function analyzePngCapacities(
     if (pngFiles.length < 2)
         throw new Error('At least two PNG files are required (one for distribution map and at least one for data).');
 
-    return await Promise.all(
-        pngFiles.map(async png => {
-            const pngPath = path.join(inputPngFolder, png);
-            const capacity = await getCachedImageTones(pngPath, logger); // Use cached tones
-            // Using 2 bits per channel on all RGB channels
-            const bitsPerChannel = config.bitsPerChannelForDistributionMap;
-            const channelsPerPixel = 3; // R, G, B
-            const totalEmbeddableChannels = (capacity.low + capacity.mid + capacity.high) * channelsPerPixel;
-            const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // Number of channels needed to embed one byte
-            const totalEmbeddableBytes = Math.floor(totalEmbeddableChannels / channelsNeededPerByte);
-            if (logger.verbose) logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
-            return {
-                file: png,
-                capacity: totalEmbeddableBytes
-            };
-        })
-    );
+    return pngFiles.map(png => {
+        const pngPath = path.join(inputPngFolder, png);
+        const capacity = getCachedImageTones(pngPath, logger); // Use cached tones
+        const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+        const channelsPerPixel = 3; // R, G, B
+        const totalEmbeddableChannels = (capacity.low + capacity.mid + capacity.high) * channelsPerPixel;
+        const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // Number of channels needed to embed one byte
+        const totalEmbeddableBytes = Math.floor(totalEmbeddableChannels / channelsNeededPerByte);
+        if (logger.verbose) logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
+        return {
+            file: png,
+            capacity: totalEmbeddableBytes
+        };
+    });
 }
 
 /**
@@ -181,12 +171,12 @@ async function analyzePngCapacities(
  * @param logger - Logger instance for debugging.
  * @returns Object containing distribution map entries and a chunk map.
  */
-async function distributeChunksAcrossPngs(
+function distributeChunksAcrossPngs(
     chunks: IChunk[],
     pngCapacities: { file: string; capacity: number }[],
     inputPngFolder: string,
     logger: ILogger
-): Promise<{ distributionMapEntries: IDistributionMapEntry[]; chunkMap: Map<number, Buffer> }> {
+): { distributionMapEntries: IDistributionMapEntry[]; chunkMap: Map<number, Buffer> } {
     if (logger.verbose) logger.info('Distributing chunks across PNG images...');
 
     const distributionMapEntries: IDistributionMapEntry[] = [];
@@ -201,7 +191,7 @@ async function distributeChunksAcrossPngs(
     const usedPositions: Record<string, boolean[]> = {};
     for (const png of pngCapacities) {
         const pngPath = path.join(inputPngFolder, png.file);
-        const capacity = await getCachedImageTones(pngPath, logger);
+        const capacity = getCachedImageTones(pngPath, logger);
         const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // R, G, B
         usedPositions[png.file] = new Array(totalChannels).fill(false);
     }
@@ -238,11 +228,10 @@ async function distributeChunksAcrossPngs(
 
         // Find a non-overlapping position
         let randomPosition;
+        const cachedImageTones = getCachedImageTones(path.join(inputPngFolder, png.file), logger);
         try {
             randomPosition = getRandomPosition(
-                (await getCachedImageTones(path.join(inputPngFolder, png.file), logger)).low +
-                    (await getCachedImageTones(path.join(inputPngFolder, png.file), logger)).mid +
-                    (await getCachedImageTones(path.join(inputPngFolder, png.file), logger)).high,
+                cachedImageTones.low + cachedImageTones.mid + cachedImageTones.high,
                 nextChunk.data.length,
                 bitsPerChannel,
                 usedPositions[png.file]
@@ -289,141 +278,4 @@ async function distributeChunksAcrossPngs(
 
     if (logger.verbose) logger.info('Chunks distributed successfully.');
     return { distributionMapEntries, chunkMap };
-}
-
-/**
- * Injects chunks into their respective PNG images.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param chunkMap - Map of chunkId to chunk data.
- * @param inputPngFolder - Path to the folder containing input PNG images.
- * @param outputFolder - Path to the output folder for modified PNG images.
- * @param debugVisual - Whether to add debug visual blocks.
- * @param logger - Logger instance for debugging.
- */
-async function injectChunksIntoPngs(
-    distributionMapEntries: IDistributionMapEntry[],
-    chunkMap: Map<number, Buffer>,
-    inputPngFolder: string,
-    outputFolder: string,
-    debugVisual: boolean,
-    logger: ILogger
-): Promise<void> {
-    if (logger.verbose) logger.info('Injecting chunks into PNG images...');
-
-    // Ensure output folder exists
-    ensureOutputDirectory(outputFolder);
-    if (logger.verbose) logger.debug(`Ensured output folder "${outputFolder}".`);
-
-    // Group distribution map entries by PNG file
-    const pngToChunksMap: Record<string, IDistributionMapEntry[]> = {};
-    distributionMapEntries.forEach(entry => {
-        if (!pngToChunksMap[entry.pngFile]) {
-            pngToChunksMap[entry.pngFile] = [];
-        }
-        pngToChunksMap[entry.pngFile].push(entry);
-    });
-
-    // Inject all chunks per PNG in a single operation
-    const injectPromises = Object.entries(pngToChunksMap).map(async ([pngFile, entries]) => {
-        const inputPngPath = path.join(inputPngFolder, pngFile);
-        const outputPngPath = path.join(outputFolder, pngFile);
-
-        // Load the PNG image once
-        const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
-        const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
-        const { channels: imageChannels, width, height } = info;
-
-        // Iterate over each chunk assigned to this PNG
-        for (const entry of entries) {
-            const chunkData = chunkMap.get(entry.chunkId);
-            if (!chunkData) {
-                throw new Error(`Chunk data for chunkId ${entry.chunkId} not found.`);
-            }
-
-            // Inject data into the image buffer
-            injectDataIntoBuffer(
-                imageData,
-                chunkData,
-                entry.bitsPerChannel,
-                entry.channelSequence,
-                entry.startPosition,
-                debugVisual,
-                logger,
-                width,
-                height,
-                imageChannels,
-                entry.endPosition
-            );
-        }
-
-        // Save the modified image to the output folder
-        const modifiedImage = sharp(imageData, {
-            raw: {
-                width: width,
-                height: height,
-                channels: imageChannels
-            }
-        })
-            .toColourspace('srgb')
-            .png({
-                compressionLevel: config.imageCompression.compressionLevel,
-                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
-                palette: false
-            });
-
-        const outputBuffer = await modifiedImage.toBuffer();
-        writeBufferToFile(outputPngPath, outputBuffer);
-        if (logger.verbose) logger.info(`Injected all assigned chunks into "${pngFile}" and saved to output folder.`);
-    });
-
-    await Promise.all(injectPromises);
-    if (logger.verbose) logger.info('All chunks injected successfully.');
-}
-
-/**
- * Creates and stores the distribution map.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param inputFile - Original input file name
- * @param checksum - Checksum of the encrypted data.
- * @param password - Password used for encryption.
- * @param outputFolder - Path to the output folder.
- * @param logger - Logger instance for debugging.
- */
-function createAndStoreDistributionMap(
-    distributionMapEntries: IDistributionMapEntry[],
-    inputFile: string,
-    checksum: string,
-    password: string,
-    outputFolder: string,
-    logger: ILogger
-) {
-    if (logger.verbose) logger.info('Creating and injecting the distribution map...');
-    const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum);
-    const distributionMapCompressed = compressBuffer(serializedMap);
-    const encryptedMap = encrypt(distributionMapCompressed, password);
-    const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + '.db');
-    writeBufferToFile(distributionMapOutputPath, encryptedMap);
-    if (logger.verbose) logger.info(`Distribution map encrypted and saved at "${distributionMapOutputPath}".`);
-}
-
-/**
- * Creates a human-readable distribution map text file.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param originalFilename - Original Filename
- * @param checksum - Checksum of the encrypted data.
- * @param outputFolder - Path to the output folder.
- * @param logger - Logger instance for debugging.
- */
-function createHumanReadableDistributionMap(
-    distributionMapEntries: IDistributionMapEntry[],
-    originalFilename: string,
-    checksum: string,
-    outputFolder: string,
-    logger: ILogger
-) {
-    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
-    const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
-    const distributionMapText = generateDistributionMapText(distributionMapEntries, originalFilename, checksum);
-    writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
-    if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 }

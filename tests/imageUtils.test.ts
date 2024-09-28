@@ -6,7 +6,12 @@ import sharp from 'sharp';
 
 import fs from 'node:fs';
 
-import { extractDataFromBuffer, getCachedImageTones, injectDataIntoBuffer } from '../src/utils/image/imageUtils.ts';
+import {
+    extractDataFromBuffer,
+    getCachedImageTones,
+    injectDataIntoBuffer,
+    prewarmImageTonesCache
+} from '../src/utils/image/imageUtils.ts';
 import { ChannelSequence, ILogger } from '../src/@types/index.ts';
 import { getLogger } from '../src/utils/misc/logUtils.ts';
 import { Buffer } from 'node:buffer';
@@ -14,9 +19,9 @@ import { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
+const logger = getLogger('test');
 
 describe('imageUtils Module', () => {
-    let logger: ILogger;
     let testImagePath: string;
     let width: number;
     let height: number;
@@ -24,9 +29,6 @@ describe('imageUtils Module', () => {
     let originalImageBuffer: Buffer;
 
     beforeAll(async () => {
-        // Initialize the mock logger
-        logger = getLogger('test');
-
         // Create a simple test image (e.g., 16x16 pixels, solid color)
         width = 16;
         height = 16;
@@ -57,18 +59,14 @@ describe('imageUtils Module', () => {
 
     describe('getCachedImageTones', () => {
         it('should analyze and cache image tones correctly', async () => {
-            const capacity = await getCachedImageTones(testImagePath, logger);
+            await prewarmImageTonesCache(path.dirname(testImagePath), logger);
+            const capacity = getCachedImageTones(testImagePath, logger);
 
             expect(capacity).toEqual({
                 low: 0, // White pixels have brightness 255, so low should be 0
                 mid: 0, // Similarly, mid should be 0
                 high: width * height // All pixels are high-tone
             });
-
-            // Ensure caching works by calling again and checking logs
-            const capacityCached = await getCachedImageTones(testImagePath, logger);
-            expect(capacityCached).toEqual(capacity);
-            expect(logger.debugMessages).toContain(`Retrieved cached tones for "${testImagePath}".`);
         });
 
         it('should handle images with different tones', async () => {
@@ -95,8 +93,8 @@ describe('imageUtils Module', () => {
             })
                 .png()
                 .toFile(gradientImagePath);
-
-            const capacity = await getCachedImageTones(gradientImagePath, logger);
+            await prewarmImageTonesCache(path.dirname(gradientImagePath), logger);
+            const capacity = getCachedImageTones(gradientImagePath, logger);
 
             // Calculate expected counts
             let expectedLow = 0;
@@ -300,7 +298,7 @@ describe('imageUtils Module', () => {
             }
         });
 
-        it('should throw an error for invalid bitsPerChannel', async () => {
+        it('should throw an error for invalid bitsPerChannel', () => {
             const data = Buffer.from('Test Data', 'utf-8');
 
             // Invalid bitsPerChannel values
@@ -335,7 +333,7 @@ describe('imageUtils Module', () => {
             ).toThrow('bitsPerChannel must be between 1 and 8.');
         });
 
-        it('should throw an error for empty channelSequence', async () => {
+        it('should throw an error for empty channelSequence', () => {
             const data = Buffer.from('Test Data', 'utf-8');
 
             expect(() =>
@@ -354,7 +352,7 @@ describe('imageUtils Module', () => {
             ).toThrow('channelSequence cannot be empty.');
         });
 
-        it('should throw an error for out-of-bounds startBitPosition', async () => {
+        it('should throw an error for out-of-bounds startBitPosition', () => {
             const data = Buffer.from('Test Data', 'utf-8');
 
             const outOfBoundsStartBitPosition = Math.floor(width * height * channels); // For bitsPerChannel=1
@@ -375,7 +373,7 @@ describe('imageUtils Module', () => {
             ).toThrow('Channel positions are out of bounds for data injection.');
         });
 
-        it('should throw an error for invalid channel in channelSequence', async () => {
+        it('should throw an error for invalid channel in channelSequence', () => {
             const data = Buffer.from('Test Data', 'utf-8');
             const invalidChannelSequence: ChannelSequence[] = ['R', 'G', 'X'] as unknown as ChannelSequence[]; // 'X' is invalid
 

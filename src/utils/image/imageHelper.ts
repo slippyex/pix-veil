@@ -24,26 +24,6 @@ export function getPixelIndex(
 }
 
 /**
- * Helper function to get the channel offset based on the channel name.
- * @param channel - The channel name ('R', 'G', 'B', 'A').
- * @returns The channel offset index.
- */
-export function getChannelOffset(channel: ChannelSequence): number {
-    switch (channel) {
-        case 'R':
-            return 0;
-        case 'G':
-            return 1;
-        case 'B':
-            return 2;
-        case 'A':
-            return 3;
-        default:
-            throw new Error(`Invalid channel specified: ${channel}`);
-    }
-}
-
-/**
  * Generates a non-overlapping start and end position within the image capacity for a chunk.
  * Ensures that the chunk does not exceed the image capacity and does not overlap with existing chunks.
  * @param used - Array tracking used channel positions.

@@ -94,8 +94,7 @@ describe('Codec tests', () => {
         ).rejects.toThrow();
     });
 
-    it('should correctly map chunkId to chunk data', async () => {
-        decodedFolder;
+    it('should correctly map chunkId to chunk data', () => {
         const chunks: IChunk[] = [
             { id: 0, data: Buffer.from('Chunk0') },
             { id: 1, data: Buffer.from('Chunk1') }
