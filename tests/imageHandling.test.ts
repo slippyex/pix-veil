@@ -1,4 +1,4 @@
-// src/tests/imageUtils.test.ts
+// src/tests/imageHandling.test.ts
 
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';

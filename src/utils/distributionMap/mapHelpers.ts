@@ -1,3 +1,5 @@
+// src/utils/distributionMap/mapHelpers.ts
+
 import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
 import { MAGIC_BYTE } from '../../config.ts';
 import { Buffer } from 'node:buffer';
