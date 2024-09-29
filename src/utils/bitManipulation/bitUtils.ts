@@ -1,4 +1,4 @@
-// src/utils/misc/bitUtils.ts
+// src/utils/bitManipulation/bitUtils.ts
 
 /**
  * Extracts a specific number of bits from a byte.

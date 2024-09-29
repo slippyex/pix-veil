@@ -1,13 +1,13 @@
-// src/modules/lib/distributionMap/mapUtils.ts
+// src/utils/distributionMap/mapUtils.ts
 
 import { serializeDistributionMap, deserializeDistributionMap } from './mapHelpers.ts';
-import { IDistributionMap, IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
+import { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { Buffer } from 'node:buffer';
-import { compressBuffer, decompressBuffer } from '../../../utils/misc/compressUtils.ts';
-import { decrypt, encrypt } from '../../../utils/misc/cryptoUtils.ts';
+import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
+import { decryptData, encryptData } from '../cryptography/crypto.ts';
 import path from 'node:path';
-import { config } from '../../../config.ts';
-import { filePathExists, readBufferFromFile, writeBufferToFile } from '../../../utils/misc/storageUtils.ts';
+import { config } from '../../config/index.ts';
+import { filePathExists, readBufferFromFile, writeBufferToFile } from '../storage/storageUtils.ts';
 
 /**
  * Creates and stores the distribution map.
@@ -29,11 +29,11 @@ export function createAndStoreDistributionMap(
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum);
     const distributionMapCompressed = compressBuffer(serializedMap);
-    const encryptedMap = encrypt(distributionMapCompressed, password);
+    const encrypted = encryptData(distributionMapCompressed, password, logger);
     const distributionMapOutputPath = path.join(outputFolder, config.distributionMapFile + '.db');
-    writeBufferToFile(distributionMapOutputPath, encryptedMap);
+    writeBufferToFile(distributionMapOutputPath, encrypted);
     if (logger.verbose) logger.info(`Distribution map encrypted and saved at "${distributionMapOutputPath}".`);
-    return encryptedMap;
+    return encrypted;
 }
 
 /**
@@ -57,7 +57,7 @@ export function readAndProcessDistributionMap(
 
     if (logger.verbose) logger.info('Reading and processing the distribution map...');
     const rawDistributionMapEncrypted = readBufferFromFile(distributionMapPath);
-    const rawDistributionMapDecrypted = decrypt(rawDistributionMapEncrypted, password);
+    const rawDistributionMapDecrypted = decryptData(rawDistributionMapEncrypted, password, logger);
     const rawDistributionMapDecompressed = decompressBuffer(rawDistributionMapDecrypted);
     return deserializeDistributionMap(rawDistributionMapDecompressed);
 }
@@ -76,15 +76,6 @@ export function createDistributionMap(
 ): Buffer {
     const distributionMap: IDistributionMap = { entries, originalFilename, checksum };
     return serializeDistributionMap(distributionMap);
-}
-
-/**
- * Parses the distribution map buffer to reconstruct the DistributionMap object.
- * @param buffer - Buffer containing the serialized distribution map.
- * @returns Parsed DistributionMap object.
- */
-export function parseDistributionMap(buffer: Buffer): IDistributionMap {
-    return deserializeDistributionMap(buffer);
 }
 
 /**

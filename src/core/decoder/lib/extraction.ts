@@ -1,11 +1,11 @@
-// src/modules/lib/extraction.ts
+// src/core/decoder/lib/extraction.ts
 
 import { Buffer } from 'node:buffer';
-import { IDistributionMap, ILogger } from '../../@types/index.ts';
-import { filePathExists } from '../../utils/misc/storageUtils.ts';
+import { IDistributionMap, ILogger } from '../../../@types/index.ts';
+import { filePathExists } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
-import { extractDataFromBuffer } from '../../utils/image/imageUtils.ts';
+import { extractDataFromBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
 
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 

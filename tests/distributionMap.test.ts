@@ -3,7 +3,8 @@ import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { IDistributionMapEntry } from '../src/@types/index.ts';
-import { createDistributionMap, parseDistributionMap } from '../src/modules/lib/distributionMap/mapUtils.ts';
+import { createDistributionMap } from '../src/utils/distributionMap/mapUtils.ts';
+import { deserializeDistributionMap } from '../src/utils/distributionMap/mapHelpers.ts';
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
@@ -29,7 +30,7 @@ describe('Distribution Map Serialization', () => {
         const checksum = 'abcdef1234567890';
 
         const serialized = createDistributionMap(entries, originalFilename, checksum);
-        const deserialized = parseDistributionMap(serialized);
+        const deserialized = deserializeDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);

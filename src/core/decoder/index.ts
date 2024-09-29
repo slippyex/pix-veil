@@ -1,14 +1,13 @@
-// src/modules/decoder.ts
+// src/core/decoder/index.ts
 
 import * as path from 'jsr:@std/path';
 
-import { IDecodeOptions, ILogger } from '../@types/index.ts';
-import { decrypt, generateChecksum, verifyChecksum } from '../utils/misc/cryptoUtils.ts';
-import { writeBufferToFile } from '../utils/misc/storageUtils.ts';
-import { decompressBuffer } from '../utils/misc/compressUtils.ts';
-import { Buffer } from 'node:buffer';
+import { IDecodeOptions } from '../../@types/index.ts';
+import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
+import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
+import { decompressBuffer } from '../../utils/compression/compression.ts';
 import { assembleChunks, extractChunks } from './lib/extraction.ts';
-import { readAndProcessDistributionMap } from './lib/distributionMap/mapUtils.ts';
+import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
 
 /**
  * Decodes and processes encrypted data from a specified input folder, decrypts it, decompresses it,
@@ -33,9 +32,9 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         const distributionMap = readAndProcessDistributionMap(inputFolder, password, logger);
         const encryptedDataChunks = await extractChunks(distributionMap, inputFolder, logger);
         const encryptedData = assembleChunks(encryptedDataChunks, logger);
+        if (logger.verbose) logger.info('Verifying and decrypting data...');
         verifyDataIntegrity(encryptedData, distributionMap.checksum, logger);
-        if (logger.verbose) logger.info('Decrypting the encrypted data...');
-        const decryptedData = decrypt(encryptedData, password);
+        const decryptedData = decryptData(encryptedData, password, logger);
         if (logger.verbose) logger.info('Decompressing data...');
         const decompressedData = decompressBuffer(decryptedData);
         const outputFile = path.join(outputFolder, distributionMap.originalFilename);
@@ -46,18 +45,5 @@ export async function decode(options: IDecodeOptions): Promise<void> {
     } catch (error) {
         logger.error(`Decoding failed: ${error}`);
         throw error;
-    }
-}
-
-/**
- * Verifies the integrity of the encrypted data using checksum.
- */
-function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): void {
-    if (logger.verbose) logger.info('Verifying data integrity...');
-    const isChecksumValid = verifyChecksum(encryptedData, checksum);
-    logger.debug(`Expected Checksum: ${checksum}`);
-    logger.debug(`Computed Checksum: ${generateChecksum(encryptedData)}`);
-    if (!isChecksumValid) {
-        throw new Error('Data integrity check failed. The data may be corrupted or tampered with.');
     }
 }

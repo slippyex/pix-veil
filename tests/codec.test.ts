@@ -2,13 +2,13 @@
 import { describe, it, beforeAll, afterAll } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { encode } from '../src/modules/encoder.ts';
-import { decode } from '../src/modules/decoder.ts';
+import { encode } from '../src/core/encoder/index.ts';
+import { decode } from '../src/core/decoder/index.ts';
 import fs from 'node:fs';
 
 import seedrandom from 'seedrandom';
 import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
-import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';

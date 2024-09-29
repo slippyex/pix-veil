@@ -1,11 +1,11 @@
-// src/utils/image/imageUtils.ts
+// src/utils/imageProcessing/imageUtils.ts
 
 import sharp from 'sharp';
 import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
 import { addDebugBlocks } from './debugHelper.ts';
-import { extractBits, insertBits } from '../misc/bitUtils.ts';
+import { extractBits, insertBits } from '../bitManipulation/bitUtils.ts';
 import { Buffer } from 'node:buffer';
-import { readDirectory } from '../misc/storageUtils.ts';
+import { readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
 
 /**
@@ -13,7 +13,7 @@ import path from 'node:path';
  */
 const toneCache: ImageToneCache = {};
 
-export async function prewarmImageTonesCache(inputPngPath: string, logger: ILogger) {
+export async function processImageTones(inputPngPath: string, logger: ILogger) {
     const pngsInDirectory = readDirectory(inputPngPath).filter(input => input.endsWith('.png'));
     for (const png of pngsInDirectory) {
         const imagePath = path.join(inputPngPath, png);

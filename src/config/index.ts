@@ -1,4 +1,4 @@
-// src/config.ts
+// src/config/index.ts
 
 import { Buffer } from 'node:buffer';
 

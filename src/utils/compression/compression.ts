@@ -1,7 +1,7 @@
-// src/utils/misc/compressUtils.ts
+// src/utils/compression/compression.ts
 
 import { Buffer } from 'node:buffer';
-import zlib from 'node:zlib';
+import { BrotliCompressor } from './strategies/BrotliCompressor.ts';
 
 /**
  * Compresses the input buffer using Brotli compression algorithm.
@@ -10,7 +10,8 @@ import zlib from 'node:zlib';
  * @return The compressed buffer.
  */
 export function compressBuffer(input: Buffer): Buffer {
-    return zlib.brotliCompressSync(input);
+    const compressor = new BrotliCompressor();
+    return compressor.compress(input);
 }
 
 /**
@@ -20,5 +21,6 @@ export function compressBuffer(input: Buffer): Buffer {
  * @return The decompressed buffer.
  */
 export function decompressBuffer(input: Buffer): Buffer {
-    return zlib.brotliDecompressSync(input);
+    const compressor = new BrotliCompressor();
+    return compressor.decompress(input);
 }

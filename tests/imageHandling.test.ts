@@ -3,11 +3,11 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { getCachedImageTones, prewarmImageTonesCache } from '../src/utils/image/imageUtils.ts';
+import { getCachedImageTones, processImageTones } from '../src/utils/imageProcessing/imageUtils.ts';
 import sharp from 'sharp';
 
 import fs from 'node:fs';
-import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
 
@@ -32,7 +32,7 @@ describe('Image Utilities with Various Image Types', () => {
         })
             .png()
             .toFile(grayscaleImagePath);
-        await prewarmImageTonesCache(path.dirname(grayscaleImagePath), logger);
+        await processImageTones(path.dirname(grayscaleImagePath), logger);
 
         const capacity = getCachedImageTones(grayscaleImagePath, logger);
         expect(capacity).toEqual({
@@ -64,7 +64,7 @@ describe('Image Utilities with Various Image Types', () => {
         })
             .png()
             .toFile(rgbaImagePath);
-        await prewarmImageTonesCache(path.dirname(rgbaImagePath), logger);
+        await processImageTones(path.dirname(rgbaImagePath), logger);
         const capacity = getCachedImageTones(rgbaImagePath, logger);
         expect(capacity).toEqual({
             low: 0,

@@ -1,14 +1,14 @@
-// src/modules/lib/distributionMap/mapHelpers.ts
+// src/utils/distributionMap/mapHelpers.ts
 
-import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../../@types/index.ts';
-import { MAGIC_BYTE } from '../../../config.ts';
+import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import { MAGIC_BYTE } from '../../config/index.ts';
 import { Buffer } from 'node:buffer';
 import {
     deserializeUInt32,
     deserializeUInt8,
     serializeUInt32,
     serializeUInt8
-} from '../../../utils/misc/serializationHelpers.ts';
+} from '../serialization/serializationHelpers.ts';
 
 /**
  * Serializes the distribution map into a buffer with Magic Byte and Size Field.

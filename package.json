@@ -5,8 +5,8 @@
   "scripts": {
     "test-jest": "jest",
     "test": "deno test --allow-read --allow-ffi --allow-write",
-    "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/index.ts encode",
-    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/index.ts decode",
+    "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/cli/index.ts encode",
+    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/cli/index.ts decode",
     "format": "prettier --write '{src,tests}/**/*.ts'"
   },
   "keywords": [],

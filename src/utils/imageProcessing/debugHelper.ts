@@ -1,12 +1,12 @@
-// src/utils/image/debugHelper.ts
+// src/utils/imageProcessing/debugHelper.ts
 
 import { Buffer } from 'node:buffer';
 import { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { getPixelIndex } from './imageHelper.ts';
 import path from 'node:path';
-import { config } from '../../config.ts';
-import { generateDistributionMapText } from '../../modules/lib/distributionMap/mapUtils.ts';
-import { writeBufferToFile } from '../misc/storageUtils.ts';
+import { config } from '../../config/index.ts';
+import { generateDistributionMapText } from '../distributionMap/mapUtils.ts';
+import { writeBufferToFile } from '../storage/storageUtils.ts';
 
 /**
  * Adds debug visual blocks (red and blue) to the image buffer.

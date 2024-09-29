@@ -1,4 +1,4 @@
-// src/utils/image/imageHelper.ts
+// src/utils/imageProcessing/imageHelper.ts
 
 import { ChannelSequence } from '../../@types/index.ts';
 

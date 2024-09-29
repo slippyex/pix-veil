@@ -1,4 +1,4 @@
-// src/utils/misc/logUtils.ts
+// src/utils/logging/logUtils.ts
 
 import chalk from 'chalk';
 import { ILogger } from '../../@types/index.ts';

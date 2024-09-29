@@ -1,12 +1,12 @@
-// src/modules/lib/injection.ts
+// src/core/encoder/lib/injection.ts
 
 import { Buffer } from 'node:buffer';
-import { IDistributionMapEntry, ILogger } from '../../@types/index.ts';
-import { ensureOutputDirectory, writeBufferToFile } from '../../utils/misc/storageUtils.ts';
+import { IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
+import { ensureOutputDirectory, writeBufferToFile } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
-import { injectDataIntoBuffer } from '../../utils/image/imageUtils.ts';
-import { config } from '../../config.ts';
+import { injectDataIntoBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
+import { config } from '../../../config/index.ts';
 
 /**
  * Injects chunks into their respective PNG images.

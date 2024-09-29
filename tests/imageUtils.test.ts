@@ -10,10 +10,10 @@ import {
     extractDataFromBuffer,
     getCachedImageTones,
     injectDataIntoBuffer,
-    prewarmImageTonesCache
-} from '../src/utils/image/imageUtils.ts';
+    processImageTones
+} from '../src/utils/imageProcessing/imageUtils.ts';
 import { ChannelSequence, ILogger } from '../src/@types/index.ts';
-import { getLogger } from '../src/utils/misc/logUtils.ts';
+import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
@@ -59,7 +59,7 @@ describe('imageUtils Module', () => {
 
     describe('getCachedImageTones', () => {
         it('should analyze and cache image tones correctly', async () => {
-            await prewarmImageTonesCache(path.dirname(testImagePath), logger);
+            await processImageTones(path.dirname(testImagePath), logger);
             const capacity = getCachedImageTones(testImagePath, logger);
 
             expect(capacity).toEqual({
@@ -93,7 +93,7 @@ describe('imageUtils Module', () => {
             })
                 .png()
                 .toFile(gradientImagePath);
-            await prewarmImageTonesCache(path.dirname(gradientImagePath), logger);
+            await processImageTones(path.dirname(gradientImagePath), logger);
             const capacity = getCachedImageTones(gradientImagePath, logger);
 
             // Calculate expected counts

@@ -1,4 +1,4 @@
-// src/utils/misc/storageUtils.ts
+// src/utils/storage/storageUtils.ts
 
 import { Buffer } from 'node:buffer';
 import fs from 'node:fs';

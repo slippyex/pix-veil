@@ -1,4 +1,4 @@
-// src/utils/misc/serializationHelpers.ts
+// src/utils/serialization/serializationHelpers.ts
 
 import { Buffer } from 'node:buffer';
 
