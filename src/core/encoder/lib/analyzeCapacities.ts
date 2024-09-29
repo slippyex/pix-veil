@@ -12,26 +12,51 @@ import { config } from '../../../config/index.ts';
  * @param logger - Logger instance for debugging.
  * @returns Array of PNG capacities.
  */
-export function analyzePngCapacities(inputPngFolder: string, logger: ILogger): { file: string; capacity: number }[] {
-    if (logger.verbose) logger.info('Analyzing PNG images for capacity...');
+export function analyzePngCapacities(
+    inputPngFolder: string,
+    logger: ILogger
+): {
+    analyzed: { file: string; capacity: number }[];
+    distributionCarrier: { file: string; capacity: number };
+} {
+    if (logger.verbose) {
+        logger.info('Analyzing PNG images for capacity...');
+    }
+
     const pngFiles = readDirectory(inputPngFolder).filter(file => file.endsWith('.png'));
-    if (pngFiles.length === 0) throw new Error('No PNG files found in the input folder.');
 
-    if (pngFiles.length < 2)
+    if (pngFiles.length === 0) {
+        throw new Error('No PNG files found in the input folder.');
+    }
+
+    if (pngFiles.length < 2) {
         throw new Error('At least two PNG files are required (one for distribution map and at least one for data).');
+    }
 
-    return pngFiles.map(png => {
+    const analyzedFiles = pngFiles.map(png => {
         const pngPath = path.join(inputPngFolder, png);
         const capacity = getCachedImageTones(pngPath, logger); // Use cached tones
+
         const bitsPerChannel = config.bitsPerChannelForDistributionMap;
         const channelsPerPixel = 3; // R, G, B
         const totalEmbeddableChannels = (capacity.low + capacity.mid + capacity.high) * channelsPerPixel;
         const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // Number of channels needed to embed one byte
         const totalEmbeddableBytes = Math.floor(totalEmbeddableChannels / channelsNeededPerByte);
-        if (logger.verbose) logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
+
+        if (logger.verbose) {
+            logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
+        }
+
         return {
             file: png,
             capacity: totalEmbeddableBytes
         };
     });
+
+    const distributionCarrier = analyzedFiles.reduce((prev, curr) => (prev.capacity < curr.capacity ? prev : curr));
+
+    return {
+        analyzed: analyzedFiles.filter(af => af.file !== distributionCarrier.file),
+        distributionCarrier
+    };
 }

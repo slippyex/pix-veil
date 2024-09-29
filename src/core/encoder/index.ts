@@ -8,7 +8,7 @@ import { createAndStoreDistributionMap } from '../../utils/distributionMap/mapUt
 
 import { readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
-import { injectChunksIntoPngs } from './lib/injection.ts';
+import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
 import { createHumanReadableDistributionMap } from '../../utils/imageProcessing/debugHelper.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
 import { distributeChunksAcrossPngs } from './lib/distributeChunks.ts';
@@ -23,8 +23,9 @@ export async function encode(options: IEncodeOptions) {
     const { inputFile, inputPngFolder, outputFolder, password, verbose, debugVisual, logger } = options;
     try {
         if (verbose) logger.info('Starting encoding process...');
+
         // Capture only the filename (no path) using path.basename
-        const originalFilename = path.basename(inputFile); // This ensures only the file name without the path
+        const originalFilename = path.basename(inputFile);
 
         // Step 1: Read and compress the input file
         logger.debug('Reading and compressing the input file...');
@@ -43,7 +44,7 @@ export async function encode(options: IEncodeOptions) {
         await processImageTones(inputPngFolder, logger);
 
         // Step 5: Analyze PNG images for capacity
-        const pngCapacities = analyzePngCapacities(inputPngFolder, logger);
+        const { analyzed: pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
 
         // Step 6: Distribute chunks across PNG images and obtain chunk map
         const { distributionMapEntries, chunkMap } = distributeChunksAcrossPngs(
@@ -63,6 +64,14 @@ export async function encode(options: IEncodeOptions) {
             checksum,
             password,
             outputFolder,
+            logger
+        );
+
+        await injectDistributionMapIntoCarrierPng(
+            inputPngFolder,
+            outputFolder,
+            distributionCarrier,
+            encryptedMapContent,
             logger
         );
 
