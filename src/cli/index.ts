@@ -6,6 +6,7 @@ import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
 import process from 'node:process';
+import figlet from 'figlet';
 
 const program = new Command();
 
@@ -79,4 +80,15 @@ program
         }
     });
 
-program.parse(process.argv);
+(() => {
+    console.log(
+        figlet.textSync("Pix-Veil", {
+            font: "DOS Rebel",
+            horizontalLayout: "default",
+            verticalLayout: "default",
+            width: 80,
+            whitespaceBreak: true,
+        })
+    );
+    program.parse(process.argv);
+})();
