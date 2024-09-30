@@ -279,6 +279,7 @@
         "npm:chalk@4",
         "npm:commander@^12.1.0",
         "npm:figlet@^1.7.0",
+        "npm:inquirer@^11.1.0",
         "npm:lodash@^4.17.21",
         "npm:p-limit@^6.1.0",
         "npm:seedrandom@^3.0.5",
