@@ -5,14 +5,11 @@
   "scripts": {
     "test": "deno test --allow-read --allow-ffi --allow-write --allow-sys",
     "lint": "deno lint",
-    "fmt": "deno fmt",
-    "compile": "deno compile --output ./.bin/pix-veil --target x86_64-unknown-linux-gnu --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
-    "compile:linux": "deno compile --output ./.bin/pix-veil --target x86_64-unknown-linux-gnu --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
-    "compile:win": "deno compile --output ./.bin/pix-veil.exe --target x86_64-pc-windows-msvc --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
-    "compile:mac": "deno compile --output ./.bin/pix-veil.app --target x86_64-apple-darwin --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
+    "doc": "deno doc --html --name='Pix-Veil' --output=./doc ./src",
+    "format": "deno fmt",
+    "compile": "deno compile --output ./.bin/pix-veil --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
     "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts encode",
-    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts decode",
-    "format": "deno fmt"
+    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts decode"
   },
   "keywords": [],
   "author": "",

@@ -2,6 +2,7 @@
 .vscode
 .build
 .bin
+doc
 coverage
 node_modules
 input-file
