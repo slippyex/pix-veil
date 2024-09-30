@@ -2,14 +2,18 @@
   "name": "@perengo/pix-veil",
   "version": "1.0.0",
   "main": "src/cli/index.ts",
+  "config": {
+    "permissions": "--allow-env --allow-read --allow-ffi --allow-write --allow-sys"
+  },
   "scripts": {
-    "test": "deno test --allow-read --allow-ffi --allow-write --allow-sys",
     "lint": "deno lint",
-    "doc": "deno doc --html --name='Pix-Veil' --output=./doc ./src",
     "format": "deno fmt",
-    "compile": "deno compile --output ./.bin/pix-veil --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
-    "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts encode",
-    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts decode"
+    "test": "deno test $npm_package_config_permissions",
+    "doc": "deno doc --html --name='Pix-Veil' --output=./doc ./src",
+    "coverage": "deno test --coverage $npm_package_config_permissions && deno coverage --html",
+    "compile": "deno compile --output ./.bin/pix-veil $npm_package_config_permissions src/cli/index.ts",
+    "pix-veil:encode": "deno run $npm_package_config_permissions src/cli/index.ts encode",
+    "pix-veil:decode": "deno run $npm_package_config_permissionss src/cli/index.ts decode"
   },
   "keywords": [],
   "author": "",
