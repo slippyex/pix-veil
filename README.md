@@ -4,7 +4,9 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](#)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
 
-**Pix-Veil** is a powerful command-line tool for steganography in PNG images. It allows you to hide files within PNG images securely using advanced Least Significant Bit (LSB) embedding, coupled with encryption and compression for enhanced security and efficiency.
+**Pix-Veil** is a powerful command-line tool for steganography in PNG images. 
+It allows you to hide files within PNG images securely using advanced Least Significant Bit (LSB) embedding, 
+coupled with encryption and compression for enhanced security and efficiency.
 
 ---
 
@@ -49,7 +51,7 @@
 
 ~~~bash
 # Clone the repository
-git clone https://github.com/yourusername/pix-veil.git
+git clone https://github.com/slippyex/pix-veil.git
 
 # Navigate to the project directory
 cd pix-veil
