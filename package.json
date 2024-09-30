@@ -11,7 +11,7 @@
     "compile:mac": "deno compile --output ./bin/pix-veil.app --target x86_64-apple-darwin --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
     "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts encode",
     "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts decode",
-    "format": "prettier --write '{src,tests}/**/*.ts'"
+    "format": "deno fmt"
   },
   "keywords": [],
   "author": "",
@@ -28,18 +28,7 @@
   "devDependencies": {
     "@types/lodash": "^4.17.9",
     "@types/node": "^22.5.5",
-    "@types/p-limit": "^2.2.0",
     "@types/seedrandom": "^3.0.8",
-    "prettier": "^3.3.3",
     "seedrandom": "^3.0.5"
-  },
-  "prettier": {
-    "parser": "typescript",
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "none",
-    "bracketSpacing": true,
-    "tabWidth": 4,
-    "arrowParens": "avoid"
   }
 }

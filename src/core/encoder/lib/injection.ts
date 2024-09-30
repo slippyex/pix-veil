@@ -1,4 +1,5 @@
 // src/core/encoder/lib/injection.ts
+
 import { Buffer } from 'node:buffer';
 import { IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
@@ -22,7 +23,7 @@ async function processImage(
     inputPngPath: string,
     outputPngPath: string,
     injectorFn: (imageData: Buffer, info: sharp.OutputInfo, logger: ILogger) => void,
-    logger: ILogger
+    logger: ILogger,
 ): Promise<void> {
     try {
         const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
@@ -34,13 +35,13 @@ async function processImage(
             raw: {
                 width: info.width,
                 height: info.height,
-                channels: info.channels
-            }
+                channels: info.channels,
+            },
         })
             .png({
                 compressionLevel: config.imageCompression.compressionLevel,
                 adaptiveFiltering: config.imageCompression.adaptiveFiltering,
-                palette: false
+                palette: false,
             })
             .toFile(outputPngPath);
 
@@ -68,7 +69,7 @@ export async function injectChunksIntoPngs(
     inputPngFolder: string,
     outputFolder: string,
     debugVisual: boolean,
-    logger: ILogger
+    logger: ILogger,
 ): Promise<void> {
     try {
         if (logger.verbose) logger.info('Injecting chunks into PNG images...');
@@ -109,11 +110,11 @@ export async function injectChunksIntoPngs(
                                 info.width,
                                 info.height,
                                 info.channels,
-                                entry.endPosition
+                                entry.endPosition,
                             );
                         }
                     },
-                    logger
+                    logger,
                 )
             );
         });
@@ -140,7 +141,7 @@ export async function injectDistributionMapIntoCarrierPng(
     outputFolder: string,
     distributionCarrier: { file: string; capacity: number },
     encryptedMapContent: Buffer,
-    logger: ILogger
+    logger: ILogger,
 ): Promise<void> {
     try {
         const inputPngPath = path.resolve(inputPngFolder, distributionCarrier.file);
@@ -160,10 +161,10 @@ export async function injectDistributionMapIntoCarrierPng(
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 );
             },
-            logger
+            logger,
         );
     } catch (error) {
         logger.error(`Failed to inject distribution map into carrier PNG: ${(error as Error).message}`);

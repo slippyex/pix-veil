@@ -1,6 +1,6 @@
 // src/utils/distributionMap/mapUtils.ts
 
-import { serializeDistributionMap, deserializeDistributionMap } from './mapHelpers.ts';
+import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
 import { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
@@ -20,7 +20,7 @@ export function prepareDistributionMapForInjection(
     inputFile: string,
     checksum: string,
     password: string,
-    logger: ILogger
+    logger: ILogger,
 ): Buffer {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum);
@@ -41,7 +41,7 @@ export function prepareDistributionMapForInjection(
 export async function readAndProcessDistributionMap(
     inputFolder: string,
     password: string,
-    logger: ILogger
+    logger: ILogger,
 ): Promise<IDistributionMap> {
     const distributionMapFromCarrier = await scanForDistributionMap(inputFolder, logger);
     if (distributionMapFromCarrier) {
@@ -61,7 +61,7 @@ export async function readAndProcessDistributionMap(
 function processDistributionMap(
     rawDistributionMapEncrypted: Buffer,
     password: string,
-    logger: ILogger
+    logger: ILogger,
 ): IDistributionMap {
     const rawDistributionMapDecrypted = decryptData(rawDistributionMapEncrypted, password, logger);
     const rawDistributionMapDecompressed = decompressBuffer(rawDistributionMapDecrypted);
@@ -78,7 +78,7 @@ function processDistributionMap(
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
     originalFilename: string,
-    checksum: string
+    checksum: string,
 ): Buffer {
     const distributionMap: IDistributionMap = { entries, originalFilename, checksum };
     return serializeDistributionMap(distributionMap);
@@ -90,13 +90,13 @@ export function createDistributionMap(
 export function generateDistributionMapText(
     entries: IDistributionMapEntry[],
     originalFilename: string,
-    checksum: string
+    checksum: string,
 ): string {
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
 
     const pngMap: Record<string, IDistributionMapEntry[]> = {};
 
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
         if (!pngMap[entry.pngFile]) {
             pngMap[entry.pngFile] = [];
         }
@@ -107,9 +107,12 @@ export function generateDistributionMapText(
         text += `PNG File: ${png}\n`;
         text += `Chunks Embedded: ${pngMap[png].length}\n`;
         text += `Details:\n`;
-        pngMap[png].forEach(entry => {
+        pngMap[png].forEach((entry) => {
             const length = entry.endPosition - entry.startPosition;
-            text += `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startPosition}-${entry.endPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${entry.channelSequence.join(', ')}\n`;
+            text +=
+                `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startPosition}-${entry.endPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${
+                    entry.channelSequence.join(', ')
+                }\n`;
         });
         text += `\n`;
     }

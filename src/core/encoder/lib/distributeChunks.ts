@@ -20,7 +20,7 @@ export function distributeChunksAcrossPngs(
     chunks: IChunk[],
     pngCapacities: { file: string; capacity: number }[],
     inputPngFolder: string,
-    logger: ILogger
+    logger: ILogger,
 ): { distributionMapEntries: IDistributionMapEntry[]; chunkMap: Map<number, Buffer> } {
     if (logger.verbose) logger.info('Distributing chunks across PNG images...');
 
@@ -79,11 +79,11 @@ export function distributeChunksAcrossPngs(
                 cachedImageTones.low + cachedImageTones.mid + cachedImageTones.high,
                 nextChunk.data.length,
                 bitsPerChannel,
-                usedPositions[png.file]
+                usedPositions[png.file],
             );
         } catch (_error) {
             logger.warn(
-                `Unable to find non-overlapping position for chunk ${nextChunk.id} in "${png.file}". Skipping this PNG.`
+                `Unable to find non-overlapping position for chunk ${nextChunk.id} in "${png.file}". Skipping this PNG.`,
             );
             continue; // Skip this PNG for this chunk
         }
@@ -106,12 +106,12 @@ export function distributeChunksAcrossPngs(
             startPosition: start, // Now in channels
             endPosition: end, // Now in channels
             bitsPerChannel: bitsPerChannel,
-            channelSequence
+            channelSequence,
         });
 
         if (logger.verbose) {
             logger.info(
-                `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`
+                `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`,
             );
         }
     }

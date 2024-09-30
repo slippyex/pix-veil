@@ -27,8 +27,8 @@ describe('Image Utilities with Various Image Types', () => {
             raw: {
                 width: grayscaleWidth,
                 height: grayscaleHeight,
-                channels: grayscaleChannels
-            }
+                channels: grayscaleChannels,
+            },
         })
             .png()
             .toFile(grayscaleImagePath);
@@ -38,7 +38,7 @@ describe('Image Utilities with Various Image Types', () => {
         expect(capacity).toEqual({
             low: 0,
             mid: grayscaleWidth * grayscaleHeight, // All pixels are mid-tone
-            high: 0
+            high: 0,
         });
 
         // Cleanup
@@ -59,8 +59,8 @@ describe('Image Utilities with Various Image Types', () => {
             raw: {
                 width: rgbaWidth,
                 height: rgbaHeight,
-                channels: rgbaChannels
-            }
+                channels: rgbaChannels,
+            },
         })
             .png()
             .toFile(rgbaImagePath);
@@ -69,7 +69,7 @@ describe('Image Utilities with Various Image Types', () => {
         expect(capacity).toEqual({
             low: 0,
             mid: 0,
-            high: rgbaWidth * rgbaHeight
+            high: rgbaWidth * rgbaHeight,
         });
 
         // Cleanup

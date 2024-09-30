@@ -7,7 +7,7 @@ import {
     deserializeUInt32,
     deserializeUInt8,
     serializeUInt32,
-    serializeUInt8
+    serializeUInt8,
 } from '../serialization/serializationHelpers.ts';
 
 /**
@@ -132,7 +132,7 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
         startPosition,
         endPosition,
         bitsPerChannel,
-        channelSequence
+        channelSequence,
     };
 
     return { entry, newOffset };
@@ -224,7 +224,7 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
 
     if (offset + length > buffer.length) {
         throw new RangeError(
-            `The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`
+            `The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`,
         );
     }
 

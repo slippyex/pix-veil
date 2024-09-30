@@ -1,4 +1,4 @@
-// src/index.ts
+// src/cli/index.ts
 
 import { Command } from 'commander';
 import path from 'node:path';
@@ -23,7 +23,7 @@ program
     .requiredOption('-p, --png-folder <folder>', 'Folder with input PNG files')
     .requiredOption('-o, --output <folder>', 'Output folder to store PNG files')
     .requiredOption('-w, --password <password>', 'Password for encryption')
-    .action(async options => {
+    .action(async (options) => {
         const debugVisual = program.opts().debugVisual || false;
         const verbose = program.opts().verbose || false;
 
@@ -42,7 +42,7 @@ program
                 password,
                 verbose,
                 debugVisual,
-                logger
+                logger,
             });
         } catch (error) {
             logger.error(`Encoding failed: ${error}`);
@@ -56,7 +56,7 @@ program
     .requiredOption('-i, --input <folder>', 'Input folder with PNG files')
     .requiredOption('-o, --output <folder>', 'Output file path')
     .requiredOption('-w, --password <password>', 'Password for decryption')
-    .action(async options => {
+    .action(async (options) => {
         const verbose = program.opts().verbose || false;
 
         const inputFolder = path.resolve(options.input);
@@ -71,7 +71,7 @@ program
                 outputFolder,
                 password,
                 verbose,
-                logger
+                logger,
             });
         } catch (error) {
             logger.error(`Decoding failed: ${error}`);

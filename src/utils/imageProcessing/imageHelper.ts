@@ -14,7 +14,7 @@ export function getPixelIndex(
     width: number,
     channelPosition: number,
     bitsPerChannel: number,
-    channelSequence: ChannelSequence[]
+    channelSequence: ChannelSequence[],
 ): { x: number; y: number } {
     const channelIndex = Math.floor(channelPosition / bitsPerChannel);
     const pixelNumber = Math.floor(channelIndex / channelSequence.length);
@@ -34,13 +34,13 @@ export function getPixelIndex(
 export function getNonOverlappingPosition(
     used: boolean[],
     totalChannels: number,
-    channelsNeeded: number
+    channelsNeeded: number,
 ): { start: number; end: number } | null {
     const maxStart = totalChannels - channelsNeeded;
     const attempts = 100; // Prevent infinite loops
     for (let i = 0; i < attempts; i++) {
         const start = Math.floor(Math.random() * maxStart);
-        const overlap = used.slice(start, start + channelsNeeded).some(channel => channel);
+        const overlap = used.slice(start, start + channelsNeeded).some((channel) => channel);
         if (!overlap) {
             // Mark positions as used
             used.fill(true, start, start + channelsNeeded);
@@ -63,7 +63,7 @@ export function getRandomPosition(
     imageCapacity: number,
     chunkSize: number,
     bitsPerChannel: number,
-    used: boolean[]
+    used: boolean[],
 ): { start: number; end: number } {
     const channelsNeeded = Math.ceil((chunkSize * 8) / bitsPerChannel);
     const position = getNonOverlappingPosition(used, imageCapacity, channelsNeeded);

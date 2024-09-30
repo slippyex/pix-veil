@@ -1,5 +1,6 @@
 // test/codec.test.ts
-import { describe, it, beforeAll, afterAll } from 'jsr:@std/testing/bdd';
+
+import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { encode } from '../src/core/encoder/index.ts';
@@ -40,7 +41,7 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup output folders
-        //         fs.rmSync(encodedFolder, { recursive: true, force: true });
+        fs.rmSync(encodedFolder, { recursive: true, force: true });
         fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
@@ -53,11 +54,11 @@ describe('Codec tests', () => {
             password,
             verbose: true,
             debugVisual: false,
-            logger
+            logger,
         });
 
         // Check if output PNGs are created
-        const outputPngFiles = fs.readdirSync(encodedFolder).filter(file => file.endsWith('.png'));
+        const outputPngFiles = fs.readdirSync(encodedFolder).filter((file) => file.endsWith('.png'));
         expect(outputPngFiles.length).toBeGreaterThan(1); // Ensure multiple PNGs are used
     });
 
@@ -68,7 +69,7 @@ describe('Codec tests', () => {
             outputFolder: decodedFolder,
             password,
             verbose: false,
-            logger
+            logger,
         });
 
         // Check if decoded file exists and matches the original
@@ -89,15 +90,15 @@ describe('Codec tests', () => {
                 outputFolder: decodedFolder,
                 password: wrongPassword,
                 verbose: false,
-                logger
-            })
+                logger,
+            }),
         ).rejects.toThrow();
     });
 
     it('should correctly map chunkId to chunk data', () => {
         const chunks: IChunk[] = [
             { id: 0, data: Buffer.from('Chunk0') },
-            { id: 1, data: Buffer.from('Chunk1') }
+            { id: 1, data: Buffer.from('Chunk1') },
         ];
 
         // Simulate distributionMapEntries
@@ -108,7 +109,7 @@ describe('Codec tests', () => {
                 startPosition: 0,
                 endPosition: 10,
                 bitsPerChannel: 2,
-                channelSequence: ['R', 'G', 'B']
+                channelSequence: ['R', 'G', 'B'],
             },
             {
                 chunkId: 1,
@@ -116,18 +117,18 @@ describe('Codec tests', () => {
                 startPosition: 10,
                 endPosition: 20,
                 bitsPerChannel: 2,
-                channelSequence: ['G', 'B', 'R']
-            }
+                channelSequence: ['G', 'B', 'R'],
+            },
         ];
 
         // Create a chunkMap
         const chunkMap = new Map<number, Buffer>();
-        chunks.forEach(chunk => chunkMap.set(chunk.id, chunk.data));
+        chunks.forEach((chunk) => chunkMap.set(chunk.id, chunk.data));
 
         // Assert that chunkMap contains all necessary entries
-        distributionMapEntries.forEach(entry => {
+        distributionMapEntries.forEach((entry) => {
             expect(chunkMap.has(entry.chunkId)).toBe(true);
-            expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find(c => c.id === entry.chunkId)?.data);
+            expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find((c) => c.id === entry.chunkId)?.data);
         });
     });
 });

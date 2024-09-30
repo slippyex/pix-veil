@@ -40,7 +40,7 @@ async function getImage(pngPath: string): Promise<{ data: Buffer; info: sharp.Ou
 export async function extractChunks(
     distributionMap: IDistributionMap,
     inputFolder: string,
-    logger: ILogger
+    logger: ILogger,
 ): Promise<{ chunkId: number; data: Buffer }[]> {
     const encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
 
@@ -65,7 +65,7 @@ export async function extractChunks(
             entry.startPosition,
             chunkBits,
             logger,
-            info.channels
+            info.channels,
         );
 
         encryptedDataArray.push({ chunkId: entry.chunkId, data: chunkBuffer });
@@ -86,10 +86,10 @@ export function assembleChunks(encryptedDataArray: { chunkId: number; data: Buff
 
     verifyChunkIds(encryptedDataArray);
     // Concatenate all chunks to form the encrypted data
-    const concatenatedEncryptedData = Buffer.concat(encryptedDataArray.map(chunk => chunk.data));
+    const concatenatedEncryptedData = Buffer.concat(encryptedDataArray.map((chunk) => chunk.data));
 
     logger.debug(
-        `All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`
+        `All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`,
     );
 
     return concatenatedEncryptedData;
@@ -105,7 +105,7 @@ function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[])
     encryptedDataArray.forEach((chunk, index) => {
         if (chunk.chunkId !== index) {
             throw new Error(
-                `Missing or out-of-order chunk detected. Expected chunkId ${index}, found ${chunk.chunkId}.`
+                `Missing or out-of-order chunk detected. Expected chunkId ${index}, found ${chunk.chunkId}.`,
             );
         }
     });
@@ -120,7 +120,7 @@ function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[])
  *                                   or null if no distribution map is found.
  */
 export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
-    const carrierPngs = readDirectory(inputFolder).filter(i => i.endsWith('.png'));
+    const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
     for (const png of carrierPngs) {
         const pngPath = path.join(inputFolder, png);
 

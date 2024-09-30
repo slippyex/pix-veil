@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { EncryptionStrategy } from '../encryptionStrategy.ts';
+import { EncryptionStrategy } from '../../../@types/encryptionStrategy.ts';
 import crypto from 'node:crypto';
 
 export class AES256CBCStrategy implements EncryptionStrategy {

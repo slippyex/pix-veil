@@ -1,4 +1,4 @@
-// src/utils/cryptography/encryptionStrategy.ts
+// src/@types/encryptionStrategy.ts
 
 import type { Buffer } from 'node:buffer';
 

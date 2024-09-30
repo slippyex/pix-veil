@@ -21,9 +21,9 @@ export function splitDataIntoChunks(encryptedData: Buffer, logger: ILogger): ICh
         const size = Math.min(
             config.chunksDefinition.minChunkSize *
                 Math.ceil(
-                    Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize)
+                    Math.random() * (config.chunksDefinition.maxChunkSize / config.chunksDefinition.minChunkSize),
                 ),
-            remaining
+            remaining,
         );
         const chunkData = encryptedData.subarray(offset, offset + size);
         chunks.push({ id: chunkId++, data: Buffer.from(chunkData) });

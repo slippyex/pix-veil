@@ -14,7 +14,7 @@ import path from 'node:path';
 const toneCache: ImageToneCache = {};
 
 export async function processImageTones(inputPngPath: string, logger: ILogger) {
-    const pngsInDirectory = readDirectory(inputPngPath).filter(input => input.endsWith('.png'));
+    const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.endsWith('.png'));
     for (const png of pngsInDirectory) {
         const imagePath = path.join(inputPngPath, png);
         const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
@@ -40,7 +40,7 @@ export async function processImageTones(inputPngPath: string, logger: ILogger) {
 
         toneCache[imagePath] = capacity; // Cache the result
         logger.debug(
-            `Analyzed tones for "${imagePath}": Low=${capacity.low}, Mid=${capacity.mid}, High=${capacity.high}.`
+            `Analyzed tones for "${imagePath}": Low=${capacity.low}, Mid=${capacity.mid}, High=${capacity.high}.`,
         );
     }
 }
@@ -83,7 +83,7 @@ export function injectDataIntoBuffer(
     width: number,
     height: number,
     channels: 1 | 2 | 3 | 4,
-    endChannelPosition?: number // Optional parameter for debug visuals
+    endChannelPosition?: number, // Optional parameter for debug visuals
 ) {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {
@@ -108,7 +108,7 @@ export function injectDataIntoBuffer(
     }
 
     logger.debug(
-        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`
+        `Injecting ${data.length} bytes (${totalDataBits} bits) into buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`,
     );
 
     let dataBitIndex = 0; // Track the number of bits injected
@@ -166,12 +166,12 @@ export function injectDataIntoBuffer(
             finalEndChannelPosition,
             bitsPerChannel,
             channelSequence,
-            logger
+            logger,
         );
     }
 
     logger.debug(
-        `Data injection completed. Start Channel: ${startChannelPosition}, End Channel: ${finalEndChannelPosition}.`
+        `Data injection completed. Start Channel: ${startChannelPosition}, End Channel: ${finalEndChannelPosition}.`,
     );
 }
 
@@ -195,7 +195,7 @@ export function extractDataFromBuffer(
     startChannelPosition: number,
     bitCount: number,
     logger: ILogger,
-    channels: number // Number of channels in the image
+    channels: number, // Number of channels in the image
 ): Buffer {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {
@@ -219,7 +219,7 @@ export function extractDataFromBuffer(
     }
 
     logger.debug(
-        `Extracting ${bitCount} bits from buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`
+        `Extracting ${bitCount} bits from buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`,
     );
 
     const extractedData = Buffer.alloc(Math.ceil(bitCount / 8), 0);
@@ -239,7 +239,7 @@ export function extractDataFromBuffer(
 
         if (channelIndex >= imageData.length) {
             throw new Error(
-                `${pngFile} :: Channel index out of bounds during extraction at channel position ${currentChannelPos}.`
+                `${pngFile} :: Channel index out of bounds during extraction at channel position ${currentChannelPos}.`,
             );
         }
 

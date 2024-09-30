@@ -11,7 +11,7 @@ class Logger implements ILogger {
 
     constructor(
         readonly name: string,
-        readonly verbose = false
+        readonly verbose = false,
     ) {}
 
     info(message: string) {

@@ -14,7 +14,7 @@ import { config } from '../../../config/index.ts';
  */
 export function analyzePngCapacities(
     inputPngFolder: string,
-    logger: ILogger
+    logger: ILogger,
 ): {
     analyzed: { file: string; capacity: number }[];
     distributionCarrier: { file: string; capacity: number };
@@ -23,7 +23,7 @@ export function analyzePngCapacities(
         logger.info('Analyzing PNG images for capacity...');
     }
 
-    const pngFiles = readDirectory(inputPngFolder).filter(file => file.endsWith('.png'));
+    const pngFiles = readDirectory(inputPngFolder).filter((file) => file.endsWith('.png'));
 
     if (pngFiles.length === 0) {
         throw new Error('No PNG files found in the input folder.');
@@ -33,7 +33,7 @@ export function analyzePngCapacities(
         throw new Error('At least two PNG files are required (one for distribution map and at least one for data).');
     }
 
-    const analyzedFiles = pngFiles.map(png => {
+    const analyzedFiles = pngFiles.map((png) => {
         const pngPath = path.join(inputPngFolder, png);
         const capacity = getCachedImageTones(pngPath, logger); // Use cached tones
 
@@ -49,14 +49,14 @@ export function analyzePngCapacities(
 
         return {
             file: png,
-            capacity: totalEmbeddableBytes
+            capacity: totalEmbeddableBytes,
         };
     });
 
     const distributionCarrier = analyzedFiles.reduce((prev, curr) => (prev.capacity < curr.capacity ? prev : curr));
 
     return {
-        analyzed: analyzedFiles.filter(af => af.file !== distributionCarrier.file),
-        distributionCarrier
+        analyzed: analyzedFiles.filter((af) => af.file !== distributionCarrier.file),
+        distributionCarrier,
     };
 }

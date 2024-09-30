@@ -29,7 +29,7 @@ export function addDebugBlocks(
     endBitPosition: number,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
-    logger: ILogger
+    logger: ILogger,
 ): void {
     // Define the size and color of the blocks
     const blockSize = 8;
@@ -82,7 +82,7 @@ export function createHumanReadableDistributionMap(
     originalFilename: string,
     checksum: string,
     outputFolder: string,
-    logger: ILogger
+    logger: ILogger,
 ) {
     if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
     const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');

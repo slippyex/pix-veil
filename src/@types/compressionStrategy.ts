@@ -1,4 +1,4 @@
-// src/utils/compression/compressionStrategy.ts
+// src/@types/compressionStrategy.ts
 
 import type { Buffer } from 'node:buffer';
 

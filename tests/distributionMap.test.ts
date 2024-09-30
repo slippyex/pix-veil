@@ -1,4 +1,5 @@
 // tests/distributionMap.test.ts
+
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
@@ -16,7 +17,7 @@ describe('Distribution Map Serialization', () => {
                 startPosition: 0,
                 endPosition: 100,
                 bitsPerChannel: 2,
-                channelSequence: ['R', 'G', 'B']
+                channelSequence: ['R', 'G', 'B'],
             },
             {
                 chunkId: 2,
@@ -24,8 +25,8 @@ describe('Distribution Map Serialization', () => {
                 startPosition: 100,
                 endPosition: 200,
                 bitsPerChannel: 2,
-                channelSequence: ['R', 'G', 'B']
-            }
+                channelSequence: ['R', 'G', 'B'],
+            },
         ];
         const checksum = 'abcdef1234567890';
 

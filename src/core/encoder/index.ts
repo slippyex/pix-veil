@@ -51,7 +51,7 @@ export async function encode(options: IEncodeOptions) {
             chunks,
             pngCapacities,
             inputPngFolder,
-            logger
+            logger,
         );
 
         // Step 7: Inject chunks into PNG images
@@ -63,7 +63,7 @@ export async function encode(options: IEncodeOptions) {
             originalFilename,
             checksum,
             password,
-            logger
+            logger,
         );
 
         await injectDistributionMapIntoCarrierPng(
@@ -71,7 +71,7 @@ export async function encode(options: IEncodeOptions) {
             outputFolder,
             distributionCarrier,
             encryptedMapContent,
-            logger
+            logger,
         );
 
         // Step 9: Generate human-readable distribution map text file

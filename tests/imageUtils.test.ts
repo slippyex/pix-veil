@@ -1,5 +1,6 @@
 // src/tests/imageUtils.test.ts
-import { describe, it, beforeAll, afterAll } from 'jsr:@std/testing/bdd';
+
+import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import sharp from 'sharp';
@@ -10,7 +11,7 @@ import {
     extractDataFromBuffer,
     getCachedImageTones,
     injectDataIntoBuffer,
-    processImageTones
+    processImageTones,
 } from '../src/utils/imageProcessing/imageUtils.ts';
 import { ChannelSequence, ILogger } from '../src/@types/index.ts';
 import { getLogger } from '../src/utils/logging/logUtils.ts';
@@ -43,8 +44,8 @@ describe('imageUtils Module', () => {
             raw: {
                 width,
                 height,
-                channels
-            }
+                channels,
+            },
         })
             .png()
             .toFile(testImagePath);
@@ -65,7 +66,7 @@ describe('imageUtils Module', () => {
             expect(capacity).toEqual({
                 low: 0, // White pixels have brightness 255, so low should be 0
                 mid: 0, // Similarly, mid should be 0
-                high: width * height // All pixels are high-tone
+                high: width * height, // All pixels are high-tone
             });
         });
 
@@ -88,8 +89,8 @@ describe('imageUtils Module', () => {
                 raw: {
                     width,
                     height,
-                    channels
-                }
+                    channels,
+                },
             })
                 .png()
                 .toFile(gradientImagePath);
@@ -117,7 +118,7 @@ describe('imageUtils Module', () => {
             expect(capacity).toEqual({
                 low: expectedLow,
                 mid: expectedMid,
-                high: expectedHigh
+                high: expectedHigh,
             });
 
             // Cleanup gradient image
@@ -150,7 +151,7 @@ describe('imageUtils Module', () => {
                 logger,
                 info.width,
                 info.height,
-                info.channels as 1 | 2 | 3 | 4
+                info.channels as 1 | 2 | 3 | 4,
             );
 
             // Create a new image buffer after injection
@@ -165,7 +166,7 @@ describe('imageUtils Module', () => {
                 startBitPosition,
                 dataToInject.length * 8,
                 logger,
-                info.channels as number // Pass channels
+                info.channels as number, // Pass channels
             );
 
             expect(extractedData.toString('utf-8')).toEqual(dataToInject.toString('utf-8'));
@@ -183,8 +184,8 @@ describe('imageUtils Module', () => {
                 raw: {
                     width: smallWidth,
                     height: smallHeight,
-                    channels: smallChannels
-                }
+                    channels: smallChannels,
+                },
             })
                 .png()
                 .toFile(smallImagePath);
@@ -207,7 +208,7 @@ describe('imageUtils Module', () => {
                     logger,
                     info.width,
                     info.height,
-                    info.channels as 1 | 2 | 3 | 4
+                    info.channels as 1 | 2 | 3 | 4,
                 )
             ).toThrow('Channel positions are out of bounds for data injection.');
 
@@ -239,7 +240,7 @@ describe('imageUtils Module', () => {
                 logger,
                 info.width,
                 info.height,
-                info.channels as 1 | 2 | 3 | 4
+                info.channels as 1 | 2 | 3 | 4,
             );
 
             // Extract data
@@ -251,7 +252,7 @@ describe('imageUtils Module', () => {
                 startBitPosition,
                 data.length * 8,
                 logger,
-                info.channels as number // Pass channels
+                info.channels as number, // Pass channels
             );
 
             expect(extractedData).toEqual(data);
@@ -284,8 +285,8 @@ describe('imageUtils Module', () => {
                 raw: {
                     width,
                     height,
-                    channels
-                }
+                    channels,
+                },
             })
                 .png()
                 .toFile(testImagePath);
@@ -313,7 +314,7 @@ describe('imageUtils Module', () => {
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 )
             ).toThrow('bitsPerChannel must be between 1 and 8.');
 
@@ -328,7 +329,7 @@ describe('imageUtils Module', () => {
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 )
             ).toThrow('bitsPerChannel must be between 1 and 8.');
         });
@@ -347,7 +348,7 @@ describe('imageUtils Module', () => {
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 )
             ).toThrow('channelSequence cannot be empty.');
         });
@@ -368,7 +369,7 @@ describe('imageUtils Module', () => {
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 )
             ).toThrow('Channel positions are out of bounds for data injection.');
         });
@@ -388,7 +389,7 @@ describe('imageUtils Module', () => {
                     logger,
                     width,
                     height,
-                    channels
+                    channels,
                 )
             ).toThrow('Invalid channel specified: X');
         });
