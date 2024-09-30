@@ -1,7 +1,8 @@
 // src/core/encoder/lib/distributeChunks.ts
 
-import { Buffer } from 'node:buffer';
 import type { ChannelSequence, IChunk, IDistributionMapEntry, ILogger, IUsedPng } from '../../../@types/index.ts';
+
+import { Buffer } from 'node:buffer';
 import { getCachedImageTones } from '../../../utils/imageProcessing/imageUtils.ts';
 import path from 'node:path';
 import { config } from '../../../config/index.ts';
@@ -9,12 +10,17 @@ import { getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts
 import _ from 'lodash';
 
 /**
- * Distributes chunks across PNG images and creates a mapping of chunkId to chunk data.
- * @param chunks - Array of chunks to distribute.
- * @param pngCapacities - Array of PNG capacities.
- * @param inputPngFolder - Path to the folder containing PNG images.
- * @param logger - Logger instance for debugging.
- * @returns Object containing distribution map entries and a chunk map.
+ * Distributes given data chunks across PNG files based on their capacities.
+ *
+ * @param {IChunk[]} chunks - Array of data chunks to be distributed.
+ * @param {Object[]} pngCapacities - Array of objects representing PNG files and their capacities.
+ * @param {string} pngCapacities[].file - The file name of the PNG.
+ * @param {number} pngCapacities[].capacity - The capacity of the PNG in bytes.
+ * @param {string} inputPngFolder - Path to the folder containing input PNG files.
+ * @param {ILogger} logger - Logger for logging informational and error messages.
+ * @return {Object} The distribution result.
+ * @return {IDistributionMapEntry[]} return.distributionMapEntries - The mapping of chunks to PNG files.
+ * @return {Map<number, Buffer>} return.chunkMap - The mapping of chunk IDs to chunk data.
  */
 export function distributeChunksAcrossPngs(
     chunks: IChunk[],

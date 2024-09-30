@@ -1,12 +1,14 @@
 // src/utils/imageProcessing/imageUtils.ts
 
+import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
+
+import { Buffer } from 'node:buffer';
+import path from 'node:path';
 import sharp from 'sharp';
-import { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
+
 import { addDebugBlocks } from './debugHelper.ts';
 import { extractBits, insertBits } from '../bitManipulation/bitUtils.ts';
-import { Buffer } from 'node:buffer';
 import { readDirectory } from '../storage/storageUtils.ts';
-import path from 'node:path';
 
 /**
  * In-memory cache for image tones.

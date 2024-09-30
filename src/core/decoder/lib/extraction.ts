@@ -1,7 +1,8 @@
 // src/core/decoder/lib/extraction.ts
 
+import type { IDistributionMap, ILogger } from '../../../@types/index.ts';
+
 import { Buffer } from 'node:buffer';
-import { IDistributionMap, ILogger } from '../../../@types/index.ts';
 import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -11,14 +12,10 @@ import { MAGIC_BYTE } from '../../../config/index.ts';
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 
 /**
- * Retrieves an image from the specified path. If the image is not already
- * cached, it processes the image to remove the alpha channel and converts
- * it to the sRGB color space before storing it in the cache.
+ * Retrieves an image from the specified path, processing it and caching the result.
  *
- * @param pngPath The file path to the PNG image.
- * @return {Promise<{data: Buffer, info: sharp.OutputInfo} | undefined>}
- *         A promise that resolves to an object containing the image data
- *         and information if the image is found, otherwise undefined.
+ * @param {string} pngPath - The file path to the PNG image.
+ * @return {Promise<{ data: Buffer, info: sharp.OutputInfo } | undefined>} A promise that resolves to an object containing the image data and information, or undefined if the image cannot be processed.
  */
 async function getImage(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo } | undefined> {
     if (!imageMap.has(pngPath)) {
@@ -30,12 +27,12 @@ async function getImage(pngPath: string): Promise<{ data: Buffer; info: sharp.Ou
 }
 
 /**
- * Extracts chunks of encrypted data from a series of PNG files based on provided distribution map.
+ * Extracts chunks of data from given PNG files as specified in the distribution map.
  *
- * @param distributionMap The distribution map detailing the PNG file and chunk information.
- * @param inputFolder The path to the folder containing the input PNG files.
- * @param logger The logger instance for logging debug or error information.
- * @return {Promise<{ chunkId: number; data: Buffer }[]>} A promise that resolves to an array of objects containing chunk IDs and their corresponding data buffers.
+ * @param {IDistributionMap} distributionMap - An object defining how data is distributed across multiple PNG files.
+ * @param {string} inputFolder - The path to the folder containing the PNG files.
+ * @param {ILogger} logger - An object used to log debug information during the extraction process.
+ * @return {Promise<{ chunkId: number, data: Buffer }[]>} - A promise that resolves to an array of objects, each containing a chunkId and its associated data buffer.
  */
 export async function extractChunks(
     distributionMap: IDistributionMap,
@@ -74,11 +71,13 @@ export async function extractChunks(
 }
 
 /**
- * Assembles chunks of encrypted data in the correct order and concatenates them into a single Buffer.
+ * Assembles chunks of encrypted data into a single Buffer.
  *
- * @param  encryptedDataArray An array of objects containing chunkId and data Buffer.
- * @param logger An instance of a logger that implements a debug method.
- * @return {Buffer} The concatenated Buffer of all encrypted data chunks.
+ * @param {Object[]} encryptedDataArray - An array of objects containing the chunkId and data buffer.
+ * @param {number} encryptedDataArray[].chunkId - The unique identifier for the chunk.
+ * @param {Buffer} encryptedDataArray[].data - The data buffer for the chunk.
+ * @param {ILogger} logger - The logger instance to log debug messages.
+ * @returns {Buffer} - The concatenated buffer containing the assembled encrypted data.
  */
 export function assembleChunks(encryptedDataArray: { chunkId: number; data: Buffer }[], logger: ILogger): Buffer {
     // Sort chunks by chunkId to ensure correct order
@@ -96,10 +95,10 @@ export function assembleChunks(encryptedDataArray: { chunkId: number; data: Buff
 }
 
 /**
- * Verifies that each chunk in the provided array has the correct chunkId.
+ * Verifies that each chunk in the encrypted data array has the correct sequential chunkId.
  *
- * @param encryptedDataArray An array of objects containing chunkId and data properties.
- * @throws Error an error if a chunk is missing or out of order.
+ * @param {Array} encryptedDataArray - An array of objects containing chunkId and data. Each chunkId should be a number and data should be a Buffer.
+ * @return {void} This function does not return a value. It throws an error if a chunkId is missing or out of order.
  */
 function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[]): void {
     encryptedDataArray.forEach((chunk, index) => {

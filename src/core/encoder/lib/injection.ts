@@ -1,7 +1,8 @@
 // src/core/encoder/lib/injection.ts
 
+import type { IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
+
 import { Buffer } from 'node:buffer';
-import { IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -13,11 +14,15 @@ import * as os from 'node:os';
 const cpuCount = os.cpus().length;
 
 /**
- * Processes the image by loading, injecting data, and saving it.
- * @param inputPngPath - Path to the input PNG image.
- * @param outputPngPath - Path to the output PNG image.
- * @param injectorFn - Function to inject data into the image buffer.
- * @param logger - Logger instance for debugging.
+ * Processes an image by reading it from an input path, applying an injector function,
+ * and then saving the modified image to an output path.
+ *
+ * @param {string} inputPngPath - The input path of the PNG image to be processed.
+ * @param {string} outputPngPath - The output path where the processed PNG image will be saved.
+ * @param {function} injectorFn - A function that modifies the image data. This function takes
+ *                                three arguments: imageData (Buffer), info (sharp.OutputInfo), and logger (ILogger).
+ * @param {ILogger} logger - A logger instance used for logging messages.
+ * @return {Promise<void>} - A promise that resolves when the image processing is completed.
  */
 async function processImage(
     inputPngPath: string,
@@ -55,13 +60,15 @@ async function processImage(
 type PngToChunksMap = Record<string, IDistributionMapEntry[]>;
 
 /**
- * Injects chunks into their respective PNG images.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param chunkMap - Map of chunkId to chunk data.
- * @param inputPngFolder - Path to the folder containing input PNG images.
- * @param outputFolder - Path to the output folder for modified PNG images.
- * @param debugVisual - Whether to add debug visual blocks.
- * @param logger - Logger instance for debugging.
+ * Injects specified chunks of data into PNG images.
+ *
+ * @param {IDistributionMapEntry[]} distributionMapEntries - An array of distribution map entries detailing which chunks to inject into which PNG files.
+ * @param {Map<number, Buffer>} chunkMap - A map where keys are chunk IDs and values are Buffers containing the chunk data to be injected.
+ * @param {string} inputPngFolder - Path to the folder containing input PNG files.
+ * @param {string} outputFolder - Path to the folder where output PNG files will be saved after injection.
+ * @param {boolean} debugVisual - Flag to indicate whether to enable debugging visuals.
+ * @param {ILogger} logger - Logger instance for logging messages and errors.
+ * @return {Promise<void>} A Promise that resolves when all chunk injections are completed.
  */
 export async function injectChunksIntoPngs(
     distributionMapEntries: IDistributionMapEntry[],
@@ -129,12 +136,16 @@ export async function injectChunksIntoPngs(
 }
 
 /**
- * Injects a distribution map into a carrier PNG image.
- * @param inputPngFolder - Path to the folder containing input PNG images.
- * @param outputFolder - Path to the output folder for modified PNG images.
- * @param distributionCarrier - Details of the carrier PNG and its capacity.
- * @param encryptedMapContent - Encrypted distribution map content to inject.
- * @param logger - Logger instance for debugging.
+ * Injects an encrypted distribution map into a carrier PNG file.
+ *
+ * @param {string} inputPngFolder - Path to the folder containing the input PNG file.
+ * @param {string} outputFolder - Path to the folder where the output PNG file should be saved.
+ * @param {Object} distributionCarrier - Object containing properties of the carrier file.
+ * @param {string} distributionCarrier.file - The name of the carrier PNG file.
+ * @param {number} distributionCarrier.capacity - The capacity of the carrier file.
+ * @param {Buffer} encryptedMapContent - The encrypted distribution map content to be injected.
+ * @param {ILogger} logger - Logger instance for logging operations and errors.
+ * @return {Promise<void>} Resolves when the injection process is complete.
  */
 export async function injectDistributionMapIntoCarrierPng(
     inputPngFolder: string,

@@ -155,7 +155,7 @@ if (import.meta.main) {
             verticalLayout: 'default',
             width: 80,
             whitespaceBreak: true,
-        })
+        }),
     );
     console.log(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`);
     program.parse(process.argv);

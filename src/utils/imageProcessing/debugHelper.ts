@@ -1,7 +1,8 @@
 // src/utils/imageProcessing/debugHelper.ts
 
+import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
+
 import { Buffer } from 'node:buffer';
-import { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { getPixelIndex } from './imageHelper.ts';
 import path from 'node:path';
 import { config } from '../../config/index.ts';
@@ -9,16 +10,19 @@ import { generateDistributionMapText } from '../distributionMap/mapUtils.ts';
 import { writeBufferToFile } from '../storage/storageUtils.ts';
 
 /**
- * Adds debug visual blocks (red and blue) to the image buffer.
- * @param imageData - Raw image buffer data.
- * @param width - Image width.
- * @param height - Image height.
- * @param channels - Number of channels in the image.
- * @param startBitPosition - Bit position where data injection starts.
- * @param endBitPosition - Bit position where data injection ends.
- * @param bitsPerChannel - Number of bits per channel used.
- * @param channelSequence - Sequence of channels used.
- * @param logger - Logger instance for debugging.
+ * Adds two 8x8 debug blocks to the image data. A red block is placed at the start bit position,
+ * and a blue block is placed at the end bit position. Both blocks are constrained by the image dimensions.
+ *
+ * @param {Buffer} imageData - The buffer containing the image data.
+ * @param {number} width - The width of the image.
+ * @param {number} height - The height of the image.
+ * @param {number} channels - The number of channels per pixel (e.g., 3 for RGB, 4 for RGBA).
+ * @param {number} startBitPosition - The bit position where the red block should start.
+ * @param {number} endBitPosition - The bit position where the blue block should end.
+ * @param {number} bitsPerChannel - The number of bits used per channel.
+ * @param {ChannelSequence[]} channelSequence - The channel sequence to be used for processing.
+ * @param {ILogger} logger - Logger instance for debugging information.
+ * @return {void}
  */
 export function addDebugBlocks(
     imageData: Buffer,
@@ -70,12 +74,15 @@ export function addDebugBlocks(
 }
 
 /**
- * Creates a human-readable distribution map text file.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param originalFilename - Original Filename
- * @param checksum - Checksum of the encrypted data.
- * @param outputFolder - Path to the output folder.
- * @param logger - Logger instance for debugging.
+ * Creates a human-readable distribution map text file from a list of distribution map entries.
+ *
+ * @param {IDistributionMapEntry[]} distributionMapEntries - An array of distribution map entries to be included in the text file.
+ * @param {string} originalFilename - The original filename associated with the distribution map entries.
+ * @param {string} checksum - The checksum of the original file to be included in the distribution map.
+ * @param {string} outputFolder - The folder path where the distribution map text file should be created.
+ * @param {ILogger} logger - The logger instance used for logging information about the process.
+ *
+ * @return {void} This function doesn't return a value.
  */
 export function createHumanReadableDistributionMap(
     distributionMapEntries: IDistributionMapEntry[],

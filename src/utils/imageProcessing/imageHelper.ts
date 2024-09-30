@@ -1,14 +1,18 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-import { ChannelSequence } from '../../@types/index.ts';
+import type { ChannelSequence } from '../../@types/index.ts';
 
 /**
- * Calculates (x, y) coordinates from a given channel position.
- * @param width - Image width.
- * @param channelPosition - Position in channels.
- * @param bitsPerChannel - Number of bits per channel used.
- * @param channelSequence - Sequence of channels used.
- * @returns Object containing x and y coordinates.
+ * Calculates the x and y coordinates of a pixel in an image based on
+ * the channel position and various image parameters.
+ *
+ * @param {number} width - The width of the image in pixels.
+ * @param {number} channelPosition - The position of the desired channel.
+ * @param {number} bitsPerChannel - The number of bits used to represent a channel value.
+ * @param {ChannelSequence[]} channelSequence - The array representing the sequence of channels.
+ * @return {Object} The coordinates of the pixel.
+ * @return {number} return.x - The x-coordinate of the pixel.
+ * @return {number} return.y - The y-coordinate of the pixel.
  */
 export function getPixelIndex(
     width: number,
@@ -24,12 +28,12 @@ export function getPixelIndex(
 }
 
 /**
- * Generates a non-overlapping start and end position within the image capacity for a chunk.
- * Ensures that the chunk does not exceed the image capacity and does not overlap with existing chunks.
- * @param used - Array tracking used channel positions.
- * @param totalChannels - Total number of channels in the image.
- * @param channelsNeeded - Number of channels required for the chunk.
- * @returns Object containing start and end positions, or null if no position found.
+ * Finds and marks a non-overlapping position of consecutive channels.
+ *
+ * @param {boolean[]} used - Array indicating which channels are already in use.
+ * @param {number} totalChannels - Total number of available channels.
+ * @param {number} channelsNeeded - Number of consecutive channels required.
+ * @return {{start: number, end: number} | null} - The start and end indices of the non-overlapping position or null if no such position is found.
  */
 export function getNonOverlappingPosition(
     used: boolean[],
@@ -51,13 +55,14 @@ export function getNonOverlappingPosition(
 }
 
 /**
- * Generates a random start and end position within the image capacity for a chunk.
- * Ensures that the chunk does not exceed the image capacity.
- * @param imageCapacity - Total capacity in channels.
- * @param chunkSize - Size of the chunk in bytes.
- * @param bitsPerChannel - Number of bits per channel used.
- * @param used - Array tracking used channel positions.
- * @returns Object containing start and end positions.
+ * Generates a random position within the provided image capacity that does not overlap with already used positions.
+ *
+ * @param {number} imageCapacity - The total capacity of the image in terms of available positions.
+ * @param {number} chunkSize - The size of the chunk to hide within the image.
+ * @param {number} bitsPerChannel - The number of bits used per channel in the image.
+ * @param {boolean[]} used - An array indicating which positions have already been used.
+ * @return {{ start: number, end: number }} An object containing the start and end positions for the chunk within the image.
+ * @throws {Error} If unable to find a non-overlapping position for the chunk.
  */
 export function getRandomPosition(
     imageCapacity: number,

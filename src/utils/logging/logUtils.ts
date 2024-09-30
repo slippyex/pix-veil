@@ -1,10 +1,14 @@
 // src/utils/logging/logUtils.ts
 
+import type { ILogger } from '../../@types/index.ts';
+
 import chalk from 'chalk';
-import { ILogger } from '../../@types/index.ts';
 
 const loggerMap: Record<string, ILogger> = {};
 
+/**
+ * Logger class that implements ILogger interface to log messages at various levels such as info, success, warning, error, and debug.
+ */
 class Logger implements ILogger {
     debugMessages: string[] = [];
     errorMessages: string[] = [];
@@ -39,6 +43,13 @@ class Logger implements ILogger {
     }
 }
 
+/**
+ * Retrieves or creates a logger instance associated with the given name.
+ *
+ * @param name - The name associated with the logger instance.
+ * @param verbose - verbose logging enabled
+ * @return The logger instance associated with the provided name.
+ */
 export function getLogger(name: string, verbose = false) {
     const logger = loggerMap[name];
     if (!logger) {

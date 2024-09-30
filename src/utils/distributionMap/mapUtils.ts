@@ -1,19 +1,22 @@
 // src/utils/distributionMap/mapUtils.ts
 
+import type { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
+
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
-import { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
 import { decryptData, encryptData } from '../cryptography/crypto.ts';
 import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
 
 /**
- * Creates and stores the distribution map.
- * @param distributionMapEntries - Array of distribution map entries.
- * @param inputFile - Original input file name
- * @param checksum - Checksum of the encrypted data.
- * @param password - Password used for encryption.
- * @param logger - Logger instance for debugging.
+ * Prepares a distribution map for injection by creating, compressing, and encrypting it.
+ *
+ * @param {IDistributionMapEntry[]} distributionMapEntries - Entries to be included in the distribution map.
+ * @param {string} inputFile - The input file associated with the distribution map.
+ * @param {string} checksum - The checksum to validate the distribution map.
+ * @param {string} password - The password used for encrypting the distribution map.
+ * @param {ILogger} logger - The logger instance used for logging information and debugging.
+ * @returns {Buffer} - The prepared distribution map as encrypted binary data, ready for injection.
  */
 export function prepareDistributionMapForInjection(
     distributionMapEntries: IDistributionMapEntry[],
@@ -69,11 +72,13 @@ function processDistributionMap(
 }
 
 /**
- * Creates a distribution map buffer with a header containing magic bytes and map length.
- * @param entries - Array of distribution map entries.
- * @param originalFilename - Original input file name
- * @param checksum - Checksum string for data integrity.
- * @returns Buffer containing the structured distribution map.
+ * Creates a distribution map from the given entries, original filename, and checksum,
+ * and returns it as a serialized Buffer.
+ *
+ * @param {IDistributionMapEntry[]} entries - The entries to be included in the distribution map.
+ * @param {string} originalFilename - The original filename associated with the distribution.
+ * @param {string} checksum - The checksum for verifying the integrity of the distribution data.
+ * @returns {Buffer} - The serialized distribution map.
  */
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
@@ -85,7 +90,12 @@ export function createDistributionMap(
 }
 
 /**
- * Generates a human-readable distribution map text.
+ * Generates a distribution map text for the given entries.
+ *
+ * @param {IDistributionMapEntry[]} entries - An array of distribution map entries.
+ * @param {string} originalFilename - The name of the original file.
+ * @param {string} checksum - The checksum of the original file.
+ * @return {string} The formatted distribution map text.
  */
 export function generateDistributionMapText(
     entries: IDistributionMapEntry[],

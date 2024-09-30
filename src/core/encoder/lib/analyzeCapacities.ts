@@ -1,16 +1,20 @@
 // src/core/encoder/lib/analyzeCapacities.ts
 
-import { ILogger } from '../../../@types/index.ts';
+import type { ILogger } from '../../../@types/index.ts';
+
 import path from 'node:path';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
 import { getCachedImageTones } from '../../../utils/imageProcessing/imageUtils.ts';
 import { config } from '../../../config/index.ts';
 
 /**
- * Analyzes PNG images for their embedding capacity.
- * @param inputPngFolder - Path to the folder containing PNG images.
- * @param logger - Logger instance for debugging.
- * @returns Array of PNG capacities.
+ * Analyzes the capacities of PNG images in a specified folder to determine their suitability for data embedding.
+ *
+ * @param {string} inputPngFolder - The directory containing PNG images to be analyzed.
+ * @param {ILogger} logger - The logger instance used for logging information and debugging.
+ * @return {Object} - An object containing the analyzed capacities of the PNG files and the distribution carrier:
+ *                    - analyzed: An array of objects representing each PNG file analyzed with its calculated capacity.
+ *                    - distributionCarrier: An object representing the PNG file with the smallest capacity suitable for use as a distribution carrier.
  */
 export function analyzePngCapacities(
     inputPngFolder: string,

@@ -1,11 +1,11 @@
 // src/core/encoder/index.ts
 
+import type { IEncodeOptions } from '../../@types/index.ts';
+
 import path from 'node:path';
 
 import { processImageTones } from '../../utils/imageProcessing/imageUtils.ts';
-import { IEncodeOptions } from '../../@types/index.ts';
 import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
-
 import { readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
@@ -16,10 +16,19 @@ import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
 
 /**
- * Encodes a file into PNG images using steganography.
- * @param options - Encoding options.
+ * Encodes the input file and embeds the data across multiple PNG images using steganography.
+ *
+ * @param {IEncodeOptions} options - The options for the encoding process.
+ * @param {string} options.inputFile - Path to the input file to be encoded.
+ * @param {string} options.inputPngFolder - Directory containing PNG images to use for encoding.
+ * @param {string} options.outputFolder - Directory where the encoded PNG images will be saved.
+ * @param {string} options.password - Password used for encrypting the data.
+ * @param {boolean} options.verbose - Flag to enable verbose logging.
+ * @param {boolean} options.debugVisual - Flag to enable visual debugging information.
+ * @param {object} options.logger - Logger object for logging debug and information messages.
+ * @returns {Promise<void>} A promise that resolves when encoding is complete.
  */
-export async function encode(options: IEncodeOptions) {
+export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verbose, debugVisual, logger } = options;
     try {
         if (verbose) logger.info('Starting encoding process...');

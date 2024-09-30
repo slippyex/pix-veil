@@ -1,6 +1,7 @@
 // src/utils/distributionMap/mapHelpers.ts
 
-import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import type { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+
 import { MAGIC_BYTE } from '../../config/index.ts';
 import { Buffer } from 'node:buffer';
 import {
@@ -11,9 +12,11 @@ import {
 } from '../serialization/serializationHelpers.ts';
 
 /**
- * Serializes the distribution map into a buffer with Magic Byte and Size Field.
- * @param distributionMap - The DistributionMap object to serialize.
- * @returns Buffer containing the serialized distribution map.
+ * Serializes a distribution map into a Buffer.
+ *
+ * @param {IDistributionMap} distributionMap - The distribution map to serialize,
+ *   containing information about entries, checksum, and the original filename.
+ * @returns {Buffer} The serialized Buffer representation of the distribution map.
  */
 export function serializeDistributionMap(distributionMap: IDistributionMap): Buffer {
     const entryBuffers = distributionMap.entries.map(serializeEntry);
@@ -34,10 +37,10 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
 }
 
 /**
- * Deserializes the distribution map buffer into a DistributionMap object.
- * Expects the buffer to start with MAGIC_BYTE followed by SIZE and then CONTENT.
- * @param buffer - Buffer containing the serialized distribution map.
- * @returns Parsed DistributionMap object.
+ * Deserializes a buffer into a distribution map object.
+ *
+ * @param {Buffer} buffer - The buffer containing the serialized distribution map data.
+ * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, and original filename.
  */
 export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     validateMagicBytes(buffer);
@@ -66,9 +69,12 @@ export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
 }
 
 /**
- * Serializes a distribution map entry.
- * @param entry - The entry to serialize.
- * @returns Buffer containing the serialized entry.
+ * Serializes a given distribution map entry into a Buffer.
+ *
+ * @param entry - The entry to be serialized, which contains properties such as
+ *                chunkId, pngFile, startPosition, endPosition, bitsPerChannel,
+ *                and channelSequence.
+ * @returns A Buffer containing the serialized data of the provided entry.
  */
 function serializeEntry(entry: IDistributionMapEntry): Buffer {
     const buffers: Buffer[] = [];
@@ -96,10 +102,11 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
 }
 
 /**
- * Deserializes a distribution map entry.
- * @param buffer - The buffer containing the serialized entry.
- * @param offset - The offset at which the entry begins.
- * @returns The deserialized entry and the new offset.
+ * Deserializes a buffer into an entry object containing various properties.
+ *
+ * @param {Buffer} buffer - The input buffer containing serialized entry data.
+ * @param {number} offset - The initial offset in the buffer from where to start deserialization.
+ * @return {{ entry: IDistributionMapEntry, newOffset: number }} An object containing the deserialized entry and the updated offset.
  */
 function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributionMapEntry; newOffset: number } {
     // Deserialize chunkId
@@ -139,9 +146,10 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
 }
 
 /**
- * Serializes the channel sequence.
- * @param channelSequence - The channel sequence to serialize.
- * @returns Buffer containing the serialized channel sequence.
+ * Serializes a sequence of channel objects into a Buffer, with a compact binary representation.
+ *
+ * @param {ChannelSequence[]} channelSequence - An array of channel objects to be serialized. Each channel's value is extracted using the channelValue function.
+ * @returns {Buffer} - A Buffer containing the serialized binary representation of the channel sequence.
  */
 function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
     const byteLength = Math.ceil(channelSequence.length / 4);
@@ -157,10 +165,11 @@ function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
 }
 
 /**
- * Deserializes the channel sequence.
- * @param buffer - The buffer containing the serialized channel sequence.
- * @param length - The number of channels in the sequence.
- * @returns The deserialized channel sequence.
+ * Deserializes a buffer into an array of ChannelSequence objects.
+ *
+ * @param {Buffer} buffer - The input buffer containing serialized channel sequence data.
+ * @param {number} length - The number of channels to deserialize from the buffer.
+ * @return {ChannelSequence[]} An array of deserialized ChannelSequence objects.
  */
 function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequence[] {
     const channelSequence: ChannelSequence[] = [];
@@ -176,9 +185,11 @@ function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequ
 }
 
 /**
- * Serializes the checksum.
- * @param checksum - The checksum to serialize.
- * @returns Buffer containing the serialized checksum.
+ * Serializes a hexadecimal checksum string into a buffer that includes
+ * a 2-byte length prefix indicating the length of the checksum.
+ *
+ * @param {string} checksum - The hexadecimal checksum string to serialize.
+ * @returns {Buffer} A buffer containing the length-prefixed checksum.
  */
 function serializeChecksum(checksum: string): Buffer {
     const checksumBuffer = Buffer.from(checksum, 'hex');
@@ -188,10 +199,13 @@ function serializeChecksum(checksum: string): Buffer {
 }
 
 /**
- * Deserializes the checksum.
- * @param buffer - The buffer containing the serialized checksum.
- * @param offset - The offset at which the checksum begins.
- * @returns The deserialized checksum and the new offset.
+ * Deserializes a checksum from a given buffer starting at a specified offset.
+ *
+ * @param {Buffer} buffer - The buffer containing the serialized checksum.
+ * @param {number} offset - The position in the buffer to start reading from.
+ * @return {Object} The deserialized checksum as a hex string and the new offset after reading.
+ * @return {string} return.checksum - The deserialized checksum in hex format.
+ * @return {number} return.newOffset - The new offset position after reading the checksum.
  */
 function deserializeChecksum(buffer: Buffer, offset: number): { checksum: string; newOffset: number } {
     const length = buffer.readUInt16BE(offset);
@@ -201,9 +215,14 @@ function deserializeChecksum(buffer: Buffer, offset: number): { checksum: string
 }
 
 /**
- * Serializes a string with its length prefixed as a 2-byte unsigned integer.
- * @param str - The string to serialize.
- * @returns Buffer containing the serialized string.
+ * Serializes a given string into a Buffer object.
+ *
+ * The method converts the string into a Buffer using UTF-8 encoding. It then creates a 2-byte buffer
+ * to store the length of the string. Finally, it concatenates the length buffer with the string
+ * buffer to form the serialized output.
+ *
+ * @param {string} str - The string to be serialized.
+ * @returns {Buffer} The Buffer object representing the serialized string.
  */
 function serializeString(str: string): Buffer {
     const stringBuffer = Buffer.from(str, 'utf-8');
@@ -213,10 +232,14 @@ function serializeString(str: string): Buffer {
 }
 
 /**
- * Deserializes a string prefixed with its length as a 2-byte unsigned integer.
- * @param buffer - The buffer containing the serialized string.
- * @param offset - The offset at which the string begins.
- * @returns The deserialized string and the new offset.
+ * Deserializes a string from the given buffer starting at the specified offset.
+ *
+ * @param {Buffer} buffer - The buffer from which the string will be deserialized.
+ * @param {number} offset - The offset within the buffer at which to start deserialization.
+ * @return {Object} An object containing the deserialized string and the new offset:
+ *                  - {string} value: The deserialized string.
+ *                  - {number} newOffset: The new offset after deserialization.
+ * @throws {RangeError} If the offset and length exceed the buffer's bounds.
  */
 function deserializeString(buffer: Buffer, offset: number): { value: string; newOffset: number } {
     const length = buffer.readUInt16BE(offset);
@@ -233,19 +256,20 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
 }
 
 /**
- * Serializes the original filename.
- * @param filename - The filename to serialize.
- * @returns Buffer containing the serialized filename.
+ * Serializes a filename string into a buffer.
+ *
+ * @param {string} filename - The name of the file to be serialized.
  */
 function serializeFilename(filename: string): Buffer {
     return serializeString(filename);
 }
 
 /**
- * Deserializes the original filename.
- * @param buffer - The buffer containing the serialized filename.
- * @param offset - The offset at which the filename begins.
- * @returns The deserialized filename.
+ * Deserializes a filename from a buffer starting at the given offset.
+ *
+ * @param {Buffer} buffer - The buffer from which to deserialize the filename.
+ * @param {number} offset - The offset in the buffer to start deserializing from.
+ * @return {string} The deserialized filename.
  */
 function deserializeFilename(buffer: Buffer, offset: number): string {
     const { value } = deserializeString(buffer, offset);
@@ -253,9 +277,13 @@ function deserializeFilename(buffer: Buffer, offset: number): string {
 }
 
 /**
- * Converts a channel character to its corresponding value.
- * @param channel - The channel character.
- * @returns The channel value.
+ * Returns the numerical value associated with the specified channel.
+ *
+ * @param {ChannelSequence} channel - The channel for which the numerical value is needed.
+ * Possible values are 'R', 'G', 'B'.
+ *
+ * @return {number} The numerical value corresponding to the specified channel.
+ * @throws Will throw an error if the channel value is invalid.
  */
 function channelValue(channel: ChannelSequence): number {
     switch (channel) {
@@ -271,9 +299,11 @@ function channelValue(channel: ChannelSequence): number {
 }
 
 /**
- * Converts a channel value to its corresponding character.
- * @param value - The channel value.
- * @returns The channel character.
+ * Determines the channel sequence based on the provided numerical value.
+ *
+ * @param {number} value - The numerical value representing a color channel (0 for 'R', 1 for 'G', 2 for 'B').
+ * @return {ChannelSequence} The channel sequence corresponding to the provided value.
+ * @throws {Error} If the provided value does not correspond to a valid channel sequence.
  */
 function channelFromValue(value: number): ChannelSequence {
     switch (value) {
@@ -289,9 +319,10 @@ function channelFromValue(value: number): ChannelSequence {
 }
 
 /**
- * Validates the magic bytes at the start of the buffer.
- * @param buffer - The buffer to validate.
- * @throws If the magic bytes are not found.
+ * Validates the presence of specified magic bytes at the beginning of a buffer.
+ *
+ * @param {Buffer} buffer - The buffer in which to validate the magic bytes.
+ * @return {void} - Throws an error if the magic bytes are not found.
  */
 function validateMagicBytes(buffer: Buffer): void {
     if (!buffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {

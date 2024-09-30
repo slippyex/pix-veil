@@ -1,8 +1,9 @@
 // src/core/decoder/index.ts
 
+import type { IDecodeOptions } from '../../@types/index.ts';
+
 import * as path from 'jsr:@std/path';
 
-import { IDecodeOptions } from '../../@types/index.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
@@ -10,19 +11,16 @@ import { assembleChunks, extractChunks } from './lib/extraction.ts';
 import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
 
 /**
- * Decodes and processes encrypted data from a specified input folder, decrypts it, decompresses it,
- * and writes the resulting data to an output folder.
+ * Decodes encrypted data from the input folder, decrypts it using the provided password, and writes the
+ * decompressed output to the output folder.
  *
- * @param options - An object containing required options for the decode process.
- * @param options.inputFolder - The folder containing the input data to be decoded.
- * @param options.outputFolder - The folder where the decoded output will be saved.
- * @param options.password - The password used for decrypting the data.
- * @param options.verbose - A flag indicating whether to log detailed information during the decode process.
- * @param options.logger - Logger instance for logging information and errors.
- * @param options.logger.info - Function to log informational messages.
- * @param options.logger.error - Function to log error messages.
- *
- * @return {Promise<void>} A promise that resolves when the decoding process has completed successfully.
+ * @param {Object} options - The options for the decode function.
+ * @param {string} options.inputFolder - The folder containing the encrypted data.
+ * @param {string} options.outputFolder - The folder where the decrypted and decompressed data will be saved.
+ * @param {string} options.password - The password used for decrypting the data.
+ * @param {boolean} options.verbose - Indicates if verbose logging should be enabled.
+ * @param {Object} options.logger - The logger object for logging messages.
+ * @return {Promise<void>} A promise that resolves when the decoding process is complete.
  */
 export async function decode(options: IDecodeOptions): Promise<void> {
     const { inputFolder, outputFolder, password, verbose, logger } = options;

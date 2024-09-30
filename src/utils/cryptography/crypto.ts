@@ -1,17 +1,21 @@
 // src/utils/cryptography/crypto.ts
 
+import type { ILogger } from '../../@types/index.ts';
+import type { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
+
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
-import { ILogger } from '../../@types/index.ts';
-import { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
 
 /**
- * Encrypts the compressed data, generates checksum, and stores encrypted data.
- * @param compressedData - Compressed data buffer.
- * @param password - Password for encryption.
- * @param logger - Logger instance for debugging.
- * @returns Object containing encrypted data and its checksum.
+ * Encrypts the provided compressed data using the specified password and encryption strategy.
+ * Utilizes AES-256-CBC encryption to ensure data security. Additionally, it generates and logs
+ * a checksum for data integrity verification.
+ *
+ * @param {Buffer} compressedData - The data to be encrypted in binary format.
+ * @param {string} password - The password to use for the encryption process.
+ * @param {ILogger} logger - The logger instance to log information during the encryption process.
+ * @returns {Buffer} - The encrypted data in binary format.
  */
 export function encryptData(compressedData: Buffer, password: string, logger: ILogger): Buffer {
     const encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy();
@@ -22,6 +26,15 @@ export function encryptData(compressedData: Buffer, password: string, logger: IL
     return encryptedData;
 }
 
+/**
+ * Decrypts the given encrypted data using the provided password.
+ * Utilizes the AES-256-CBC encryption strategy for decryption.
+ *
+ * @param {Buffer} encryptedBuffer - The buffer containing the encrypted data to be decrypted.
+ * @param {string} password - The password to use for decrypting the data.
+ * @param {ILogger} logger - Logger instance for logging information during the decryption process.
+ * @returns {Buffer} - The decrypted data as a Buffer.
+ */
 export function decryptData(encryptedBuffer: Buffer, password: string, logger: ILogger): Buffer {
     const encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy();
     if (logger.verbose) logger.info('Encrypting the compressed data...');
@@ -41,17 +54,23 @@ export function verifyDataIntegrity(encryptedData: Buffer, checksum: string, log
 }
 
 /**
- * Generate SHA-256 checksum of the buffer.
+ * Generates an SHA-256 checksum for the given buffer.
+ *
+ * @param {Buffer} buffer - The buffer for which to generate the checksum.
+ * @return {string} The generated SHA-256 checksum encoded as a hexadecimal string.
  */
 export function generateChecksum(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 /**
- * Verify if the checksum matches.
+ * Verifies whether the provided checksum matches the checksum computed from the given buffer.
+ *
+ * @param {Buffer} buffer - The buffer containing the data to compute the checksum from.
+ * @param {string} checksum - The precomputed checksum to verify against.
+ * @return {boolean} - Returns true if the computed checksum matches the provided checksum, otherwise false.
  */
 function verifyChecksum(buffer: Buffer, checksum: string): boolean {
     const computedChecksum = generateChecksum(buffer);
-    console.log(computedChecksum);
     return computedChecksum === checksum;
 }

@@ -4,8 +4,11 @@ import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 
 /**
- * Ensures that the output directory exists; if not, creates it.
- * @param outputFolder - Path to the output directory.
+ * Ensures that the specified output directory exists. If the directory
+ * does not exist, it creates the directory and any necessary subdirectories.
+ *
+ * @param {string} outputFolder - The path of the output directory to ensure.
+ * @return {void}
  */
 export function ensureOutputDirectory(outputFolder: string): void {
     if (!fs.existsSync(outputFolder)) {
@@ -14,18 +17,22 @@ export function ensureOutputDirectory(outputFolder: string): void {
 }
 
 /**
- * Writes a buffer to a specified file path.
- * @param filePath - The path to the file.
- * @param data - The data buffer to write.
+ * Writes a buffer to a file at the specified path.
+ *
+ * @param {string} filePath - The path of the file where the data will be written.
+ * @param {Buffer} data - The buffer containing data to write to the file.
+ *
+ * @return {void}
  */
 export function writeBufferToFile(filePath: string, data: Buffer): void {
     fs.writeFileSync(filePath, data);
 }
 
 /**
- * Reads a buffer from a specified file path.
- * @param filePath - The path to the file.
- * @returns The data buffer read from the file.
+ * Reads the entire contents of a file into a buffer.
+ *
+ * @param {string} filePath - The file path of the file to be read.
+ * @returns {Buffer} - The contents of the file as a buffer.
  */
 export function readBufferFromFile(filePath: string): Buffer {
     return fs.readFileSync(filePath);
@@ -34,19 +41,19 @@ export function readBufferFromFile(filePath: string): Buffer {
 /**
  * Reads the contents of a directory synchronously.
  *
- * @param filePath - The path to the directory to read.
- * @return An array of strings representing the files and directories within the specified directory.
+ * @param {string} filePath - The path of the directory to read.
+ * @return {string[]} - An array of filenames in the directory.
  */
 export function readDirectory(filePath: string): string[] {
     return fs.readdirSync(filePath);
 }
 
 /**
- * Checks if the specified file path exists in the file system.
+ * Checks if a file or directory exists at the given file path.
  *
- * @param filePath - The path of the file to check.
- * @return {boolean} True if the file path exists, false otherwise.
+ * @param {string} filePath - The path to the file or directory.
+ * @return {boolean} Returns true if the file or directory exists, otherwise false.
  */
-export function filePathExists(filePath: string) {
+export function filePathExists(filePath: string): boolean {
     return fs.existsSync(filePath);
 }
