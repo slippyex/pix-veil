@@ -10,7 +10,7 @@ import process from 'node:process';
 const program = new Command();
 
 program
-    .name('steganography-cli')
+    .name('pix-veil')
     .description('A CLI tool for steganography in PNG images')
     .version('1.3.0')
     .option('-v, --verbose', 'Enable verbose logging')
