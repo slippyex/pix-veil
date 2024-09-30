@@ -29,7 +29,7 @@ export async function decode(options: IDecodeOptions): Promise<void> {
     try {
         if (verbose) logger.info('Starting decoding process...');
 
-        const distributionMap = readAndProcessDistributionMap(inputFolder, password, logger);
+        const distributionMap = await readAndProcessDistributionMap(inputFolder, password, logger);
         const encryptedDataChunks = await extractChunks(distributionMap, inputFolder, logger);
         const encryptedData = assembleChunks(encryptedDataChunks, logger);
         if (logger.verbose) logger.info('Verifying and decrypting data...');

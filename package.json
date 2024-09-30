@@ -1,12 +1,16 @@
 {
-  "name": "@perengo/stego-cli",
+  "name": "@perengo/pix-veil",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/cli/index.ts",
   "scripts": {
-    "test-jest": "jest",
-    "test": "deno test --allow-read --allow-ffi --allow-write",
-    "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/cli/index.ts encode",
-    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write src/cli/index.ts decode",
+    "test": "deno test --allow-read --allow-ffi --allow-write --allow-sys",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "compile:linux": "deno compile --output ./bin/pix-veil --target x86_64-unknown-linux-gnu --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
+    "compile:win": "deno compile --output ./bin/pix-veil.exe --target x86_64-pc-windows-msvc --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
+    "compile:mac": "deno compile --output ./bin/pix-veil.app --target x86_64-apple-darwin --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts",
+    "start:encode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts encode",
+    "start:decode": "deno run --allow-env --allow-read --allow-ffi --allow-write --allow-sys src/cli/index.ts decode",
     "format": "prettier --write '{src,tests}/**/*.ts'"
   },
   "keywords": [],
@@ -22,18 +26,12 @@
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "@types/crypto-js": "^4.2.2",
-    "@types/jest": "^29.5.13",
     "@types/lodash": "^4.17.9",
     "@types/node": "^22.5.5",
     "@types/p-limit": "^2.2.0",
     "@types/seedrandom": "^3.0.8",
-    "jest": "^29.7.0",
     "prettier": "^3.3.3",
-    "seedrandom": "^3.0.5",
-    "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.2"
+    "seedrandom": "^3.0.5"
   },
   "prettier": {
     "parser": "typescript",

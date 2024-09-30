@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { processImageTones } from '../../utils/imageProcessing/imageUtils.ts';
 import { IEncodeOptions } from '../../@types/index.ts';
-import { createAndStoreDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
+import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
 
 import { readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
@@ -58,12 +58,11 @@ export async function encode(options: IEncodeOptions) {
         await injectChunksIntoPngs(distributionMapEntries, chunkMap, inputPngFolder, outputFolder, debugVisual, logger);
 
         // Step 8: Create and store the distribution map
-        const encryptedMapContent = createAndStoreDistributionMap(
+        const encryptedMapContent = prepareDistributionMapForInjection(
             distributionMapEntries,
             originalFilename,
             checksum,
             password,
-            outputFolder,
             logger
         );
 

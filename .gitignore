@@ -1,6 +1,7 @@
 .idea
 .vscode
 .build
+.bin
 coverage
 node_modules
 input-file

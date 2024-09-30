@@ -2,10 +2,11 @@
 
 import { Buffer } from 'node:buffer';
 import { IDistributionMap, ILogger } from '../../../@types/index.ts';
-import { filePathExists } from '../../../utils/storage/storageUtils.ts';
+import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
 import { extractDataFromBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
+import { MAGIC_BYTE } from '../../../config/index.ts';
 
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 
@@ -108,4 +109,55 @@ function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[])
             );
         }
     });
+}
+
+/**
+ * Scans a directory for PNG files that contain a distribution map.
+ *
+ * @param {string} inputFolder - The path to the folder containing PNG files to be scanned.
+ * @param {ILogger} logger - A logger instance for logging debug information.
+ * @return {Promise<Buffer | null>} A promise that resolves to a Buffer containing the distribution map if found,
+ *                                   or null if no distribution map is found.
+ */
+export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
+    const carrierPngs = readDirectory(inputFolder).filter(i => i.endsWith('.png'));
+    for (const png of carrierPngs) {
+        const pngPath = path.join(inputFolder, png);
+
+        logger.debug(`Scanning for distributionMap in file "${png}".`);
+
+        const { data: imageData, info } = (await getImage(pngPath)) as { data: Buffer; info: sharp.OutputInfo };
+
+        // Extract data
+        const chunkBuffer = extractDataFromBuffer(png, imageData, 2, ['R', 'G', 'B'], 0, 32768, logger, info.channels);
+        const content = scanBufferForMagicByte(chunkBuffer);
+        if (content) {
+            return content;
+        }
+    }
+    return null;
+}
+
+/**
+ * Scans the given Buffer for occurrences of a predefined MAGIC_BYTE sequence.
+ * If two MAGIC_BYTE sequences are found, the method returns a Buffer containing the content between them.
+ *
+ * @param {Buffer} chunkBuffer The Buffer to be scanned for MAGIC_BYTE sequences.
+ * @return {Buffer | null} The content between two MAGIC_BYTE sequences if found, otherwise null.
+ */
+function scanBufferForMagicByte(chunkBuffer: Buffer): Buffer | null {
+    const startPos = chunkBuffer.indexOf(MAGIC_BYTE);
+    if (startPos === -1) {
+        // MAGIC_BYTE not found, return null or handle accordingly
+        return null;
+    }
+
+    const endPos = chunkBuffer.indexOf(MAGIC_BYTE, startPos + MAGIC_BYTE.length);
+    if (endPos === -1) {
+        // Second MAGIC_BYTE not found, return null or handle accordingly
+        return null;
+    }
+
+    // Extracting the content between the MAGIC_BYTE occurrences
+    return chunkBuffer.subarray(startPos + MAGIC_BYTE.length, endPos);
 }

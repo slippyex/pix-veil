@@ -5,7 +5,7 @@ import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 import sharp from 'sharp';
 import { injectDataIntoBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
-import { config } from '../../../config/index.ts';
+import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
 
@@ -152,7 +152,7 @@ export async function injectDistributionMapIntoCarrierPng(
             (imageData, { width, height, channels }, logger) => {
                 injectDataIntoBuffer(
                     imageData,
-                    encryptedMapContent,
+                    Buffer.concat([MAGIC_BYTE, encryptedMapContent, MAGIC_BYTE]),
                     2, // bitsPerChannel
                     ['R', 'G', 'B'], // channelSequence
                     0, // startPosition
