@@ -166,7 +166,6 @@ export async function injectDistributionMapIntoCarrierPng(
     try {
         const inputPngPath = path.resolve(inputPngFolder, distributionCarrier.file);
         const outputPngPath = path.resolve(outputFolder, distributionCarrier.file);
-        console.log(`encrypted map length: ${encryptedMapContent.length}`);
         await processImage(
             inputPngPath,
             outputPngPath,
