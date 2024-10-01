@@ -8,7 +8,6 @@ import path from 'node:path';
 import { config } from '../../../config/index.ts';
 import { getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
-import { resetBitmask } from '../../../utils/bitManipulation/bitMaskUtils.ts';
 
 /**
  * Distributes given data chunks across PNG files based on their capacities.
@@ -29,120 +28,157 @@ export function distributeChunksAcrossPngs(
     inputPngFolder: string,
     logger: ILogger,
 ): { distributionMapEntries: IDistributionMapEntry[]; chunkMap: Map<number, Buffer> } {
-    if (logger.verbose) logger.info('Distributing chunks across PNG images...');
+    if (logger.verbose) logger.info('Distributing chunks across PNG images with even distribution and capacity verification...');
 
+    const totalRequiredCapacity = chunks.reduce((acc, chunk) => acc + chunk.data.length, 0);
+    const totalAvailableCapacity = pngCapacities.reduce((acc, png) => acc + png.capacity, 0);
+
+    logger.debug(`Total required capacity: ${totalRequiredCapacity} bytes.`);
+    logger.debug(`Total available capacity: ${totalAvailableCapacity} bytes.`);
+
+    if (totalRequiredCapacity > totalAvailableCapacity) {
+        throw new Error(
+            `Insufficient total capacity: Required ${totalRequiredCapacity} bytes, but only ${totalAvailableCapacity} bytes are available across ${pngCapacities.length} PNGs.`,
+        );
+    }
+
+    // Calculate the proportion of capacity for each PNG
+    const capacityProportions = pngCapacities.map(png => ({
+        file: png.file,
+        capacity: png.capacity,
+        proportion: png.capacity / totalAvailableCapacity,
+    }));
+
+    // Determine the number of chunks each PNG should handle based on capacity proportion
+    const chunksPerPng = capacityProportions.map(png => Math.floor(png.proportion * chunks.length));
+
+    // Adjust chunksPerPng to ensure all chunks are allocated
+    const allocatedChunks = chunksPerPng.reduce((acc, num) => acc + num, 0);
+    const remainingChunks = chunks.length - allocatedChunks;
+
+    // Distribute remaining chunks one by one to PNGs with the highest remaining capacity proportion
+    if (remainingChunks > 0) {
+        const sortedPngs = capacityProportions
+            .map((png, index) => ({ ...png, index }))
+            .sort((a, b) => b.proportion - a.proportion);
+
+        for (let i = 0; i < remainingChunks; i++) {
+            chunksPerPng[sortedPngs[i % sortedPngs.length].index] += 1;
+        }
+    }
+
+    // Create a queue of PNGs with their allocated chunk counts
+    const pngQueue = pngCapacities.map((png, index) => ({
+        file: png.file,
+        capacity: png.capacity,
+        allocatedChunks: chunksPerPng[index],
+    }));
+
+    // Initialize tracking structures
     const distributionMapEntries: IDistributionMapEntry[] = [];
+    const chunkMap = new Map<number, Buffer>();
     const usedPngs: Record<string, IUsedPng> = {};
 
-    // Initialize usedPngs with usedCapacity, chunkCount, and chunks array
-    for (const png of pngCapacities) {
+    for (const png of pngQueue) {
         usedPngs[png.file] = { usedCapacity: 0, chunkCount: 0, chunks: [] };
     }
 
-    // Initialize usedPositions to track channel usage per PNG using Uint8Array
-    const usedPositions: Record<string, Uint8Array> = {};
-    for (const png of pngCapacities) {
-        const pngPath = path.join(inputPngFolder, png.file);
-        const capacity = getCachedImageTones(pngPath, logger);
-        const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // R, G, B
-        const byteLength = Math.ceil(totalChannels / 8);
-        usedPositions[png.file] = new Uint8Array(byteLength);
-    }
+    // Initialize a bitmask for each PNG to track used channels
+    const usedBitmasks: Record<string, Uint8Array> = {};
+    pngCapacities.forEach(png => {
+        const imageTones = getCachedImageTones(path.join(inputPngFolder, png.file), logger);
+        const imageCapacity = imageTones.low + imageTones.mid + imageTones.high;
+        usedBitmasks[png.file] = new Uint8Array(Math.ceil(imageCapacity / 8));
+    });
 
-    // Shuffle the chunks to randomize distribution
+    // Shuffle chunks to randomize injection within allocated PNGs
     const shuffledChunks = _.shuffle(chunks);
-    // Shuffle the PNGs to ensure random assignment
-    const shuffledPngCapacities = _.shuffle(pngCapacities);
 
-    // Create a Map to store chunkId to chunk data
-    const chunkMap = new Map<number, Buffer>();
+    // Assign chunks to PNGs based on allocatedChunks
+    for (const png of pngQueue) {
+        const allocated = png.allocatedChunks;
+        for (let i = 0; i < allocated; i++) {
+            const chunk = shuffledChunks.pop();
+            if (!chunk) break; // Safeguard, though total capacity is verified
 
-    // Assign chunks in a round-robin fashion to ensure balanced distribution
-    let pngIndex = 0;
-    while (shuffledChunks.length > 0) {
-        const png = shuffledPngCapacities[pngIndex % shuffledPngCapacities.length];
-        pngIndex++;
+            if (usedPngs[png.file].usedCapacity + chunk.data.length > png.capacity) {
+                throw new Error(
+                    `PNG file "${png.file}" does not have enough capacity for chunk ID ${chunk.id}. Required: ${chunk.data.length} bytes, Available: ${png.capacity - usedPngs[png.file].usedCapacity} bytes.`,
+                );
+            }
 
-        // Check if PNG can receive more chunks
-        if (usedPngs[png.file].chunkCount >= config.chunksDefinition.maxChunksPerPng) {
-            resetBitmask(usedPositions[png.file]);
-            delete usedPositions[png.file];
-            logger.debug(`Cleared usedPositions for "${png.file}" after reaching max chunks.`);
+            // Calculate channels needed based on bitsPerChannel
+            const bitsPerChannel = config.bitsPerChannelForDistributionMap;
+            // Removed the unused 'channelsNeeded' variable
 
-            continue; // Skip this PNG as it reached the maximum chunk limit
-        }
+            // Find a suitable position in the PNG
+            const imageCapacity = getCachedImageTones(path.join(inputPngFolder, png.file), logger).low +
+                getCachedImageTones(path.join(inputPngFolder, png.file), logger).mid +
+                getCachedImageTones(path.join(inputPngFolder, png.file), logger).high;
 
-        // Check if PNG has enough capacity for the next chunk
-        const nextChunk = shuffledChunks[0];
-        if (usedPngs[png.file].usedCapacity + nextChunk.data.length > png.capacity) {
-            // Not enough capacity, skip to the next PNG
-            continue;
-        }
+            let randomPosition;
+            try {
+                randomPosition = getRandomPosition(
+                    imageCapacity,
+                    chunk.data.length,
+                    bitsPerChannel,
+                    usedBitmasks[png.file], // Pass the bitmask
+                );
+            } catch (error) {
+                throw new Error(
+                    `Unable to find a non-overlapping position for chunk ID ${chunk.id} in PNG "${png.file}". Error: ${(error as Error).message}`,
+                );
+            }
 
-        // Calculate channels needed for this chunk
-        const bitsPerChannel = config.bitsPerChannelForDistributionMap;
-        const channelSequence = _.shuffle(['R', 'G', 'B']) as ChannelSequence[];
+            const { start, end } = randomPosition;
 
-        // Find a non-overlapping position
-        let randomPosition;
-        const cachedImageTones = getCachedImageTones(path.join(inputPngFolder, png.file), logger);
-        try {
-            randomPosition = getRandomPosition(
-                cachedImageTones.low + cachedImageTones.mid + cachedImageTones.high,
-                nextChunk.data.length,
-                bitsPerChannel,
-                usedPositions[png.file],
-            );
-        } catch (_error) {
-            logger.warn(
-                `Unable to find non-overlapping position for chunk ${nextChunk.id} in "${png.file}". Skipping this PNG.`,
-            );
-            continue; // Skip this PNG for this chunk
-        }
+            // Assign the chunk
+            distributionMapEntries.push({
+                chunkId: chunk.id,
+                pngFile: png.file,
+                startPosition: start,
+                endPosition: end,
+                bitsPerChannel: bitsPerChannel,
+                channelSequence: _.shuffle(['R', 'G', 'B']) as ChannelSequence[],
+            });
 
-        const { start, end } = randomPosition;
+            // Update tracking
+            usedPngs[png.file].usedCapacity += chunk.data.length;
+            usedPngs[png.file].chunkCount += 1;
+            usedPngs[png.file].chunks.push(chunk);
 
-        // Assign the chunk to this PNG
-        const chunk = shuffledChunks.shift()!;
-        usedPngs[png.file].usedCapacity += chunk.data.length;
-        usedPngs[png.file].chunkCount += 1;
-        usedPngs[png.file].chunks.push(chunk);
+            // Add to chunkMap
+            chunkMap.set(chunk.id, chunk.data);
 
-        // Add to chunkMap
-        chunkMap.set(chunk.id, chunk.data);
-
-        // Create distribution map entry
-        distributionMapEntries.push({
-            chunkId: chunk.id,
-            pngFile: png.file,
-            startPosition: start, // Now in channels
-            endPosition: end, // Now in channels
-            bitsPerChannel: bitsPerChannel,
-            channelSequence,
-        });
-
-        if (logger.verbose) {
-            logger.info(
-                `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`,
+            logger.debug(
+                `Assigned chunk ${chunk.id} (${chunk.data.length} bytes) to "${png.file}" at channels ${start}-${end}.`,
             );
         }
     }
 
-    // After distribution, check if all chunks have been assigned
+    // Final verification to ensure all chunks are assigned
     if (shuffledChunks.length > 0) {
-        throw new Error('Not enough capacity to embed all chunks within the PNG images.');
+        throw new Error(
+            `Not all chunks could be assigned. Remaining chunks count: ${shuffledChunks.length}. This should not happen as total capacity was verified.`,
+        );
     }
 
-    if (logger.verbose) logger.info('Chunks distributed successfully.');
+    logger.info('Chunks distributed successfully across PNG images.');
 
-    // **Clear remaining usedPositions as they are no longer needed**
-    for (const png of pngCapacities) {
-        if (usedPositions[png.file]) {
-            resetBitmask(usedPositions[png.file]);
-            delete usedPositions[png.file];
-            logger.debug(`Cleared usedPositions for "${png.file}" after distribution.`);
-        }
-    }
+    // Logging Distribution Summary
+    const distributionSummary = pngQueue.map(png => ({
+        pngFile: png.file,
+        allocatedChunks: png.allocatedChunks,
+        usedCapacity: usedPngs[png.file].usedCapacity,
+        remainingCapacity: png.capacity - usedPngs[png.file].usedCapacity,
+    }));
+
+    logger.info('Distribution Summary:');
+    distributionSummary.forEach(summary => {
+        logger.info(
+            `PNG "${summary.pngFile}": Allocated Chunks = ${summary.allocatedChunks}, Used Capacity = ${summary.usedCapacity} bytes, Remaining Capacity = ${summary.remainingCapacity} bytes.`,
+        );
+    });
 
     return { distributionMapEntries, chunkMap };
 }

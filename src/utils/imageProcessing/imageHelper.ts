@@ -66,10 +66,10 @@ export function getNonOverlappingPosition(
 /**
  * Generates a random position within the provided image capacity that does not overlap with already used positions.
  *
- * @param {number} imageCapacity - The total capacity of the image in terms of available positions.
+ * @param {number} imageCapacity - The total capacity of the image in terms of available channels.
  * @param {number} chunkSize - The size of the chunk to hide within the image.
  * @param {number} bitsPerChannel - The number of bits used per channel in the image.
- * @param {Uint8Array} used - A Uint8Array indicating which channels have already been used.
+ * @param {Uint8Array} used - A bitmask indicating which channels are already used.
  * @return {{ start: number, end: number }} An object containing the start and end positions for the chunk within the image.
  * @throws {Error} If unable to find a non-overlapping position for the chunk.
  */
