@@ -8,6 +8,7 @@ import path from 'node:path';
 import { config } from '../../../config/index.ts';
 import { getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
+import {resetBitmask} from "../../../utils/bitManipulation/bitMaskUtils.ts";
 
 /**
  * Distributes given data chunks across PNG files based on their capacities.
@@ -38,13 +39,14 @@ export function distributeChunksAcrossPngs(
         usedPngs[png.file] = { usedCapacity: 0, chunkCount: 0, chunks: [] };
     }
 
-    // Initialize usedPositions to track channel usage per PNG
-    const usedPositions: Record<string, boolean[]> = {};
+    // Initialize usedPositions to track channel usage per PNG using Uint8Array
+    const usedPositions: Record<string, Uint8Array> = {};
     for (const png of pngCapacities) {
         const pngPath = path.join(inputPngFolder, png.file);
         const capacity = getCachedImageTones(pngPath, logger);
         const totalChannels = (capacity.low + capacity.mid + capacity.high) * 3; // R, G, B
-        usedPositions[png.file] = new Array(totalChannels).fill(false);
+        const byteLength = Math.ceil(totalChannels / 8);
+        usedPositions[png.file] = new Uint8Array(byteLength);
     }
 
     // Shuffle the chunks to randomize distribution
@@ -120,6 +122,18 @@ export function distributeChunksAcrossPngs(
                 `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`,
             );
         }
+
+        // **Clear usedPositions for this PNG after assigning the chunk**
+        // If you have logic to process PNGs one by one, you can clear here.
+        // However, in this loop, multiple chunks can be assigned to the same PNG,
+        // so clearing should be done after all chunks for a PNG are assigned.
+
+        // Example: If maximum chunks per PNG is reached, clear the bitmask
+        if (usedPngs[png.file].chunkCount >= config.chunksDefinition.maxChunksPerPng) {
+            resetBitmask(usedPositions[png.file]);
+            delete usedPositions[png.file];
+            logger.debug(`Cleared usedPositions for "${png.file}" after reaching max chunks.`);
+        }
     }
 
     // After distribution, check if all chunks have been assigned
@@ -128,5 +142,15 @@ export function distributeChunksAcrossPngs(
     }
 
     if (logger.verbose) logger.info('Chunks distributed successfully.');
+
+    // **Clear remaining usedPositions as they are no longer needed**
+    for (const png of pngCapacities) {
+        if (usedPositions[png.file]) {
+            resetBitmask(usedPositions[png.file]);
+            delete usedPositions[png.file];
+            logger.debug(`Cleared usedPositions for "${png.file}" after distribution.`);
+        }
+    }
+
     return { distributionMapEntries, chunkMap };
 }

@@ -1,6 +1,7 @@
 // src/utils/imageProcessing/imageHelper.ts
 
 import type { ChannelSequence } from '../../@types/index.ts';
+import {isBitSet, setBit} from "../bitManipulation/bitMaskUtils.ts";
 
 /**
  * Calculates the x and y coordinates of a pixel in an image based on
@@ -30,13 +31,13 @@ export function getPixelIndex(
 /**
  * Finds and marks a non-overlapping position of consecutive channels.
  *
- * @param {boolean[]} used - Array indicating which channels are already in use.
+ * @param {Uint8Array} used - Uint8Array indicating which channels are already used.
  * @param {number} totalChannels - Total number of available channels.
  * @param {number} channelsNeeded - Number of consecutive channels required.
- * @return {{start: number, end: number} | null} - The start and end indices of the non-overlapping position or null if no such position is found.
+ * @return {{ start: number, end: number } | null} - The start and end indices of the non-overlapping position or null if no such position is found.
  */
 export function getNonOverlappingPosition(
-    used: boolean[],
+    used: Uint8Array,
     totalChannels: number,
     channelsNeeded: number,
 ): { start: number; end: number } | null {
@@ -44,10 +45,18 @@ export function getNonOverlappingPosition(
     const attempts = 100; // Prevent infinite loops
     for (let i = 0; i < attempts; i++) {
         const start = Math.floor(Math.random() * maxStart);
-        const overlap = used.slice(start, start + channelsNeeded).some((channel) => channel);
+        let overlap = false;
+        for (let j = 0; j < channelsNeeded; j++) {
+            if (isBitSet(used, start + j)) {
+                overlap = true;
+                break;
+            }
+        }
         if (!overlap) {
             // Mark positions as used
-            used.fill(true, start, start + channelsNeeded);
+            for (let j = 0; j < channelsNeeded; j++) {
+                setBit(used, start + j);
+            }
             return { start, end: start + channelsNeeded };
         }
     }
@@ -60,7 +69,7 @@ export function getNonOverlappingPosition(
  * @param {number} imageCapacity - The total capacity of the image in terms of available positions.
  * @param {number} chunkSize - The size of the chunk to hide within the image.
  * @param {number} bitsPerChannel - The number of bits used per channel in the image.
- * @param {boolean[]} used - An array indicating which positions have already been used.
+ * @param {Uint8Array} used - A Uint8Array indicating which channels have already been used.
  * @return {{ start: number, end: number }} An object containing the start and end positions for the chunk within the image.
  * @throws {Error} If unable to find a non-overlapping position for the chunk.
  */
@@ -68,7 +77,7 @@ export function getRandomPosition(
     imageCapacity: number,
     chunkSize: number,
     bitsPerChannel: number,
-    used: boolean[],
+    used: Uint8Array,
 ): { start: number; end: number } {
     const channelsNeeded = Math.ceil((chunkSize * 8) / bitsPerChannel);
     const position = getNonOverlappingPosition(used, imageCapacity, channelsNeeded);

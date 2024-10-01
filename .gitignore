@@ -9,5 +9,6 @@ input-file
 input-pngs
 output-file
 output-pngs
+.test_input
 tests/test_input
 tests/test_output

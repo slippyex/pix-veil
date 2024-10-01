@@ -8,6 +8,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { extractDataFromBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';
+import { deserializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 
@@ -127,36 +128,51 @@ export async function scanForDistributionMap(inputFolder: string, logger: ILogge
 
         const { data: imageData, info } = (await getImage(pngPath)) as { data: Buffer; info: sharp.OutputInfo };
 
-        // Extract data
-        const chunkBuffer = extractDataFromBuffer(png, imageData, 2, ['R', 'G', 'B'], 0, 32768, logger, info.channels);
-        const content = scanBufferForMagicByte(chunkBuffer);
-        if (content) {
-            return content;
+        // Step 1: Extract [MAGIC_BYTE][SIZE]
+        const magicSizeBits = (MAGIC_BYTE.length + 4) * 8; // MAGIC_BYTE + SIZE (4 bytes)
+        const magicSizeBuffer = extractDataFromBuffer(
+            png,
+            imageData,
+            2,
+            ['R', 'G', 'B'],
+            0,
+            magicSizeBits,
+            logger,
+            info.channels,
+        );
+
+        // Validate MAGIC_BYTE
+        if (!magicSizeBuffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {
+            logger.debug(`MAGIC_BYTE not found at the beginning of "${png}".`);
+            continue;
+        }
+
+        // Extract SIZE
+        const sizeBuffer = magicSizeBuffer.subarray(MAGIC_BYTE.length, MAGIC_BYTE.length + 4);
+        const shiftExtraction = MAGIC_BYTE.length + sizeBuffer.length;
+        const size = sizeBuffer.readUInt32BE(0);
+        logger.debug(`Found distributionMap size: ${size} bytes in "${png}".`);
+
+        // Step 2: Extract [DISTRIBUTION_MAP] based on SIZE
+        const distributionMapBits = size * 8;
+        const distributionMapBuffer = extractDataFromBuffer(
+            png,
+            imageData,
+            2,
+            ['R', 'G', 'B'],
+            0,
+            distributionMapBits + magicSizeBits,
+            logger,
+            info.channels,
+        );
+
+        const extractedDistributionMapBuffer = distributionMapBuffer.subarray(shiftExtraction, size + shiftExtraction);
+        if (extractedDistributionMapBuffer.length === size) {
+            logger.info(`Distribution map successfully extracted from "${png}".`);
+            return extractedDistributionMapBuffer;
+        } else {
+            logger.warn(`Incomplete distribution map extracted from "${png}". Expected ${size} bytes, got ${extractedDistributionMapBuffer.length} bytes.`);
         }
     }
     return null;
-}
-
-/**
- * Scans the given Buffer for occurrences of a predefined MAGIC_BYTE sequence.
- * If two MAGIC_BYTE sequences are found, the method returns a Buffer containing the content between them.
- *
- * @param {Buffer} chunkBuffer The Buffer to be scanned for MAGIC_BYTE sequences.
- * @return {Buffer | null} The content between two MAGIC_BYTE sequences if found, otherwise null.
- */
-function scanBufferForMagicByte(chunkBuffer: Buffer): Buffer | null {
-    const startPos = chunkBuffer.indexOf(MAGIC_BYTE);
-    if (startPos === -1) {
-        // MAGIC_BYTE not found, return null or handle accordingly
-        return null;
-    }
-
-    const endPos = chunkBuffer.indexOf(MAGIC_BYTE, startPos + MAGIC_BYTE.length);
-    if (endPos === -1) {
-        // Second MAGIC_BYTE not found, return null or handle accordingly
-        return null;
-    }
-
-    // Extracting the content between the MAGIC_BYTE occurrences
-    return chunkBuffer.subarray(startPos + MAGIC_BYTE.length, endPos);
 }

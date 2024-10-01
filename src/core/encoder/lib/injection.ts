@@ -10,6 +10,7 @@ import { injectDataIntoBuffer } from '../../../utils/imageProcessing/imageUtils.
 import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
+import {serializeUInt32} from "../../../utils/serialization/serializationHelpers.ts";
 
 const cpuCount = os.cpus().length;
 
@@ -129,6 +130,14 @@ export async function injectChunksIntoPngs(
         await Promise.all(injectPromises);
 
         if (logger.verbose) logger.info('All chunks injected successfully.');
+        // // **Clear usedPositions entirely as they are no longer needed**
+        // for (const png of pngCapacities) {
+        //     if (usedPositions[png.file]) {
+        //         resetBitmask(usedPositions[png.file]);
+        //         delete usedPositions[png.file];
+        //         logger.debug(`Cleared usedPositions for "${png.file}" after injection.`);
+        //     }
+        // }
     } catch (error) {
         logger.error(`Failed to inject chunks into PNGs: ${(error as Error).message}`);
         throw error;
@@ -157,14 +166,14 @@ export async function injectDistributionMapIntoCarrierPng(
     try {
         const inputPngPath = path.resolve(inputPngFolder, distributionCarrier.file);
         const outputPngPath = path.resolve(outputFolder, distributionCarrier.file);
-
+        console.log(`encrypted map length: ${encryptedMapContent.length}`);
         await processImage(
             inputPngPath,
             outputPngPath,
             (imageData, { width, height, channels }, logger) => {
                 injectDataIntoBuffer(
                     imageData,
-                    Buffer.concat([MAGIC_BYTE, encryptedMapContent, MAGIC_BYTE]),
+                    Buffer.concat([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
                     2, // bitsPerChannel
                     ['R', 'G', 'B'], // channelSequence
                     0, // startPosition
