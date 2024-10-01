@@ -8,7 +8,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { extractDataFromBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';
-import { deserializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
+
 
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 
