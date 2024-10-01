@@ -1,7 +1,7 @@
 // src/utils/imageProcessing/imageHelper.ts
 
 import type { ChannelSequence } from '../../@types/index.ts';
-import {isBitSet, setBit} from "../bitManipulation/bitMaskUtils.ts";
+import { isBitSet, setBit } from '../bitManipulation/bitMaskUtils.ts';
 
 /**
  * Calculates the x and y coordinates of a pixel in an image based on

@@ -171,7 +171,9 @@ export async function scanForDistributionMap(inputFolder: string, logger: ILogge
             logger.info(`Distribution map successfully extracted from "${png}".`);
             return extractedDistributionMapBuffer;
         } else {
-            logger.warn(`Incomplete distribution map extracted from "${png}". Expected ${size} bytes, got ${extractedDistributionMapBuffer.length} bytes.`);
+            logger.warn(
+                `Incomplete distribution map extracted from "${png}". Expected ${size} bytes, got ${extractedDistributionMapBuffer.length} bytes.`,
+            );
         }
     }
     return null;

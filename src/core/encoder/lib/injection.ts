@@ -10,7 +10,7 @@ import { injectDataIntoBuffer } from '../../../utils/imageProcessing/imageUtils.
 import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
-import {serializeUInt32} from "../../../utils/serialization/serializationHelpers.ts";
+import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 
 const cpuCount = os.cpus().length;
 

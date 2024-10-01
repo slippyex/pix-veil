@@ -8,7 +8,7 @@ import path from 'node:path';
 import { config } from '../../../config/index.ts';
 import { getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
-import {resetBitmask} from "../../../utils/bitManipulation/bitMaskUtils.ts";
+import { resetBitmask } from '../../../utils/bitManipulation/bitMaskUtils.ts';
 
 /**
  * Distributes given data chunks across PNG files based on their capacities.
