@@ -65,6 +65,10 @@ export function distributeChunksAcrossPngs(
 
         // Check if PNG can receive more chunks
         if (usedPngs[png.file].chunkCount >= config.chunksDefinition.maxChunksPerPng) {
+            resetBitmask(usedPositions[png.file]);
+            delete usedPositions[png.file];
+            logger.debug(`Cleared usedPositions for "${png.file}" after reaching max chunks.`);
+
             continue; // Skip this PNG as it reached the maximum chunk limit
         }
 
@@ -121,18 +125,6 @@ export function distributeChunksAcrossPngs(
             logger.info(
                 `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}`,
             );
-        }
-
-        // **Clear usedPositions for this PNG after assigning the chunk**
-        // If you have logic to process PNGs one by one, you can clear here.
-        // However, in this loop, multiple chunks can be assigned to the same PNG,
-        // so clearing should be done after all chunks for a PNG are assigned.
-
-        // Example: If maximum chunks per PNG is reached, clear the bitmask
-        if (usedPngs[png.file].chunkCount >= config.chunksDefinition.maxChunksPerPng) {
-            resetBitmask(usedPositions[png.file]);
-            delete usedPositions[png.file];
-            logger.debug(`Cleared usedPositions for "${png.file}" after reaching max chunks.`);
         }
     }
 

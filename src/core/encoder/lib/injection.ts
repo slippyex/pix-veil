@@ -90,7 +90,7 @@ export async function injectChunksIntoPngs(
             return acc;
         }, {} as PngToChunksMap);
 
-        const limit = pLimit(Math.max(1, cpuCount - 1)); // Adjust concurrency as needed
+        const limit = pLimit(Math.max(1, cpuCount - 1));
 
         const injectPromises = Object.entries(pngToChunksMap).map(([pngFile, entries]) => {
             const inputPngPath = path.resolve(inputPngFolder, pngFile);
@@ -130,14 +130,6 @@ export async function injectChunksIntoPngs(
         await Promise.all(injectPromises);
 
         if (logger.verbose) logger.info('All chunks injected successfully.');
-        // // **Clear usedPositions entirely as they are no longer needed**
-        // for (const png of pngCapacities) {
-        //     if (usedPositions[png.file]) {
-        //         resetBitmask(usedPositions[png.file]);
-        //         delete usedPositions[png.file];
-        //         logger.debug(`Cleared usedPositions for "${png.file}" after injection.`);
-        //     }
-        // }
     } catch (error) {
         logger.error(`Failed to inject chunks into PNGs: ${(error as Error).message}`);
         throw error;

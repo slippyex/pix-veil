@@ -57,6 +57,7 @@ export function analyzePngCapacities(
         };
     });
 
+    // pick the png with the least capacity to host the distributionMap
     const distributionCarrier = analyzedFiles.reduce((prev, curr) => (prev.capacity < curr.capacity ? prev : curr));
 
     return {

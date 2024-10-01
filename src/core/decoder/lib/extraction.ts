@@ -9,7 +9,6 @@ import sharp from 'sharp';
 import { extractDataFromBuffer } from '../../../utils/imageProcessing/imageUtils.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';
 
-
 const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
 
 /**
@@ -134,7 +133,7 @@ export async function scanForDistributionMap(inputFolder: string, logger: ILogge
             png,
             imageData,
             2,
-            ['R', 'G', 'B'],
+            ['R', 'G', 'B'], // channelSequence
             0,
             magicSizeBits,
             logger,
