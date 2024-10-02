@@ -26,3 +26,29 @@ export function insertBits(byte: number, bits: number, startBit: number, bitCoun
     const mask = ((1 << bitCount) - 1) << startBit;
     return (byte & ~mask) | ((bits << startBit) & mask);
 }
+
+/**
+ * Sets the specified bit in the bitmask.
+ *
+ * @param {Uint8Array} bitmask - The bitmask to modify.
+ * @param {number} bitIndex - The index of the bit to set.
+ * @return {void}
+ */
+export function setBit(bitmask: Uint8Array, bitIndex: number): void {
+    const byteIndex = Math.floor(bitIndex / 8);
+    const bitPosition = bitIndex % 8;
+    bitmask[byteIndex] |= 1 << bitPosition;
+}
+
+/**
+ * Checks if a specific bit is set in a given bitmask.
+ *
+ * @param {Uint8Array} bitmask - The bitmask to check.
+ * @param {number} bitIndex - The index of the bit to check.
+ * @return {boolean} True if the bit at the given index is set, otherwise false.
+ */
+export function isBitSet(bitmask: Uint8Array, bitIndex: number): boolean {
+    const byteIndex = Math.floor(bitIndex / 8);
+    const bitPosition = bitIndex % 8;
+    return (bitmask[byteIndex] & (1 << bitPosition)) !== 0;
+}

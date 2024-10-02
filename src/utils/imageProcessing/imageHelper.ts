@@ -2,7 +2,7 @@
 
 import sharp from 'sharp';
 import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
-import { isBitSet, setBit } from '../bitManipulation/bitMaskUtils.ts';
+import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
 
