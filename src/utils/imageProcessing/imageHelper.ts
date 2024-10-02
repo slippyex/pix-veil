@@ -5,12 +5,17 @@ import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '..
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
+import type { Buffer } from 'node:buffer';
 
 /**
  * In-memory cache for image tones.
  */
 const toneCache: ImageToneCache = {};
 
+export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
+    const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
+    return await image.raw().toBuffer({ resolveWithObject: true });
+}
 /**
  * Calculates the x and y coordinates of a pixel in an image based on
  * the channel position and various image parameters.
@@ -135,10 +140,10 @@ export async function processImageTones(inputPngPath: string, logger: ILogger) {
     const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.endsWith('.png'));
     for (const png of pngsInDirectory) {
         const imagePath = path.join(inputPngPath, png);
-        const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
-
-        const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-
+        // const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
+        //
+        // const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+        const { data, info } = await getImageData(imagePath);
         const capacity: ImageCapacity = { low: 0, mid: 0, high: 0 };
 
         for (let i = 0; i < data.length; i += info.channels) {

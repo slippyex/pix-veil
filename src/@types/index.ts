@@ -1,6 +1,7 @@
 // src/@types/index.ts
 
 import type { Buffer } from 'node:buffer';
+import sharp from 'sharp';
 
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
@@ -71,4 +72,11 @@ export interface ILogger {
     error(message: string): void;
 
     debug(message: string): void;
+}
+
+export type IOutputInfo = sharp.OutputInfo;
+
+export interface IAssembledImageData {
+    data: Buffer;
+    info: IOutputInfo;
 }

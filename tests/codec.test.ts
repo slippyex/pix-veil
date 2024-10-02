@@ -1,6 +1,6 @@
 // test/codec.test.ts
 
-import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd';
+import { beforeAll, describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { encode } from '../src/core/encoder/index.ts';

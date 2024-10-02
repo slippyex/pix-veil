@@ -1,16 +1,16 @@
 // src/core/decoder/lib/extraction.ts
 
-import type { ChannelSequence, IDistributionMap, ILogger } from '../../../@types/index.ts';
+import type { ChannelSequence, IAssembledImageData, IDistributionMap, ILogger } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
 import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
-import sharp from 'sharp';
-import { getChannelOffset } from '../../../utils/imageProcessing/imageHelper.ts';
+
+import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';
 import { extractBits } from '../../../utils/bitManipulation/bitUtils.ts';
 
-const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
+const imageMap = new Map<string, IAssembledImageData>();
 
 /**
  * Retrieves an image from the specified path, processing it and caching the result.
@@ -18,11 +18,10 @@ const imageMap = new Map<string, { data: Buffer; info: sharp.OutputInfo }>();
  * @param {string} pngPath - The file path to the PNG image.
  * @return {Promise<{ data: Buffer, info: sharp.OutputInfo } | undefined>} A promise that resolves to an object containing the image data and information, or undefined if the image cannot be processed.
  */
-async function getImage(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo } | undefined> {
+async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
     if (!imageMap.has(pngPath)) {
-        const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
-        const data = await image.raw().toBuffer({ resolveWithObject: true });
-        imageMap.set(pngPath, { data: data.data, info: data.info });
+        const data = await getImageData(pngPath);
+        imageMap.set(pngPath, data);
     }
     return imageMap.get(pngPath);
 }
@@ -50,7 +49,7 @@ export async function extractChunks(
 
         logger.debug(`Extracting chunk ${entry.chunkId} from "${entry.pngFile}".`);
 
-        const { data: imageData, info } = (await getImage(pngPath)) as { data: Buffer; info: sharp.OutputInfo };
+        const { data: imageData, info } = (await getImage(pngPath)) as IAssembledImageData;
         // Calculate the number of bits to extract based on bitsPerChannel in the distribution map
         const chunkBits = (entry.endPosition - entry.startPosition) * entry.bitsPerChannel;
 
@@ -126,7 +125,7 @@ export async function scanForDistributionMap(inputFolder: string, logger: ILogge
 
         logger.debug(`Scanning for distributionMap in file "${png}".`);
 
-        const { data: imageData, info } = (await getImage(pngPath)) as { data: Buffer; info: sharp.OutputInfo };
+        const { data: imageData, info } = (await getImage(pngPath)) as IAssembledImageData;
 
         // Step 1: Extract [MAGIC_BYTE][SIZE]
         const magicSizeBits = (MAGIC_BYTE.length + 4) * 8; // MAGIC_BYTE + SIZE (4 bytes)

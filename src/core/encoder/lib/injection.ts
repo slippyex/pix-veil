@@ -12,7 +12,7 @@ import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 import { addDebugBlocks } from '../../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
-import { getChannelOffset } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 
 const cpuCount = os.cpus().length;
 
@@ -34,8 +34,9 @@ async function processImage(
     logger: ILogger,
 ): Promise<void> {
     try {
-        const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
-        const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
+        // const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
+        // const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
+        const { data: imageData, info } = await getImageData(inputPngPath);
 
         injectorFn(imageData, info, logger);
 
