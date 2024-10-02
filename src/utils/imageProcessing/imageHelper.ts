@@ -1,7 +1,15 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-import type { ChannelSequence, ILogger } from '../../@types/index.ts';
+import sharp from 'sharp';
+import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitMaskUtils.ts';
+import { readDirectory } from '../storage/storageUtils.ts';
+import path from 'node:path';
+
+/**
+ * In-memory cache for image tones.
+ */
+const toneCache: ImageToneCache = {};
 
 /**
  * Calculates the x and y coordinates of a pixel in an image based on
@@ -58,9 +66,9 @@ export function getRandomPosition(
         // Weighted random selection based on tone
         const tone = weightedRandomChoice(
             [
-                { weight: 2, tone: 'low' as const },
-                { weight: 1, tone: 'mid' as const },
-                { weight: 0.5, tone: 'high' as const },
+                { weight: 4, tone: 'low' as const },
+                { weight: 2, tone: 'mid' as const },
+                { weight: 1, tone: 'high' as const },
             ],
             logger,
         );
@@ -121,6 +129,71 @@ export function getRandomPosition(
     }
 
     throw new Error('Unable to find a non-overlapping position for the chunk.');
+}
+
+export async function processImageTones(inputPngPath: string, logger: ILogger) {
+    const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.endsWith('.png'));
+    for (const png of pngsInDirectory) {
+        const imagePath = path.join(inputPngPath, png);
+        const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
+
+        const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+
+        const capacity: ImageCapacity = { low: 0, mid: 0, high: 0 };
+
+        for (let i = 0; i < data.length; i += info.channels) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const brightness = (r + g + b) / 3;
+
+            if (brightness < 85) {
+                capacity.low += 1;
+            } else if (brightness < 170) {
+                capacity.mid += 1;
+            } else {
+                capacity.high += 1;
+            }
+        }
+
+        toneCache[imagePath] = capacity; // Cache the result
+        logger.debug(
+            `Analyzed tones for "${imagePath}": Low=${capacity.low}, Mid=${capacity.mid}, High=${capacity.high}.`,
+        );
+    }
+}
+
+/**
+ * Analyze the image to categorize pixels into low, mid, and high-tone areas.
+ * Utilizes caching to avoid redundant computations.
+ */
+export function getCachedImageTones(imagePath: string, logger: ILogger): ImageCapacity {
+    if (toneCache[imagePath]) {
+        logger.debug(`Retrieved cached tones for "${imagePath}".`);
+        return toneCache[imagePath];
+    } else {
+        throw new Error(`no cache entry found for ${imagePath}`);
+    }
+}
+
+/**
+ * Helper function to get the channel offset based on the channel name.
+ * @param channel - The channel name ('R', 'G', 'B', 'A').
+ * @returns The channel offset index.
+ */
+export function getChannelOffset(channel: ChannelSequence): number {
+    switch (channel) {
+        case 'R':
+            return 0;
+        case 'G':
+            return 1;
+        case 'B':
+            return 2;
+        case 'A':
+            return 3;
+        default:
+            throw new Error(`Invalid channel specified: ${channel}`);
+    }
 }
 
 /**

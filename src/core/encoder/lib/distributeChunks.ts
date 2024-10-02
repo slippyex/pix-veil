@@ -3,10 +3,9 @@
 import type { ChannelSequence, IChunk, IDistributionMapEntry, ILogger, IUsedPng } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { getCachedImageTones } from '../../../utils/imageProcessing/imageUtils.ts';
 import path from 'node:path';
 import { config } from '../../../config/index.ts';
-import { getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
 import crypto from 'node:crypto';
 

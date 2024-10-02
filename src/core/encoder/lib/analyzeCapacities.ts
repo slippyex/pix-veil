@@ -4,7 +4,7 @@ import type { ILogger } from '../../../@types/index.ts';
 
 import path from 'node:path';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
-import { getCachedImageTones } from '../../../utils/imageProcessing/imageUtils.ts';
+import { getCachedImageTones } from '../../../utils/imageProcessing/imageHelper.ts';
 import { config } from '../../../config/index.ts';
 
 /**

@@ -7,17 +7,14 @@ import sharp from 'sharp';
 
 import fs from 'node:fs';
 
-import {
-    extractDataFromBuffer,
-    getCachedImageTones,
-    injectDataIntoBuffer,
-    processImageTones,
-} from '../src/utils/imageProcessing/imageUtils.ts';
+import { getCachedImageTones, processImageTones } from '../src/utils/imageProcessing/imageHelper.ts';
 import { ChannelSequence, ILogger } from '../src/@types/index.ts';
 import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
+import { extractDataFromBuffer } from '../src/core/decoder/lib/extraction.ts';
+import { injectDataIntoBuffer } from '../src/core/encoder/lib/injection.ts';
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 const logger = getLogger('test');

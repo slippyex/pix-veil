@@ -3,7 +3,7 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { getCachedImageTones, processImageTones } from '../src/utils/imageProcessing/imageUtils.ts';
+import { getCachedImageTones, processImageTones } from '../src/utils/imageProcessing/imageHelper.ts';
 import sharp from 'sharp';
 
 import fs from 'node:fs';

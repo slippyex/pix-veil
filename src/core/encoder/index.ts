@@ -4,7 +4,7 @@ import type { IEncodeOptions } from '../../@types/index.ts';
 
 import path from 'node:path';
 
-import { processImageTones } from '../../utils/imageProcessing/imageUtils.ts';
+import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
 import { readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
