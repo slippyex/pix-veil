@@ -15,11 +15,6 @@ import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUt
  * decompressed output to the output folder.
  *
  * @param {Object} options - The options for the decode function.
- * @param {string} options.inputFolder - The folder containing the encrypted data.
- * @param {string} options.outputFolder - The folder where the decrypted and decompressed data will be saved.
- * @param {string} options.password - The password used for decrypting the data.
- * @param {boolean} options.verbose - Indicates if verbose logging should be enabled.
- * @param {Object} options.logger - The logger object for logging messages.
  * @return {Promise<void>} A promise that resolves when the decoding process is complete.
  */
 export async function decode(options: IDecodeOptions): Promise<void> {
@@ -30,9 +25,13 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         const distributionMap = await readAndProcessDistributionMap(inputFolder, password, logger);
         const encryptedDataChunks = await extractChunks(distributionMap, inputFolder, logger);
         const encryptedData = assembleChunks(encryptedDataChunks, logger);
+
+        // Use the encrypted data length from the distribution map
+        const exactEncryptedData = encryptedData.subarray(0, distributionMap.encryptedDataLength);
+
         if (logger.verbose) logger.info('Verifying and decrypting data...');
-        verifyDataIntegrity(encryptedData, distributionMap.checksum, logger);
-        const decryptedData = decryptData(encryptedData, password, logger);
+        verifyDataIntegrity(exactEncryptedData, distributionMap.checksum, logger);
+        const decryptedData = decryptData(exactEncryptedData, password, logger);
         if (logger.verbose) logger.info('Decompressing data...');
         const decompressedData = decompressBuffer(decryptedData);
         const outputFile = path.join(outputFolder, distributionMap.originalFilename);

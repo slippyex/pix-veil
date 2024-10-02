@@ -15,6 +15,7 @@ import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
  * @param {string} inputFile - The input file associated with the distribution map.
  * @param {string} checksum - The checksum to validate the distribution map.
  * @param {string} password - The password used for encrypting the distribution map.
+ * @param {number} encryptedDataLength - The length of the encrypted data.
  * @param {ILogger} logger - The logger instance used for logging information and debugging.
  * @returns {Buffer} - The prepared distribution map as encrypted binary data, ready for injection.
  */
@@ -23,10 +24,11 @@ export function prepareDistributionMapForInjection(
     inputFile: string,
     checksum: string,
     password: string,
+    encryptedDataLength: number, // New parameter
     logger: ILogger,
 ): Buffer {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
-    const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum);
+    const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum, encryptedDataLength);
     const distributionMapCompressed = compressBuffer(serializedMap);
     const encrypted = encryptData(distributionMapCompressed, password, logger);
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
@@ -72,20 +74,22 @@ function processDistributionMap(
 }
 
 /**
- * Creates a distribution map from the given entries, original filename, and checksum,
+ * Creates a distribution map from the given entries, original filename, checksum, and encrypted data length,
  * and returns it as a serialized Buffer.
  *
  * @param {IDistributionMapEntry[]} entries - The entries to be included in the distribution map.
  * @param {string} originalFilename - The original filename associated with the distribution.
  * @param {string} checksum - The checksum for verifying the integrity of the distribution data.
+ * @param {number} encryptedDataLength - The length of the encrypted data.
  * @returns {Buffer} - The serialized distribution map.
  */
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
     originalFilename: string,
     checksum: string,
+    encryptedDataLength: number, // New parameter
 ): Buffer {
-    const distributionMap: IDistributionMap = { entries, originalFilename, checksum };
+    const distributionMap: IDistributionMap = { entries, originalFilename, checksum, encryptedDataLength };
     return serializeDistributionMap(distributionMap);
 }
 

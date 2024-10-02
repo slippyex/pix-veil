@@ -15,7 +15,7 @@ import {
  * Serializes a distribution map into a Buffer.
  *
  * @param {IDistributionMap} distributionMap - The distribution map to serialize,
- *   containing information about entries, checksum, and the original filename.
+ *   containing information about entries, checksum, original filename, and encrypted data length.
  * @returns {Buffer} The serialized Buffer representation of the distribution map.
  */
 export function serializeDistributionMap(distributionMap: IDistributionMap): Buffer {
@@ -23,12 +23,21 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
     const entriesBuffer = Buffer.concat(entryBuffers);
 
     const checksumBuffer = serializeChecksum(distributionMap.checksum);
-    const originalFilenameBuffer = serializeFilename(distributionMap.originalFilename);
+    const originalFilenameBuffer = serializeString(distributionMap.originalFilename);
+
+    // Serialize encryptedDataLength (4 bytes)
+    const encryptedDataLengthBuffer = serializeUInt32(distributionMap.encryptedDataLength);
 
     const entryCountBuffer = Buffer.alloc(4);
     entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
 
-    const mapContent = Buffer.concat([entryCountBuffer, entriesBuffer, checksumBuffer, originalFilenameBuffer]);
+    const mapContent = Buffer.concat([
+        entryCountBuffer,
+        entriesBuffer,
+        checksumBuffer,
+        originalFilenameBuffer,
+        encryptedDataLengthBuffer, // Include the new field
+    ]);
 
     const sizeBuffer = Buffer.alloc(4);
     sizeBuffer.writeUInt32BE(mapContent.length, 0);
@@ -40,7 +49,7 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
  * Deserializes a buffer into a distribution map object.
  *
  * @param {Buffer} buffer - The buffer containing the serialized distribution map data.
- * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, and original filename.
+ * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, original filename, and encrypted data length.
  */
 export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     validateMagicBytes(buffer);
@@ -63,9 +72,19 @@ export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     const { checksum, newOffset: checksumOffset } = deserializeChecksum(mapContent, offset);
     offset = checksumOffset;
 
-    const originalFilename = deserializeFilename(mapContent, offset);
+    const { value: originalFilename, newOffset: filenameOffset } = deserializeString(mapContent, offset);
+    offset = filenameOffset;
 
-    return { entries, checksum, originalFilename };
+    // Deserialize encryptedDataLength
+    const { value: encryptedDataLength, newOffset: offsetAfterLength } = deserializeUInt32(mapContent, offset);
+    offset = offsetAfterLength;
+
+    return {
+        entries,
+        checksum,
+        originalFilename,
+        encryptedDataLength, // Include the new field
+    };
 }
 
 /**
@@ -217,10 +236,6 @@ function deserializeChecksum(buffer: Buffer, offset: number): { checksum: string
 /**
  * Serializes a given string into a Buffer object.
  *
- * The method converts the string into a Buffer using UTF-8 encoding. It then creates a 2-byte buffer
- * to store the length of the string. Finally, it concatenates the length buffer with the string
- * buffer to form the serialized output.
- *
  * @param {string} str - The string to be serialized.
  * @returns {Buffer} The Buffer object representing the serialized string.
  */
@@ -236,10 +251,7 @@ function serializeString(str: string): Buffer {
  *
  * @param {Buffer} buffer - The buffer from which the string will be deserialized.
  * @param {number} offset - The offset within the buffer at which to start deserialization.
- * @return {Object} An object containing the deserialized string and the new offset:
- *                  - {string} value: The deserialized string.
- *                  - {number} newOffset: The new offset after deserialization.
- * @throws {RangeError} If the offset and length exceed the buffer's bounds.
+ * @return {Object} An object containing the deserialized string and the new offset.
  */
 function deserializeString(buffer: Buffer, offset: number): { value: string; newOffset: number } {
     const length = buffer.readUInt16BE(offset);
@@ -253,27 +265,6 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
 
     const value = buffer.subarray(offset, offset + length).toString('utf-8');
     return { value, newOffset: offset + length };
-}
-
-/**
- * Serializes a filename string into a buffer.
- *
- * @param {string} filename - The name of the file to be serialized.
- */
-function serializeFilename(filename: string): Buffer {
-    return serializeString(filename);
-}
-
-/**
- * Deserializes a filename from a buffer starting at the given offset.
- *
- * @param {Buffer} buffer - The buffer from which to deserialize the filename.
- * @param {number} offset - The offset in the buffer to start deserializing from.
- * @return {string} The deserialized filename.
- */
-function deserializeFilename(buffer: Buffer, offset: number): string {
-    const { value } = deserializeString(buffer, offset);
-    return value;
 }
 
 /**

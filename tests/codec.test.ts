@@ -22,12 +22,13 @@ beforeAll(() => {
 });
 
 describe('Codec tests', () => {
-    const inputFile = path.join(__dirname, 'test_input', 'files', 'secret.pdf');
+    const fileUnderSubject = 'uneven-size.pdf';
+    const inputFile = path.join(__dirname, 'test_input', 'files', fileUnderSubject);
     const inputPngFolder = path.join(__dirname, 'test_input', 'images');
 
     const encodedFolder = path.join(__dirname, 'test_output', 'encoded');
     const decodedFolder = path.join(__dirname, 'test_output', 'decoded');
-    const decodedFile = path.join(decodedFolder, 'secret.pdf');
+    const decodedFile = path.join(decodedFolder, fileUnderSubject);
 
     const password = 'testpassword';
     beforeAll(() => {

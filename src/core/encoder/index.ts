@@ -19,13 +19,6 @@ import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
  * Encodes the input file and embeds the data across multiple PNG images using steganography.
  *
  * @param {IEncodeOptions} options - The options for the encoding process.
- * @param {string} options.inputFile - Path to the input file to be encoded.
- * @param {string} options.inputPngFolder - Directory containing PNG images to use for encoding.
- * @param {string} options.outputFolder - Directory where the encoded PNG images will be saved.
- * @param {string} options.password - Password used for encrypting the data.
- * @param {boolean} options.verbose - Flag to enable verbose logging.
- * @param {boolean} options.debugVisual - Flag to enable visual debugging information.
- * @param {object} options.logger - Logger object for logging debug and information messages.
  * @returns {Promise<void>} A promise that resolves when encoding is complete.
  */
 export async function encode(options: IEncodeOptions): Promise<void> {
@@ -44,6 +37,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
         // Step 2: Encrypt the compressed data and generate checksum
         logger.debug('Encrypting the compressed data...');
         const encryptedData = encryptData(compressedData, options.password, logger);
+        const encryptedDataLength = encryptedData.length; // Get the length of the encrypted data
         const checksum = generateChecksum(encryptedData);
 
         // Step 3: Split encrypted data into chunks
@@ -72,6 +66,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             originalFilename,
             checksum,
             password,
+            encryptedDataLength, // Pass the encrypted data length
             logger,
         );
 

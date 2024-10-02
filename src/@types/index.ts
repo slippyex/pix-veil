@@ -23,6 +23,7 @@ export interface IDistributionMap {
     entries: IDistributionMapEntry[];
     originalFilename: string;
     checksum: string;
+    encryptedDataLength: number; // New field added
 }
 
 export interface ImageToneCache {
@@ -52,6 +53,7 @@ export interface IDecodeOptions {
     verbose: boolean;
     logger: ILogger;
 }
+
 export interface IUsedPng {
     usedCapacity: number;
     chunkCount: number;
