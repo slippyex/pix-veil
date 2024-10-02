@@ -8,23 +8,25 @@ import { getCachedImageTones } from '../../../utils/imageProcessing/imageUtils.t
 import { config } from '../../../config/index.ts';
 
 /**
- * Analyzes the capacities of PNG images in a specified folder to determine their suitability for data embedding.
+ * Analyzes PNG images in a given folder to determine their capacity for embedding data
+ * based on tones and identifies the best image to use as a distribution map.
  *
- * @param {string} inputPngFolder - The directory containing PNG images to be analyzed.
- * @param {ILogger} logger - The logger instance used for logging information and debugging.
- * @return {Object} - An object containing the analyzed capacities of the PNG files and the distribution carrier:
- *                    - analyzed: An array of objects representing each PNG file analyzed with its calculated capacity.
- *                    - distributionCarrier: An object representing the PNG file with the smallest capacity suitable for use as a distribution carrier.
+ * @param {string} inputPngFolder - The folder containing the PNG images to be analyzed.
+ * @param {ILogger} logger - A logger instance for logging information and debug messages.
+ *
+ * @return {Object} An object containing two properties:
+ * - analyzed: an array of objects representing each analyzed PNG file and its capacity.
+ * - distributionCarrier: an object representing the PNG file chosen as the distribution carrier.
  */
 export function analyzePngCapacities(
     inputPngFolder: string,
     logger: ILogger,
 ): {
-    analyzed: { file: string; capacity: number }[];
-    distributionCarrier: { file: string; capacity: number };
+    analyzed: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[];
+    distributionCarrier: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' };
 } {
     if (logger.verbose) {
-        logger.info('Analyzing PNG images for capacity...');
+        logger.info('Analyzing PNG images for capacity based on tones...');
     }
 
     const pngFiles = readDirectory(inputPngFolder).filter((file) => file.endsWith('.png'));
@@ -39,21 +41,38 @@ export function analyzePngCapacities(
 
     const analyzedFiles = pngFiles.map((png) => {
         const pngPath = path.join(inputPngFolder, png);
-        const capacity = getCachedImageTones(pngPath, logger); // Use cached tones
+        const capacity = getCachedImageTones(pngPath, logger); // { low, mid, high }
 
         const bitsPerChannel = config.bitsPerChannelForDistributionMap;
         const channelsPerPixel = 3; // R, G, B
-        const totalEmbeddableChannels = (capacity.low + capacity.mid + capacity.high) * channelsPerPixel;
-        const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // Number of channels needed to embed one byte
+
+        // Calculate weighted embeddable channels
+        const totalEmbeddableChannels = (capacity.low * 2 + capacity.mid + capacity.high * 0.5) * channelsPerPixel;
+
+        // Calculate channels needed per byte
+        const channelsNeededPerByte = Math.ceil(8 / bitsPerChannel); // e.g., 2 bits per channel => 4 channels per byte
+
+        // Total embeddable bytes based on weighted channels
         const totalEmbeddableBytes = Math.floor(totalEmbeddableChannels / channelsNeededPerByte);
 
         if (logger.verbose) {
-            logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes.`);
+            logger.debug(`PNG "${png}" can embed up to ${totalEmbeddableBytes} bytes based on tones.`);
+        }
+
+        // Determine predominant tone
+        let predominantTone: 'low' | 'mid' | 'high';
+        if (capacity.low >= capacity.mid && capacity.low >= capacity.high) {
+            predominantTone = 'low';
+        } else if (capacity.mid >= capacity.low && capacity.mid >= capacity.high) {
+            predominantTone = 'mid';
+        } else {
+            predominantTone = 'high';
         }
 
         return {
             file: png,
             capacity: totalEmbeddableBytes,
+            tone: predominantTone,
         };
     });
 

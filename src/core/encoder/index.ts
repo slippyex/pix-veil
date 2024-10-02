@@ -84,7 +84,14 @@ export async function encode(options: IEncodeOptions): Promise<void> {
         );
 
         // Step 9: Generate human-readable distribution map text file
-        createHumanReadableDistributionMap(distributionMapEntries, originalFilename, checksum, outputFolder, logger);
+        createHumanReadableDistributionMap(
+            distributionMapEntries,
+            distributionCarrier.file,
+            originalFilename,
+            checksum,
+            outputFolder,
+            logger,
+        );
 
         logger.info('Encoding completed successfully.');
     } catch (error) {

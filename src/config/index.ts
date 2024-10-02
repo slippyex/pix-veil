@@ -10,12 +10,11 @@ export const config = {
         adaptiveFiltering: false,
     },
     chunksDefinition: {
-        maxChunksPerPng: 16,
-        minChunksPerPng: 1,
-        maxChunkSize: 4096,
-        minChunkSize: 16,
+        maxChunksPerPng: 16, // Maximum number of chunks per PNG
+        minChunksPerPng: 1, // Minimum number of chunks per PNG
+        maxChunkSize: 4096, // Maximum size of each chunk in bytes
+        minChunkSize: 16, // Minimum size of each chunk in bytes
     },
     distributionMapFile: 'distribution_map',
-    // Using 2 bits per channel on all RGB channels
-    bitsPerChannelForDistributionMap: 2,
+    bitsPerChannelForDistributionMap: 2, // Must align with the embedding strategy
 };

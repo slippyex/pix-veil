@@ -94,12 +94,14 @@ export function createDistributionMap(
  *
  * @param {IDistributionMapEntry[]} entries - An array of distribution map entries.
  * @param {string} originalFilename - The name of the original file.
+ * @param {string} distributionCarrier - The filename of the png which is used as carrier for the distribution map.
  * @param {string} checksum - The checksum of the original file.
  * @return {string} The formatted distribution map text.
  */
 export function generateDistributionMapText(
     entries: IDistributionMapEntry[],
     originalFilename: string,
+    distributionCarrier: string,
     checksum: string,
 ): string {
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
@@ -129,6 +131,7 @@ export function generateDistributionMapText(
 
     text += `Checksum: ${checksum}\n`;
     text += `Original Filename: ${originalFilename}\n`;
+    text += `Distribution Carrier PNG: ${distributionCarrier}\n`;
 
     return text;
 }

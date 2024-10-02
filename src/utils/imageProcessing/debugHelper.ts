@@ -78,6 +78,7 @@ export function addDebugBlocks(
  *
  * @param {IDistributionMapEntry[]} distributionMapEntries - An array of distribution map entries to be included in the text file.
  * @param {string} originalFilename - The original filename associated with the distribution map entries.
+ * @param {string} distributionCarrier - The filename of the png which is used as carrier for the distribution map.
  * @param {string} checksum - The checksum of the original file to be included in the distribution map.
  * @param {string} outputFolder - The folder path where the distribution map text file should be created.
  * @param {ILogger} logger - The logger instance used for logging information about the process.
@@ -86,14 +87,20 @@ export function addDebugBlocks(
  */
 export function createHumanReadableDistributionMap(
     distributionMapEntries: IDistributionMapEntry[],
+    distributionCarrier: string,
     originalFilename: string,
     checksum: string,
     outputFolder: string,
     logger: ILogger,
-) {
+): void {
     if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
     const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
-    const distributionMapText = generateDistributionMapText(distributionMapEntries, originalFilename, checksum);
+    const distributionMapText = generateDistributionMapText(
+        distributionMapEntries,
+        originalFilename,
+        distributionCarrier,
+        checksum,
+    );
     writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
     if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 }

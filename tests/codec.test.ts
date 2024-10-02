@@ -31,18 +31,14 @@ describe('Codec tests', () => {
 
     const password = 'testpassword';
     beforeAll(() => {
+        fs.rmSync(encodedFolder, { recursive: true, force: true });
+        fs.rmSync(decodedFolder, { recursive: true, force: true });
         if (!fs.existsSync(encodedFolder)) {
             fs.mkdirSync(encodedFolder, { recursive: true });
         }
         if (!fs.existsSync(decodedFolder)) {
             fs.mkdirSync(decodedFolder, { recursive: true });
         }
-    });
-
-    afterAll(() => {
-        // Cleanup output folders
-        fs.rmSync(encodedFolder, { recursive: true, force: true });
-        fs.rmSync(decodedFolder, { recursive: true, force: true });
     });
 
     it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {
