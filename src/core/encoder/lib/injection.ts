@@ -13,6 +13,7 @@ import { serializeUInt32 } from '../../../utils/serialization/serializationHelpe
 import { addDebugBlocks } from '../../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
 import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
+import {extractDataFromBuffer} from "../../decoder/lib/extraction.ts";
 
 const cpuCount = os.cpus().length;
 
@@ -123,6 +124,20 @@ export async function injectChunksIntoPngs(
                                 info.channels,
                                 entry.endPosition,
                             );
+
+                            const verifyChunkData = extractDataFromBuffer(
+                                entry.pngFile,
+                                imageData,
+                                entry.bitsPerChannel,
+                                entry.channelSequence,
+                                entry.startPosition,
+                                entry.bitsPerChannel,
+                                logger,
+                                info.channels,
+                            );
+                            if (!Buffer.compare(verifyChunkData, chunkData)) {
+                                throw new Error(`Injection error - verified chunk is not as expected`);
+                            }
                         }
                     },
                     logger,

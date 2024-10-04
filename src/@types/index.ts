@@ -24,6 +24,7 @@ export interface IDistributionMap {
     originalFilename: string;
     checksum: string;
     encryptedDataLength: number; // New field added
+    compressed: boolean;
 }
 
 export interface ImageToneCache {

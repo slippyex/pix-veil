@@ -28,6 +28,9 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
     // Serialize encryptedDataLength (4 bytes)
     const encryptedDataLengthBuffer = serializeUInt32(distributionMap.encryptedDataLength);
 
+    // Serialize compressed flag (1 byte)
+    const compressedBuffer = serializeUInt8(distributionMap.compressed ? 1 : 0);
+
     const entryCountBuffer = Buffer.alloc(4);
     entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
 
@@ -36,7 +39,8 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
         entriesBuffer,
         checksumBuffer,
         originalFilenameBuffer,
-        encryptedDataLengthBuffer, // Include the new field
+        encryptedDataLengthBuffer,
+        compressedBuffer, // Include the new field
     ]);
 
     const sizeBuffer = Buffer.alloc(4);
@@ -79,11 +83,17 @@ export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     const { value: encryptedDataLength, newOffset: offsetAfterLength } = deserializeUInt32(mapContent, offset);
     offset = offsetAfterLength;
 
+    // Deserialize compressed flag
+    const { value: compressedFlag, newOffset: finalOffset } = deserializeUInt8(mapContent, offset);
+    const compressed = compressedFlag === 1;
+    offset = finalOffset;
+
     return {
         entries,
         checksum,
         originalFilename,
-        encryptedDataLength, // Include the new field
+        encryptedDataLength,
+        compressed,
     };
 }
 

@@ -21,6 +21,7 @@ import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
  */
 export function prepareDistributionMapForInjection(
     distributionMapEntries: IDistributionMapEntry[],
+    isCompressed: boolean,
     inputFile: string,
     checksum: string,
     password: string,
@@ -28,7 +29,7 @@ export function prepareDistributionMapForInjection(
     logger: ILogger,
 ): Buffer {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
-    const serializedMap = createDistributionMap(distributionMapEntries, inputFile, checksum, encryptedDataLength);
+    const serializedMap = createDistributionMap(distributionMapEntries, isCompressed, inputFile, checksum, encryptedDataLength);
     const distributionMapCompressed = compressBuffer(serializedMap);
     const encrypted = encryptData(distributionMapCompressed, password, logger);
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
@@ -85,11 +86,12 @@ function processDistributionMap(
  */
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
+    isCompressed: boolean,
     originalFilename: string,
     checksum: string,
     encryptedDataLength: number, // New parameter
 ): Buffer {
-    const distributionMap: IDistributionMap = { entries, originalFilename, checksum, encryptedDataLength };
+    const distributionMap: IDistributionMap = { entries, originalFilename, compressed: isCompressed, checksum, encryptedDataLength };
     return serializeDistributionMap(distributionMap);
 }
 

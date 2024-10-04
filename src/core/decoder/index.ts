@@ -32,8 +32,8 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         if (logger.verbose) logger.info('Verifying and decrypting data...');
         verifyDataIntegrity(exactEncryptedData, distributionMap.checksum, logger);
         const decryptedData = decryptData(exactEncryptedData, password, logger);
-        if (logger.verbose) logger.info('Decompressing data...');
-        const decompressedData = decompressBuffer(decryptedData);
+        if (logger.verbose && distributionMap.compressed) logger.info('Decompressing data...');
+        const decompressedData = distributionMap.compressed ? decompressBuffer(decryptedData) : decryptedData;
         const outputFile = path.join(outputFolder, distributionMap.originalFilename);
         if (logger.verbose) logger.info('Writing the output file...');
         writeBufferToFile(outputFile, decompressedData);

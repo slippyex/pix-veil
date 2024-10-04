@@ -14,6 +14,7 @@ import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.t
 import { distributeChunksAcrossPngs } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
+import type { Buffer } from 'node:buffer';
 
 /**
  * Encodes the input file and embeds the data across multiple PNG images using steganography.
@@ -24,7 +25,7 @@ import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
 export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verbose, debugVisual, logger } = options;
     try {
-        if (verbose) logger.info('Starting encoding process...');
+        if (verbose) logger.info(`Starting encoding process for file ${inputFile} ...`);
 
         // Capture only the filename (no path) using path.basename
         const originalFilename = path.basename(inputFile);
@@ -32,7 +33,14 @@ export async function encode(options: IEncodeOptions): Promise<void> {
         // Step 1: Read and compress the input file
         logger.debug('Reading and compressing the input file...');
         const fileData = readBufferFromFile(options.inputFile);
-        const compressedData = compressBuffer(fileData);
+        let compressedData: Buffer;
+        let isCompressed = true;
+        try {
+            compressedData = compressBuffer(fileData);
+        } catch (_err) {
+            isCompressed = false;
+            compressedData = fileData;
+        }
 
         // Step 2: Encrypt the compressed data and generate checksum
         logger.debug('Encrypting the compressed data...');
@@ -63,6 +71,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
         // Step 8: Create and store the distribution map
         const encryptedMapContent = prepareDistributionMapForInjection(
             distributionMapEntries,
+            isCompressed,
             originalFilename,
             checksum,
             password,
