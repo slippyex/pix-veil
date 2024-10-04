@@ -23,9 +23,12 @@ interface ReportEntry {
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
 /**
- * Batch processing script for encoding and decoding multiple files.
+ * Executes a batch processing workflow for encoding and decoding files,
+ * handling failures, and recording processing results in a report.
+ *
+ * @return {Promise<void>} Resolves when the batch processing is complete.
  */
-async function batchProcess() {
+async function batchProcess(): Promise<void> {
     const logger = getLogger('testbatch', false);
     // Configuration Constants
     const inputDir = path.resolve(__dirname, '../../tests/test_input/files'); // Directory containing files to process
@@ -141,7 +144,16 @@ async function batchProcess() {
     await writeReport(reportPath, report, logger);
 }
 
-async function writeReport(reportPath: string, report: ReportEntry[], logger: ILogger) {
+/**
+ * Writes a report to a specified file path in JSON format.
+ *
+ * @param {string} reportPath - The file path where the report will be saved.
+ * @param {ReportEntry[]} report - The array of report entries to be written to the file.
+ * @param {ILogger} logger - The logger instance used to log success or error messages.
+ *
+ * @return {Promise<void>} A promise that resolves when the report is successfully written.
+ */
+async function writeReport(reportPath: string, report: ReportEntry[], logger: ILogger): Promise<void> {
     // Save Report
     try {
         await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf-8');
@@ -152,10 +164,13 @@ async function writeReport(reportPath: string, report: ReportEntry[], logger: IL
 }
 
 /**
- * Ensures that a directory exists. If it does not, creates it.
- * @param dirPath - Path to the directory.
+ * Ensures that a directory exists at the specified path. If the directory does
+ * not exist, it is created along with any necessary parent directories.
+ *
+ * @param {string} dirPath - The path to the directory that needs to be ensured.
+ * @return {Promise<void>} A promise that resolves when the directory has been ensured.
  */
-async function ensureDirectory(dirPath: string) {
+async function ensureDirectory(dirPath: string): Promise<void> {
     try {
         await fs.mkdir(dirPath, { recursive: true });
     } catch (_err) {
@@ -164,11 +179,13 @@ async function ensureDirectory(dirPath: string) {
 }
 
 /**
- * Handles failed file processing by moving the file to the failed directory.
- * @param filePath - Path to the original file.
- * @param failedDir - Path to the failed directory.
+ * Handles the failure of file processing by moving the file to a specified failed directory.
+ *
+ * @param {string} filePath - The path of the file that failed to process.
+ * @param {string} failedDir - The directory where the failed file should be moved.
+ * @return {Promise<void>} A promise that resolves when the file has been moved to the failed directory, or logs an error if the operation fails.
  */
-async function handleFailure(filePath: string, failedDir: string) {
+async function handleFailure(filePath: string, failedDir: string): Promise<void> {
     try {
         const fileName = path.basename(filePath);
         const destination = path.join(failedDir, fileName);
@@ -180,10 +197,12 @@ async function handleFailure(filePath: string, failedDir: string) {
 }
 
 /**
- * Cleans all files within the specified directory.
- * @param dirPath - Path to the directory to clean.
+ * Recursively deletes all files and subdirectories within the given directory.
+ *
+ * @param {string} dirPath - The path of the directory to clean.
+ * @return {Promise<void>} A promise that resolves when the directory has been cleaned.
  */
-async function cleanDirectory(dirPath: string) {
+async function cleanDirectory(dirPath: string): Promise<void> {
     try {
         const files = await fs.readdir(dirPath);
         const deletePromises = files.map(async (file) => {
@@ -208,16 +227,6 @@ async function cleanDirectory(dirPath: string) {
 if (import.meta.main) {
     (async () => {
         console.clear();
-        console.log(
-            figlet.textSync('Pix-Veil', {
-                font: 'DOS Rebel',
-                horizontalLayout: 'default',
-                verticalLayout: 'default',
-                width: 80,
-                whitespaceBreak: true,
-            }),
-        );
-        console.log(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`);
         try {
             await batchProcess();
         } catch (err) {
