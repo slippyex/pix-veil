@@ -29,7 +29,13 @@ export function prepareDistributionMapForInjection(
     logger: ILogger,
 ): Buffer {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
-    const serializedMap = createDistributionMap(distributionMapEntries, isCompressed, inputFile, checksum, encryptedDataLength);
+    const serializedMap = createDistributionMap(
+        distributionMapEntries,
+        isCompressed,
+        inputFile,
+        checksum,
+        encryptedDataLength,
+    );
     const distributionMapCompressed = compressBuffer(serializedMap);
     const encrypted = encryptData(distributionMapCompressed, password, logger);
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
@@ -91,7 +97,13 @@ export function createDistributionMap(
     checksum: string,
     encryptedDataLength: number, // New parameter
 ): Buffer {
-    const distributionMap: IDistributionMap = { entries, originalFilename, compressed: isCompressed, checksum, encryptedDataLength };
+    const distributionMap: IDistributionMap = {
+        entries,
+        originalFilename,
+        compressed: isCompressed,
+        checksum,
+        encryptedDataLength,
+    };
     return serializeDistributionMap(distributionMap);
 }
 

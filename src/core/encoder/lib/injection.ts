@@ -13,7 +13,7 @@ import { serializeUInt32 } from '../../../utils/serialization/serializationHelpe
 import { addDebugBlocks } from '../../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
 import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
-import {extractDataFromBuffer} from "../../decoder/lib/extraction.ts";
+import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 
 const cpuCount = os.cpus().length;
 

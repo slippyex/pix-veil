@@ -8,8 +8,8 @@ import * as path from 'jsr:@std/path';
 import process from 'node:process';
 
 import cliProgress from 'cli-progress';
-import figlet from "figlet";
-import {ILogger} from "../@types/index.ts";
+import figlet from 'figlet';
+import { ILogger } from '../@types/index.ts';
 
 /**
  * Interface representing a report entry for each file processed.
@@ -41,9 +41,8 @@ async function batchProcess(): Promise<void> {
 
     // Initialize Logger
 
-
     // Prompt for Password Securely
-    const password = 'testpassword'
+    const password = 'testpassword';
 
     // Ensure Output Directories Exist
     await ensureDirectory(decodedFolder);
@@ -73,7 +72,7 @@ async function batchProcess(): Promise<void> {
         format: 'Processing |{bar}| {percentage}% || {value}/{total} Files',
         barCompleteChar: '\u2588',
         barIncompleteChar: '\u2591',
-        hideCursor: true
+        hideCursor: true,
     });
     progressBar.start(files.length, 0);
 
@@ -94,7 +93,7 @@ async function batchProcess(): Promise<void> {
                 password,
                 verbose: true,
                 debugVisual: false,
-                logger
+                logger,
             });
 
             // Decode the File
@@ -127,10 +126,12 @@ async function batchProcess(): Promise<void> {
 
         // Clean Output Folders After Each Iteration
         try {
-//            await cleanDirectory(encodedFolder, logger);
+            //            await cleanDirectory(encodedFolder, logger);
             await cleanDirectory(decodedFolder);
         } catch (cleanupError) {
-            logger.error(`Failed to clean output folders after processing "${file}": ${(cleanupError as Error).message}`);
+            logger.error(
+                `Failed to clean output folders after processing "${file}": ${(cleanupError as Error).message}`,
+            );
         }
 
         // Update Progress Bar
@@ -157,7 +158,7 @@ async function writeReport(reportPath: string, report: ReportEntry[], logger: IL
     // Save Report
     try {
         await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf-8');
-    //    logger.success(`Report saved at "${reportPath}".`);
+        //    logger.success(`Report saved at "${reportPath}".`);
     } catch (err) {
         logger.error(`Failed to write report: ${(err as Error).message}`);
     }

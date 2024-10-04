@@ -2,25 +2,27 @@
 
 import { Buffer } from 'node:buffer';
 import { BrotliCompressor } from './strategies/BrotliCompressor.ts';
+import { CompressionStrategy } from '../../@types/compressionStrategy.ts';
 
 /**
- * Compresses the given buffer using Brotli compression algorithm.
+ * Compresses a given input buffer using a specified compression strategy.
  *
- * @param {Buffer} input - The buffer that needs to be compressed.
- * @returns {Buffer} - The compressed buffer.
+ * @param {Buffer} input - The buffer to be compressed.
+ * @param {CompressionStrategy} [compressor=new BrotliCompressor()] - An instance of a compression strategy to use for compressing the input buffer.
+ *                                                                    Defaults to BrotliCompressor.
+ * @returns {Buffer} The compressed buffer.
  */
-export function compressBuffer(input: Buffer): Buffer {
-    const compressor = new BrotliCompressor();
+export function compressBuffer(input: Buffer, compressor: CompressionStrategy = new BrotliCompressor()): Buffer {
     return compressor.compress(input);
 }
 
 /**
- * Decompresses a given buffer using the Brotli algorithm.
+ * Decompresses the given input buffer using the specified compression strategy.
  *
- * @param {Buffer} input - The compressed buffer that needs to be decompressed.
+ * @param {Buffer} input - The buffer to be decompressed.
+ * @param {CompressionStrategy} [compressor=new BrotliCompressor()] - The decompression strategy to use. Defaults to BrotliCompressor.
  * @returns {Buffer} The decompressed buffer.
  */
-export function decompressBuffer(input: Buffer): Buffer {
-    const compressor = new BrotliCompressor();
+export function decompressBuffer(input: Buffer, compressor: CompressionStrategy = new BrotliCompressor()): Buffer {
     return compressor.decompress(input);
 }
