@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/cli/index.ts",
   "config": {
-    "permissions": "--allow-env --allow-read --allow-ffi --allow-write --allow-sys"
+    "permissions": "--unstable-kv --allow-env --allow-read --allow-ffi --allow-write --allow-sys"
   },
   "scripts": {
     "lint": "deno lint",
@@ -11,7 +11,7 @@
     "test": "deno test $npm_package_config_permissions",
     "doc": "deno doc --html --name='Pix-Veil' --output=./doc ./src",
     "coverage": "deno test --coverage $npm_package_config_permissions && deno coverage --html",
-    "compile": "deno compile --output ./.bin/pix-veil $npm_package_config_permissions src/cli/index.ts",
+    "compile": "deno compile $npm_package_config_permissions --reload --output ./.bin/pix-veil  src/cli/index.ts",
     "pix-veil:encode": "deno run $npm_package_config_permissions src/cli/index.ts encode",
     "pix-veil:decode": "deno run $npm_package_config_permissionss src/cli/index.ts decode"
   },

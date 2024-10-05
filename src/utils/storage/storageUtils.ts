@@ -1,7 +1,8 @@
 // src/utils/storage/storageUtils.ts
 
 import { Buffer } from 'node:buffer';
-import fs from 'node:fs';
+import fs, { exists, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * Ensures that the specified output directory exists. If the directory
@@ -56,4 +57,31 @@ export function readDirectory(filePath: string): string[] {
  */
 export function filePathExists(filePath: string): boolean {
     return fs.existsSync(filePath);
+}
+
+/**
+ * Traverses up the directory hierarchy to find the project root based on marker files.
+ *
+ * @param {string} startPath - The directory to start searching from.
+ * @param {string[]} markerFiles - An array of filenames that signify the project root.
+ * @return {Promise<string | null>} - The path to the project root or null if not found.
+ */
+export function findProjectRoot(
+    startPath: string,
+    markerFiles: string[] = ['deno.json', 'deno.jsonc', '.git'],
+): string | null {
+    let currentPath = startPath;
+    while (true) {
+        for (const marker of markerFiles) {
+            const markerPath = join(currentPath, marker);
+            if (existsSync(markerPath)) {
+                return currentPath;
+            }
+        }
+        const parentPath = dirname(currentPath);
+        if (parentPath === currentPath) {
+            return null; // Reached filesystem root without finding a marker
+        }
+        currentPath = parentPath;
+    }
 }

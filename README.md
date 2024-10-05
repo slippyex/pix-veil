@@ -26,22 +26,20 @@ coupled with encryption and compression for enhanced security and efficiency.
 ## 📋 Table of Contents
 
 - [Installation](#-installation)
-- [Usage](#️-usage)
+- [Usage](#-usage)
     - [Encoding](#encoding)
     - [Decoding](#decoding)
 - [Techniques Explained](#-techniques-explained)
     - [Least Significant Bit (LSB) Steganography](#least-significant-bit-lsb-steganography)
         - [LSB Embedding Process](#lsb-embedding-process)
-        - [Mermaid Flowchart of LSB Embedding](#mermaid-flowchart-of-lsb-embedding)
+        - [Flowchart of LSB Embedding](#flowchart-of-lsb-embedding)
         - [LSB Manipulation Illustration](#lsb-manipulation-illustration)
     - [Data Encryption](#data-encryption)
-        - [Mermaid Flowchart of Data Encryption](#mermaid-flowchart-of-data-encryption)
     - [Data Compression](#data-compression)
-        - [Mermaid Flowchart of Data Compression](#mermaid-flowchart-of-data-compression)
     - [Data Chunking and Distribution](#data-chunking-and-distribution)
         - [Distribution Map](#distribution-map)
-        - [Mermaid Flowchart of Data Chunking and Distribution](#mermaid-flowchart-of-data-chunking-and-distribution)
-        - [Mermaid Diagram of Distribution Map Embedding](#mermaid-diagram-of-distribution-map-embedding)
+        - [Flowchart of Data Chunking and Distribution](#flowchart-of-data-chunking-and-distribution)
+        - [Diagram of Distribution Map Embedding](#diagram-of-distribution-map-embedding)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -88,7 +86,7 @@ pix-veil encode \
 - `-i, --input <file>`: Input file to hide.
 - `-p, --png-folder <folder>`: Folder containing PNG images to use.
 - `-o, --output <folder>`: Output folder to store the modified images.
-- `-w, --password <password>`: Password for encryption.
+- `-w, --password <password>`: Prompt for password
 - `--verbose`: Enable verbose logging.
 - `--debug-visual`: Enable debug visual blocks in images.
 
@@ -108,7 +106,7 @@ pix-veil decode \
 
 - `-i, --input <folder>`: Input folder containing the modified PNG images.
 - `-o, --output <folder>`: Output folder to save the extracted file.
-- `-w, --password <password>`: Password used during encoding.
+- `-w, --password <password>`: Prompt for password.
 - `--verbose`: Enable verbose logging.
 
 ---
@@ -126,7 +124,7 @@ LSB steganography involves modifying the least significant bits of image pixel v
 - **Image Analysis**: PNG images are analyzed for embedding capacity based on tonal values.
 - **Data Embedding**: Data chunks are embedded into the images using LSB manipulation.
 
-#### Mermaid Flowchart of LSB Embedding
+#### Flowchart of LSB Embedding
 
 ~~~mermaid
 flowchart TD
@@ -149,51 +147,68 @@ flowchart TD
 
 #### LSB Manipulation Illustration
 
-Here's a detailed illustration of how LSB manipulation works when embedding the byte `0xDE` into pixels, using a channel sequence of `RGB` and `2` bits per channel.
+*Example: Embedding Byte 0xDE into RGB Channels Using 2 Bits Per Channel*
 
-**Byte to Embed**: `0xDE` (binary `1101 1110`)
+We want to hide `0xDE` (which is `11011110` in binary) into the least significant bits (LSBs) of an RGB pixel, using 2 bits per channel.
 
-**Splitting into 2-bit groups**:
+#### Byte to hide:
+- **0xDE** = `11011110`
 
-- Group 1: `11`
-- Group 2: `01`
-- Group 3: `11`
-- Group 4: `10`
+Now, split this byte into three 2-bit parts:
+1. **Red channel**: `11`
+2. **Green channel**: `01`
+3. **Blue channel**: `10`
 
-**Embedding Process**:
+### Initial RGB Pixel Values:
+
+Let’s assume the initial RGB values of a pixel are as follows (in decimal and binary):
+
+- **Red**: 200 (binary: `11001000`)
+- **Green**: 150 (binary: `10010110`)
+- **Blue**: 100 (binary: `01100100`)
+
+### Modifying the 2 LSBs of Each Channel:
+
+We will embed the 2 bits for each channel into the two least significant bits of the original pixel values.
+
+1. **Red channel**: Embed `11` into the last two bits of Red (original: `11001000`):
+    - Original Red: `11001000` (200)
+    - Modified Red: `11001111` (207)
+
+2. **Green channel**: Embed `01` into the last two bits of Green (original: `10010110`):
+    - Original Green: `10010110` (150)
+    - Modified Green: `10010101` (149)
+
+3. **Blue channel**: Embed `10` into the last two bits of Blue (original: `01100100`):
+    - Original Blue: `01100100` (100)
+    - Modified Blue: `01100110` (102)
+
+### Final RGB Values After Embedding:
+
+- **Red**: `207` (binary: `11001111`)
+- **Green**: `149` (binary: `10010101`)
+- **Blue**: `102` (binary: `01100110`)
+
+These RGB values now contain the byte `0xDE` within their least significant bits.
 
 ~~~mermaid
-graph LR
-    subgraph "Byte to Embed (0xDE)"
-    B1["Bits: 11"]
-    B2["Bits: 01"]
-    B3["Bits: 11"]
-    B4["Bits: 10"]
+graph TD
+    subgraph Original Pixel
+        R1[Red: 110010*00* - 200]
+        G1[Green: 100101*10* - 150]
+        B1[Blue: 011001*00* -100]
     end
 
-    subgraph "Original Pixel Channels"
-    R1["R1: 1001 1010"]
-    G1["G1: 0110 1011"]
-    B1_orig["B1: 1110 0101"]
-    R2["R2: 1010 1100"]
+    subgraph Modified Pixel After Embedding 0xDE
+        R2[Red: 110011**11** - 207]
+        G2[Green: 100101**01** - 149]
+        B2[Blue: 011001**10** - 102]
     end
 
-    B1 -- "Embed into LSBs" --> R1
-    B2 -- "Embed into LSBs" --> G1
-    B3 -- "Embed into LSBs" --> B1_orig
-    B4 -- "Embed into LSBs" --> R2
-
-    subgraph "Modified Pixel Channels"
-    R1_mod["R1: 1001 10**11**"]
-    G1_mod["G1: 0110 10**01**"]
-    B1_mod["B1: 1110 01**11**"]
-    R2_mod["R2: 1010 11**10**"]
-    end
-
-    R1 --> R1_mod
-    G1 --> G1_mod
-    B1_orig --> B1_mod
-    R2 --> R2_mod
+    Byte[0xDE 11011110]
+    Byte --> R2
+    Byte --> G2
+    Byte --> B2
 ~~~
 
 **Explanation**:
@@ -240,7 +255,7 @@ graph LR
 - **Algorithm**: Brotli Compression.
 - **Purpose**: Reduces the size of the data to minimize the impact on the carrier images.
 - **Benefits**:
-    - Less data to embed leads to less modification of the images.
+    - Fewer data to embed leads to less modification of the images.
     - Improves security by obfuscating the data patterns.
 
 ---
@@ -265,7 +280,7 @@ graph LR
     - Start and end positions.
     - Bits per channel and channel sequence used.
 
-#### Mermaid Flowchart of Data Chunking and Distribution
+#### Flowchart of Data Chunking and Distribution
 
 ~~~mermaid
 flowchart TD
@@ -281,7 +296,7 @@ flowchart TD
     J --> K[End Data Chunking]
 ~~~
 
-#### Mermaid Diagram of Distribution Map Embedding
+#### Diagram of Distribution Map Embedding
 
 ~~~mermaid
 sequenceDiagram

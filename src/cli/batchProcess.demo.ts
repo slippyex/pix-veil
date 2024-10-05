@@ -113,6 +113,7 @@ async function batchProcess(): Promise<void> {
                 const fileName = path.basename(filePath);
                 const destination = path.join(successFolder, fileName);
                 await fs.rename(filePath, destination);
+                await cleanDirectory(encodedFolder);
             } else {
                 const reason = 'Decoded file does not match the original.';
                 await handleFailure(filePath, failedFolder);
@@ -126,7 +127,6 @@ async function batchProcess(): Promise<void> {
 
         // Clean Output Folders After Each Iteration
         try {
-            //            await cleanDirectory(encodedFolder, logger);
             await cleanDirectory(decodedFolder);
         } catch (cleanupError) {
             logger.error(

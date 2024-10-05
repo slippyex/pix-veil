@@ -12,3 +12,4 @@ output-pngs
 .test_input
 tests/test_input
 tests/test_output
+deno-kv/pix-veil.db

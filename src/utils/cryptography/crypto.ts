@@ -8,36 +8,46 @@ import crypto from 'node:crypto';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
 
 /**
- * Encrypts the provided compressed data using the specified password and encryption strategy.
- * Utilizes AES-256-CBC encryption to ensure data security. Additionally, it generates and logs
- * a checksum for data integrity verification.
+ * Encrypts the given compressed data using the provided encryption strategy.
+ * Logs the process if verbose mode is enabled.
  *
- * @param {Buffer} compressedData - The data to be encrypted in binary format.
- * @param {string} password - The password to use for the encryption process.
- * @param {ILogger} logger - The logger instance to log information during the encryption process.
- * @returns {Buffer} - The encrypted data in binary format.
+ * @param {Buffer} data - The data to be encrypted, provided as a buffer.
+ * @param {string} password - The password used to encrypt the data.
+ * @param {ILogger} logger - The logger used to log the encryption process, especially if verbose mode is set to true.
+ * @param {EncryptionStrategy} [encryptionStrategy=AES256CBCStrategy()] - The encryption strategy to be used. Defaults to AES-256-CBC if not provided.
+ * @returns {Buffer} The encrypted data as a buffer.
  */
-export function encryptData(compressedData: Buffer, password: string, logger: ILogger): Buffer {
-    const encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy();
+export function encryptData(
+    data: Buffer,
+    password: string,
+    logger: ILogger,
+    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+): Buffer {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
-    const encryptedData = encryptionStrategy.encrypt(compressedData, password);
+    const encryptedData = encryptionStrategy.encrypt(data, password);
     const checksum = generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
     return encryptedData;
 }
 
 /**
- * Decrypts the given encrypted data using the provided password.
- * Utilizes the AES-256-CBC encryption strategy for decryption.
+ * Decrypts the provided encrypted buffer using the given password and encryption strategy.
  *
- * @param {Buffer} encryptedBuffer - The buffer containing the encrypted data to be decrypted.
- * @param {string} password - The password to use for decrypting the data.
- * @param {ILogger} logger - Logger instance for logging information during the decryption process.
- * @returns {Buffer} - The decrypted data as a Buffer.
+ * @param {Buffer} encryptedBuffer - The buffer containing encrypted data to be decrypted.
+ * @param {string} password - The password used for the decryption process.
+ * @param {ILogger} logger - The logger object used for logging information.
+ * @param {EncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
+ * @returns {Buffer} - The decrypted buffer.
  */
-export function decryptData(encryptedBuffer: Buffer, password: string, logger: ILogger): Buffer {
-    const encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy();
+export function decryptData(
+    encryptedBuffer: Buffer,
+    password: string,
+    logger: ILogger,
+    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+): Buffer {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
+    const checksum = generateChecksum(encryptedBuffer);
+    logger.info(`checksum : ${checksum}`);
     return encryptionStrategy.decrypt(encryptedBuffer, password);
 }
 /**

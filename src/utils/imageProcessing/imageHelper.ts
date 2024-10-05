@@ -1,16 +1,33 @@
 // src/utils/imageProcessing/imageHelper.ts
 
+/// <reference lib="deno.unstable" />
+
 import sharp from 'sharp';
 import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
-import { readDirectory } from '../storage/storageUtils.ts';
+import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
 import type { Buffer } from 'node:buffer';
+import fs from 'node:fs';
+import openKv = Deno.openKv;
 
 /**
  * In-memory cache for image tones.
  */
 const toneCache: ImageToneCache = {};
+
+// Initialize Deno KV
+const kv = await initializeKvStore();
+
+/**
+ * Initializes and returns a Deno KV store instance.
+ *
+ * @return {Promise<Deno.Kv>} The initialized KV store.
+ */
+async function initializeKvStore(): Promise<Deno.Kv> {
+    const rootDirectory = findProjectRoot(Deno.cwd());
+    return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
+}
 
 export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
@@ -136,20 +153,108 @@ export function getRandomPosition(
     throw new Error('Unable to find a non-overlapping position for the chunk.');
 }
 
-export async function processImageTones(inputPngPath: string, logger: ILogger) {
-    const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.endsWith('.png'));
+/**
+ * Retrieves the image capacity from Deno KV using the unique cache key.
+ *
+ * @param {string} imagePath - The full path to the PNG image.
+ * @param {number} fileSize - The size of the PNG image in bytes.
+ * @return {Promise<ImageCapacity | null>} - The image capacity or null if not found.
+ */
+async function retrieveImageCapacity(imagePath: string, fileSize: number): Promise<ImageCapacity | null> {
+    const key = getToneCacheKey(imagePath, fileSize);
+    try {
+        const { value } = await kv.get<ImageCapacity>(['pix-veil', key]);
+        return value;
+    } catch (error) {
+        // Log the error and return null to indicate a cache miss
+        console.error(`Failed to retrieve cache for "${imagePath}": ${(error as Error).message}`);
+        return null;
+    }
+}
+
+/**
+ * Constructs a unique cache key using the full path and file size.
+ *
+ * @param {string} imagePath - The full path to the PNG image.
+ * @param {number} fileSize - The size of the PNG image in bytes.
+ * @return {string} - The constructed cache key.
+ */
+function getToneCacheKey(imagePath: string, fileSize: number): string {
+    return `${imagePath}:${fileSize}`;
+}
+
+/**
+ * Stores the image capacity in Deno KV using the unique cache key.
+ *
+ * @param {string} imagePath - The full path to the PNG image.
+ * @param {number} fileSize - The size of the PNG image in bytes.
+ * @param {ImageCapacity} capacity - The image capacity data.
+ * @return {Promise<void>} - Resolves when the data is stored.
+ */
+async function storeImageCapacity(imagePath: string, fileSize: number, capacity: ImageCapacity): Promise<void> {
+    const key = getToneCacheKey(imagePath, fileSize);
+    try {
+        await kv.set(['pix-veil', key], capacity);
+    } catch (error) {
+        console.error(`Failed to store cache for "${imagePath}": ${(error as Error).message}`);
+    }
+}
+
+/**
+ * Analyzes all PNG images in the specified directory for their tone capacities.
+ * Loads existing cache entries from Deno KV into the in-memory `toneCache`.
+ * For cache misses, analyzes the image and stores the result in both `toneCache` and Deno KV.
+ *
+ * @param {string} inputPngPath - The directory containing PNG images.
+ * @param {ILogger} logger - Logger instance for debugging information.
+ * @return {Promise<void>} - Resolves when all images have been processed.
+ */
+export async function processImageTones(inputPngPath: string, logger: ILogger): Promise<void> {
+    const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.toLowerCase().endsWith('.png'));
     for (const png of pngsInDirectory) {
         const imagePath = path.join(inputPngPath, png);
-        // const image = sharp(imagePath).removeAlpha().toColourspace('srgb');
-        //
-        // const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-        const { data, info } = await getImageData(imagePath);
+        let fileSize: number;
+
+        try {
+            const stats = fs.statSync(imagePath);
+            if (!stats.isFile()) {
+                logger.warn(`"${imagePath}" is not a file. Skipping.`);
+                continue;
+            }
+            fileSize = stats.size;
+        } catch (error) {
+            logger.error(`Failed to get file stats for "${imagePath}": ${(error as Error).message}`);
+            continue;
+        }
+
+        // Attempt to retrieve from Deno KV
+        const cachedCapacity = await retrieveImageCapacity(imagePath, fileSize);
+        if (cachedCapacity) {
+            toneCache[imagePath] = cachedCapacity;
+            logger.debug(`Cache hit for "${imagePath}". Loaded capacity from Deno KV.`);
+            continue;
+        }
+
+        // Cache miss: Analyze the image
+        logger.debug(`Cache miss for "${imagePath}". Analyzing image tones...`);
+        let data: Buffer;
+        let info: sharp.OutputInfo;
+
+        try {
+            const imageData = await getImageData(imagePath);
+            data = imageData.data;
+            info = imageData.info;
+        } catch (error) {
+            logger.error(`Failed to read image data for "${imagePath}": ${(error as Error).message}`);
+            continue;
+        }
+
         const capacity: ImageCapacity = { low: 0, mid: 0, high: 0 };
 
         for (let i = 0; i < data.length; i += info.channels) {
             const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+            const g = info.channels >= 2 ? data[i + 1] : 0; // Handle grayscale images
+            const b = info.channels >= 3 ? data[i + 2] : 0; // Handle grayscale or RGB images
             const brightness = (r + g + b) / 3;
 
             if (brightness < 85) {
@@ -161,23 +266,34 @@ export async function processImageTones(inputPngPath: string, logger: ILogger) {
             }
         }
 
-        toneCache[imagePath] = capacity; // Cache the result
+        // Update the in-memory cache
+        toneCache[imagePath] = capacity;
         logger.debug(
             `Analyzed tones for "${imagePath}": Low=${capacity.low}, Mid=${capacity.mid}, High=${capacity.high}.`,
         );
+
+        // Store the result in Deno KV
+        await storeImageCapacity(imagePath, fileSize, capacity);
+        logger.debug(`Stored capacity for "${imagePath}" in Deno KV.`);
     }
 }
 
 /**
- * Analyze the image to categorize pixels into low, mid, and high-tone areas.
- * Utilizes caching to avoid redundant computations.
+ * Retrieves the cached image tones from the in-memory `toneCache`.
+ * Remains synchronous as per requirement.
+ *
+ * @param {string} imagePath - The full path to the PNG image.
+ * @param {ILogger} logger - Logger instance for debugging information.
+ * @return {ImageCapacity} - The image capacity data.
+ * @throws {Error} - If no cache entry is found for the image.
  */
 export function getCachedImageTones(imagePath: string, logger: ILogger): ImageCapacity {
-    if (toneCache[imagePath]) {
-        logger.debug(`Retrieved cached tones for "${imagePath}".`);
-        return toneCache[imagePath];
+    const capacity = toneCache[imagePath];
+    if (capacity) {
+        logger.debug(`Retrieved cached tones for "${imagePath}" from in-memory cache.`);
+        return capacity;
     } else {
-        throw new Error(`no cache entry found for ${imagePath}`);
+        throw new Error(`No cache entry found for "${imagePath}". Ensure that "processImageTones" has been run.`);
     }
 }
 
