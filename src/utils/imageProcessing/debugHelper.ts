@@ -74,16 +74,16 @@ export function addDebugBlocks(
 }
 
 /**
- * Creates a human-readable distribution map text file from a list of distribution map entries.
+ * Creates a human-readable distribution map text file from the given distribution map entries and other metadata.
  *
- * @param {IDistributionMapEntry[]} distributionMapEntries - An array of distribution map entries to be included in the text file.
- * @param {string} originalFilename - The original filename associated with the distribution map entries.
- * @param {string} distributionCarrier - The filename of the png which is used as carrier for the distribution map.
- * @param {string} checksum - The checksum of the original file to be included in the distribution map.
- * @param {string} outputFolder - The folder path where the distribution map text file should be created.
- * @param {ILogger} logger - The logger instance used for logging information about the process.
- *
- * @return {void} This function doesn't return a value.
+ * @param {IDistributionMapEntry[]} distributionMapEntries - The entries to be included in the distribution map.
+ * @param {string} distributionCarrier - The carrier responsible for distribution.
+ * @param {string} originalFilename - The original filename of the content being distributed.
+ * @param {string} checksum - The checksum of the original content file.
+ * @param {string} outputFolder - The directory where the distribution map file will be created.
+ * @param {string} compressionStrategy - The strategy used for compressing the data.
+ * @param {ILogger} logger - The logger instance used for logging information.
+ * @return {void}
  */
 export function createHumanReadableDistributionMap(
     distributionMapEntries: IDistributionMapEntry[],
@@ -91,6 +91,7 @@ export function createHumanReadableDistributionMap(
     originalFilename: string,
     checksum: string,
     outputFolder: string,
+    compressionStrategy: string,
     logger: ILogger,
 ): void {
     if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
@@ -100,6 +101,7 @@ export function createHumanReadableDistributionMap(
         originalFilename,
         distributionCarrier,
         checksum,
+        compressionStrategy,
     );
     writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
     if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);

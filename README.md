@@ -77,7 +77,7 @@ pix-veil encode \
   -i path/to/secret.file \
   -p path/to/png/folder \
   -o path/to/output/folder \
-  -w yourpassword \
+  -w \
   --verbose
 ~~~
 
@@ -86,7 +86,7 @@ pix-veil encode \
 - `-i, --input <file>`: Input file to hide.
 - `-p, --png-folder <folder>`: Folder containing PNG images to use.
 - `-o, --output <folder>`: Output folder to store the modified images.
-- `-w, --password <password>`: Prompt for password
+- `-w, --password`: Prompt for password
 - `--verbose`: Enable verbose logging.
 - `--debug-visual`: Enable debug visual blocks in images.
 
@@ -98,7 +98,7 @@ To extract the hidden file from PNG images:
 pix-veil decode \
   -i path/to/encoded/png/folder \
   -o path/to/output/folder \
-  -w yourpassword \
+  -w \
   --verbose
 ~~~
 
@@ -106,7 +106,7 @@ pix-veil decode \
 
 - `-i, --input <folder>`: Input folder containing the modified PNG images.
 - `-o, --output <folder>`: Output folder to save the extracted file.
-- `-w, --password <password>`: Prompt for password.
+- `-w, --password`: Prompt for password.
 - `--verbose`: Enable verbose logging.
 
 ---

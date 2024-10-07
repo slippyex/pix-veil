@@ -16,7 +16,7 @@ export class AES256CBCStrategy implements EncryptionStrategy {
     private readonly ivLength = 16;
 
     encrypt(data: Buffer, password: string): Buffer {
-        const iv = crypto.randomBytes(this.ivLength);
+        const iv = Buffer.from('5183666c72eec9e4'); //crypto.randomBytes(this.ivLength);
         const key = crypto.createHash('sha256').update(password).digest();
         const cipher = crypto.createCipheriv(this.algorithm, key, iv);
         const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
@@ -24,10 +24,11 @@ export class AES256CBCStrategy implements EncryptionStrategy {
     }
 
     decrypt(data: Buffer, password: string): Buffer {
-        const iv = data.slice(0, this.ivLength);
-        const encrypted = data.slice(this.ivLength);
+        const iv = data.subarray(0, this.ivLength);
+        const encrypted = data.subarray(this.ivLength);
         const key = crypto.createHash('sha256').update(password).digest();
         const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+        decipher.setAutoPadding(false);
         return Buffer.concat([decipher.update(encrypted), decipher.final()]);
     }
 }

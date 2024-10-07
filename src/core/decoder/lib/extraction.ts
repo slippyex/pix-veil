@@ -6,25 +6,9 @@ import { Buffer } from 'node:buffer';
 import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
 import path from 'node:path';
 
-import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getChannelOffset, getImage } from '../../../utils/imageProcessing/imageHelper.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';
 import { extractBits } from '../../../utils/bitManipulation/bitUtils.ts';
-
-const imageMap = new Map<string, IAssembledImageData>();
-
-/**
- * Retrieves an image from the specified path, processing it and caching the result.
- *
- * @param {string} pngPath - The file path to the PNG image.
- * @return {Promise<{ data: Buffer, info: sharp.OutputInfo } | undefined>} A promise that resolves to an object containing the image data and information, or undefined if the image cannot be processed.
- */
-async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
-    if (!imageMap.has(pngPath)) {
-        const data = await getImageData(pngPath);
-        imageMap.set(pngPath, data);
-    }
-    return imageMap.get(pngPath);
-}
 
 /**
  * Extracts chunks of data from given PNG files as specified in the distribution map.
@@ -111,12 +95,11 @@ function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[])
 }
 
 /**
- * Scans a directory for PNG files that contain a distribution map.
+ * Scans the given folder for PNG images and attempts to extract a distribution map from each image.
  *
- * @param {string} inputFolder - The path to the folder containing PNG files to be scanned.
- * @param {ILogger} logger - A logger instance for logging debug information.
- * @return {Promise<Buffer | null>} A promise that resolves to a Buffer containing the distribution map if found,
- *                                   or null if no distribution map is found.
+ * @param {string} inputFolder - The path to the folder containing PNG images to scan.
+ * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
+ * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
 export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));

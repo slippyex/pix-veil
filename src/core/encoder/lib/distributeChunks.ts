@@ -23,7 +23,7 @@ import crypto from 'node:crypto';
  * @return {IDistributionMapEntry[]} return.distributionMapEntries - Array of distribution map entries that map chunks to PNG images.
  * @return {Map<number, Buffer>} return.chunkMap - Map storing chunk IDs and their corresponding chunk data.
  */
-export function distributeChunksAcrossPngs(
+export function createChunkDistributionInformation(
     chunks: IChunk[],
     pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[],
     inputPngFolder: string,

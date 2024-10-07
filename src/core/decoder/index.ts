@@ -9,6 +9,7 @@ import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
 import { assembleChunks, extractChunks } from './lib/extraction.ts';
 import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
+import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 /**
  * Decodes encrypted data from the input folder, decrypts it using the provided password, and writes the
@@ -32,8 +33,10 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         if (logger.verbose) logger.info('Verifying and decrypting data...');
         verifyDataIntegrity(exactEncryptedData, distributionMap.checksum, logger);
         const decryptedData = decryptData(exactEncryptedData, password, logger);
-        if (logger.verbose && distributionMap.compressed) logger.info('Decompressing data...');
-        const decompressedData = distributionMap.compressed ? decompressBuffer(decryptedData) : decryptedData;
+        if (logger.verbose && distributionMap.compressionStrategy !== SupportedCompressionStrategies.None) {
+            logger.info('Decompressing data...');
+        }
+        const decompressedData = decompressBuffer(decryptedData, distributionMap.compressionStrategy);
         const outputFile = path.join(outputFolder, distributionMap.originalFilename);
         if (logger.verbose) logger.info('Writing the output file...');
         writeBufferToFile(outputFile, decompressedData);

@@ -22,7 +22,7 @@ beforeAll(() => {
 });
 
 describe('Codec tests', () => {
-    const fileUnderSubject = 'secret.pdf';
+    const fileUnderSubject = '117.json';
     const inputFile = path.join(__dirname, 'test_input', 'files', fileUnderSubject);
     const inputPngFolder = path.join(__dirname, 'test_input', 'images');
 
@@ -30,7 +30,7 @@ describe('Codec tests', () => {
     const decodedFolder = path.join(__dirname, 'test_output', 'decoded');
     const decodedFile = path.join(decodedFolder, fileUnderSubject);
 
-    const password = 'testpassword';
+    const password = 'test';
     beforeAll(() => {
         fs.rmSync(encodedFolder, { recursive: true, force: true });
         fs.rmSync(decodedFolder, { recursive: true, force: true });
@@ -51,6 +51,7 @@ describe('Codec tests', () => {
             password,
             verbose: true,
             debugVisual: false,
+            verify: true,
             logger,
         });
 

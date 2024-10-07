@@ -10,12 +10,14 @@ import {
     serializeUInt32,
     serializeUInt8,
 } from '../serialization/serializationHelpers.ts';
+import { SupportedCompressionStrategies } from '../compression/compressionStrategies.ts';
 
 /**
  * Serializes a distribution map into a Buffer.
  *
  * @param {IDistributionMap} distributionMap - The distribution map to serialize,
- *   containing information about entries, checksum, original filename, and encrypted data length.
+ *   containing information about entries, checksum, original filename, encrypted data length,
+ *   and compression strategy.
  * @returns {Buffer} The serialized Buffer representation of the distribution map.
  */
 export function serializeDistributionMap(distributionMap: IDistributionMap): Buffer {
@@ -28,9 +30,11 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
     // Serialize encryptedDataLength (4 bytes)
     const encryptedDataLengthBuffer = serializeUInt32(distributionMap.encryptedDataLength);
 
-    // Serialize compressed flag (1 byte)
-    const compressedBuffer = serializeUInt8(distributionMap.compressed ? 1 : 0);
+    // Serialize compressionStrategy (UInt8)
+    const compressionStrategyBuffer = Buffer.alloc(1);
+    compressionStrategyBuffer.writeUInt8(compressionStrategyToValue(distributionMap.compressionStrategy), 0);
 
+    // Serialize entryCount (4 bytes)
     const entryCountBuffer = Buffer.alloc(4);
     entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
 
@@ -40,7 +44,7 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
         checksumBuffer,
         originalFilenameBuffer,
         encryptedDataLengthBuffer,
-        compressedBuffer, // Include the new field
+        compressionStrategyBuffer,
     ]);
 
     const sizeBuffer = Buffer.alloc(4);
@@ -50,10 +54,29 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
 }
 
 /**
+ * Converts a SupportedCompressionStrategies enum to its corresponding numeric value.
+ *
+ * @param {SupportedCompressionStrategies} strategy - The compression strategy to convert.
+ * @returns {number} - The numeric value representing the compression strategy.
+ */
+function compressionStrategyToValue(strategy: SupportedCompressionStrategies): number {
+    switch (strategy) {
+        case SupportedCompressionStrategies.Brotli:
+            return 0;
+        case SupportedCompressionStrategies.GZip:
+            return 1;
+        case SupportedCompressionStrategies.None:
+            return 2;
+        default:
+            throw new Error(`Unknown compression strategy: ${strategy}`);
+    }
+}
+
+/**
  * Deserializes a buffer into a distribution map object.
  *
  * @param {Buffer} buffer - The buffer containing the serialized distribution map data.
- * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, original filename, and encrypted data length.
+ * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, original filename, encrypted data length, and compression strategy.
  */
 export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
     validateMagicBytes(buffer);
@@ -63,9 +86,11 @@ export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
 
     let offset = 0;
 
+    // 1. Deserialize Number of Entries (UInt32BE)
     const entryCount = mapContent.readUInt32BE(offset);
     offset += 4;
 
+    // 2. Deserialize Each DistributionMapEntry
     const entries: IDistributionMapEntry[] = [];
     for (let i = 0; i < entryCount; i++) {
         const { entry, newOffset } = deserializeEntry(mapContent, offset);
@@ -73,37 +98,61 @@ export function deserializeDistributionMap(buffer: Buffer): IDistributionMap {
         offset = newOffset;
     }
 
+    // 3. Deserialize checksum (String with UInt16BE length prefix)
     const { checksum, newOffset: checksumOffset } = deserializeChecksum(mapContent, offset);
     offset = checksumOffset;
 
+    // 4. Deserialize originalFilename (String with UInt16BE length prefix)
     const { value: originalFilename, newOffset: filenameOffset } = deserializeString(mapContent, offset);
     offset = filenameOffset;
 
-    // Deserialize encryptedDataLength
+    // 5. Deserialize encryptedDataLength (UInt32BE)
     const { value: encryptedDataLength, newOffset: offsetAfterLength } = deserializeUInt32(mapContent, offset);
     offset = offsetAfterLength;
 
-    // Deserialize compressed flag
-    const { value: compressedFlag, newOffset: finalOffset } = deserializeUInt8(mapContent, offset);
-    const compressed = compressedFlag === 1;
-    offset = finalOffset;
+    // 6. Deserialize compressionStrategy (UInt8)
+    if (offset + 1 > mapContent.length) {
+        throw new RangeError('Buffer too small to contain compressionStrategy.');
+    }
+    const compressionStrategyValue = mapContent.readUInt8(offset);
+    const compressionStrategy = valueToCompressionStrategy(compressionStrategyValue);
+    offset += 1;
 
     return {
         entries,
         checksum,
         originalFilename,
         encryptedDataLength,
-        compressed,
+        compressionStrategy,
     };
+}
+
+/**
+ * Converts a numeric compression strategy value back to its corresponding enum.
+ *
+ * @param {number} value - The numeric value representing the compression strategy.
+ * @returns {SupportedCompressionStrategies} - The corresponding compression strategy.
+ */
+function valueToCompressionStrategy(value: number): SupportedCompressionStrategies {
+    switch (value) {
+        case 0:
+            return SupportedCompressionStrategies.Brotli;
+        case 1:
+            return SupportedCompressionStrategies.GZip;
+        case 2:
+            return SupportedCompressionStrategies.None;
+        default:
+            throw new Error(`Unknown compression strategy value: ${value}`);
+    }
 }
 
 /**
  * Serializes a given distribution map entry into a Buffer.
  *
- * @param entry - The entry to be serialized, which contains properties such as
+ * @param {IDistributionMapEntry} entry - The entry to be serialized, which contains properties such as
  *                chunkId, pngFile, startPosition, endPosition, bitsPerChannel,
  *                and channelSequence.
- * @returns A Buffer containing the serialized data of the provided entry.
+ * @returns {Buffer} A Buffer containing the serialized data of the provided entry.
  */
 function serializeEntry(entry: IDistributionMapEntry): Buffer {
     const buffers: Buffer[] = [];
@@ -131,11 +180,11 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
 }
 
 /**
- * Deserializes a buffer into an entry object containing various properties.
+ * Deserializes a single distribution map entry from the buffer starting at the given offset.
  *
- * @param {Buffer} buffer - The input buffer containing serialized entry data.
+ * @param {Buffer} buffer - The buffer containing serialized entry data.
  * @param {number} offset - The initial offset in the buffer from where to start deserialization.
- * @return {{ entry: IDistributionMapEntry, newOffset: number }} An object containing the deserialized entry and the updated offset.
+ * @return {{ entry: IDistributionMapEntry; newOffset: number }} - The deserialized entry and the new buffer offset.
  */
 function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributionMapEntry; newOffset: number } {
     // Deserialize chunkId
@@ -194,11 +243,11 @@ function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
 }
 
 /**
- * Deserializes a buffer into an array of ChannelSequence objects.
+ * Deserializes a channel sequence from a buffer.
  *
- * @param {Buffer} buffer - The input buffer containing serialized channel sequence data.
- * @param {number} length - The number of channels to deserialize from the buffer.
- * @return {ChannelSequence[]} An array of deserialized ChannelSequence objects.
+ * @param {Buffer} buffer - The buffer containing serialized channel sequence data.
+ * @param {number} length - The number of channels to deserialize.
+ * @returns {ChannelSequence[]} An array of deserialized ChannelSequence objects.
  */
 function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequence[] {
     const channelSequence: ChannelSequence[] = [];
@@ -273,7 +322,7 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
         );
     }
 
-    const value = buffer.subarray(offset, offset + length).toString('utf-8');
+    const value = buffer.slice(offset, offset + length).toString('utf-8');
     return { value, newOffset: offset + length };
 }
 
@@ -281,7 +330,7 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
  * Returns the numerical value associated with the specified channel.
  *
  * @param {ChannelSequence} channel - The channel for which the numerical value is needed.
- * Possible values are 'R', 'G', 'B'.
+ * Possible values are 'R', 'G', 'B', 'A'.
  *
  * @return {number} The numerical value corresponding to the specified channel.
  * @throws Will throw an error if the channel value is invalid.
@@ -294,6 +343,8 @@ function channelValue(channel: ChannelSequence): number {
             return 0x1;
         case 'B':
             return 0x2;
+        case 'A':
+            return 0x3;
         default:
             throw new Error(`Invalid channel value: ${channel}`);
     }
@@ -302,7 +353,7 @@ function channelValue(channel: ChannelSequence): number {
 /**
  * Determines the channel sequence based on the provided numerical value.
  *
- * @param {number} value - The numerical value representing a color channel (0 for 'R', 1 for 'G', 2 for 'B').
+ * @param {number} value - The numerical value representing a color channel (0 for 'R', 1 for 'G', 2 for 'B', 3 for 'A').
  * @return {ChannelSequence} The channel sequence corresponding to the provided value.
  * @throws {Error} If the provided value does not correspond to a valid channel sequence.
  */
@@ -314,6 +365,8 @@ function channelFromValue(value: number): ChannelSequence {
             return 'G';
         case 0x2:
             return 'B';
+        case 0x3:
+            return 'A';
         default:
             throw new Error(`Invalid channel sequence value: ${value}`);
     }

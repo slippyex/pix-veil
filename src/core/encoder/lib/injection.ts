@@ -35,8 +35,6 @@ async function processImage(
     logger: ILogger,
 ): Promise<void> {
     try {
-        // const image = sharp(inputPngPath).removeAlpha().toColourspace('srgb');
-        // const { data: imageData, info } = await image.raw().toBuffer({ resolveWithObject: true });
         const { data: imageData, info } = await getImageData(inputPngPath);
 
         injectorFn(imageData, info, logger);

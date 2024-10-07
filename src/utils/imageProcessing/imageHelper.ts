@@ -3,7 +3,13 @@
 /// <reference lib="deno.unstable" />
 
 import sharp from 'sharp';
-import type { ChannelSequence, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
+import type {
+    ChannelSequence,
+    IAssembledImageData,
+    ILogger,
+    ImageCapacity,
+    ImageToneCache,
+} from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
@@ -15,6 +21,7 @@ import openKv = Deno.openKv;
  * In-memory cache for image tones.
  */
 const toneCache: ImageToneCache = {};
+const imageMap = new Map<string, IAssembledImageData>();
 
 // Initialize Deno KV
 const kv = await initializeKvStore();
@@ -27,6 +34,20 @@ const kv = await initializeKvStore();
 async function initializeKvStore(): Promise<Deno.Kv> {
     const rootDirectory = findProjectRoot(Deno.cwd());
     return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
+}
+
+/**
+ * Retrieves an image from the specified path, processing it and caching the result.
+ *
+ * @param {string} pngPath - The file path to the PNG image.
+ * @return {Promise<{ data: Buffer, info: sharp.OutputInfo } | undefined>} A promise that resolves to an object containing the image data and information, or undefined if the image cannot be processed.
+ */
+export async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
+    if (!imageMap.has(pngPath)) {
+        const data = await getImageData(pngPath);
+        imageMap.set(pngPath, data);
+    }
+    return imageMap.get(pngPath);
 }
 
 export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {

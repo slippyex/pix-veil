@@ -8,7 +8,6 @@ import * as path from 'jsr:@std/path';
 import process from 'node:process';
 
 import cliProgress from 'cli-progress';
-import figlet from 'figlet';
 import { ILogger } from '../@types/index.ts';
 
 /**
@@ -82,7 +81,6 @@ async function batchProcess(): Promise<void> {
         await ensureDirectory(encodedFolder);
 
         const filePath = path.join(inputDir, file);
-        const decodedFilePath = path.join(decodedFolder, file);
 
         try {
             // Encode the File
@@ -93,6 +91,7 @@ async function batchProcess(): Promise<void> {
                 password,
                 verbose: true,
                 debugVisual: false,
+                verify: true,
                 logger,
             });
 
@@ -104,21 +103,6 @@ async function batchProcess(): Promise<void> {
                 verbose: false,
                 logger,
             });
-
-            // Compare Original and Decoded Files
-            const originalBuffer = await fs.readFile(filePath);
-            const decodedBuffer = await fs.readFile(decodedFilePath);
-
-            if (originalBuffer.equals(decodedBuffer)) {
-                const fileName = path.basename(filePath);
-                const destination = path.join(successFolder, fileName);
-                await fs.rename(filePath, destination);
-                await cleanDirectory(encodedFolder);
-            } else {
-                const reason = 'Decoded file does not match the original.';
-                await handleFailure(filePath, failedFolder);
-                report.push({ file, status: 'failed', reason });
-            }
         } catch (error) {
             const reason = (error as Error).message;
             await handleFailure(filePath, failedFolder);

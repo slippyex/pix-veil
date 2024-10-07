@@ -85,3 +85,54 @@ export function findProjectRoot(
         currentPath = parentPath;
     }
 }
+
+/**
+ * Checks if the given filename has an extension that indicates it is a compressed file.
+ *
+ * @param {string} filename - The name of the file to check.
+ * @return {boolean} Returns true if the filename has a compressed file extension, otherwise false.
+ */
+export function isCompressed(filename: string): boolean {
+    // Define common compressed file extensions
+    const compressedExtensions = [
+        '.zip',
+        '.tar',
+        '.gz',
+        '.tar.gz',
+        '.rar',
+        '.7z',
+        '.bz2',
+        '.xz',
+        '.tgz',
+        '.zst',
+        '.lz',
+        '.lz4',
+        '.cab',
+    ];
+
+    // Extract the file extension from the filename
+    const fileExtension = getFileExtension(filename);
+
+    // Check if the file extension is in the list of compressed formats
+    return compressedExtensions.includes(fileExtension.toLowerCase());
+}
+
+/**
+ * Extracts and returns the file extension from a given filename.
+ *
+ * @param {string} filename - The name of the file from which to extract the extension.
+ * @return {string} The extension of the file, including the dot (e.g., ".txt").
+ * If no extension is found, an empty string is returned.
+ */
+function getFileExtension(filename: string): string {
+    // Find the last occurrence of '.' to get the extension
+    const lastDotIndex = filename.lastIndexOf('.');
+
+    // If there's no dot, return an empty string (no extension)
+    if (lastDotIndex === -1) {
+        return '';
+    }
+
+    // Return the file extension, including the dot
+    return filename.substring(lastDotIndex);
+}

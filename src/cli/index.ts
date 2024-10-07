@@ -25,6 +25,7 @@ program
     .requiredOption('-p, --png-folder <folder>', 'Folder with input PNG files')
     .requiredOption('-o, --output <folder>', 'Output folder to store PNG files')
     .requiredOption('-w, --password', 'Prompt for password')
+    .option('--no-verify', 'Skip verification step during encoding') // Added flag
     .showHelpAfterError()
     .action(async (options) => {
         const debugVisual = program.opts().debugVisual || false;
@@ -85,6 +86,7 @@ program
                 verbose,
                 debugVisual,
                 logger,
+                verify: options.verify !== false, // Pass the verify flag
             });
             process.exit(0);
         } catch (error) {

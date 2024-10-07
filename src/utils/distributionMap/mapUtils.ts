@@ -7,21 +7,23 @@ import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
 import { decryptData, encryptData } from '../cryptography/crypto.ts';
 import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
+import { SupportedCompressionStrategies } from '../compression/compressionStrategies.ts';
 
 /**
- * Prepares a distribution map for injection by creating, compressing, and encrypting it.
+ * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
  *
- * @param {IDistributionMapEntry[]} distributionMapEntries - Entries to be included in the distribution map.
- * @param {string} inputFile - The input file associated with the distribution map.
- * @param {string} checksum - The checksum to validate the distribution map.
+ * @param {IDistributionMapEntry[]} distributionMapEntries - The entries for the distribution map.
+ * @param {SupportedCompressionStrategies} compressionStrategy - The compression strategy to use.
+ * @param {string} inputFile - The input file for which the distribution map is prepared.
+ * @param {string} checksum - The checksum of the input file.
  * @param {string} password - The password used for encrypting the distribution map.
  * @param {number} encryptedDataLength - The length of the encrypted data.
- * @param {ILogger} logger - The logger instance used for logging information and debugging.
- * @returns {Buffer} - The prepared distribution map as encrypted binary data, ready for injection.
+ * @param {ILogger} logger - The logger instance for logging information.
+ * @returns {Buffer} The encrypted buffer containing the compressed distribution map.
  */
 export function prepareDistributionMapForInjection(
     distributionMapEntries: IDistributionMapEntry[],
-    isCompressed: boolean,
+    compressionStrategy: SupportedCompressionStrategies,
     inputFile: string,
     checksum: string,
     password: string,
@@ -31,12 +33,12 @@ export function prepareDistributionMapForInjection(
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(
         distributionMapEntries,
-        isCompressed,
+        compressionStrategy,
         inputFile,
         checksum,
         encryptedDataLength,
     );
-    const distributionMapCompressed = compressBuffer(serializedMap);
+    const distributionMapCompressed = compressBuffer(serializedMap, SupportedCompressionStrategies.Brotli);
     const encrypted = encryptData(distributionMapCompressed, password, logger);
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
     return encrypted;
@@ -76,23 +78,26 @@ function processDistributionMap(
     logger: ILogger,
 ): IDistributionMap {
     const rawDistributionMapDecrypted = decryptData(rawDistributionMapEncrypted, password, logger);
-    const rawDistributionMapDecompressed = decompressBuffer(rawDistributionMapDecrypted);
+    const rawDistributionMapDecompressed = decompressBuffer(
+        rawDistributionMapDecrypted,
+        SupportedCompressionStrategies.Brotli,
+    );
     return deserializeDistributionMap(rawDistributionMapDecompressed);
 }
 
 /**
- * Creates a distribution map from the given entries, original filename, checksum, and encrypted data length,
- * and returns it as a serialized Buffer.
+ * Creates a distribution map buffer from the provided entries and metadata.
  *
- * @param {IDistributionMapEntry[]} entries - The entries to be included in the distribution map.
- * @param {string} originalFilename - The original filename associated with the distribution.
- * @param {string} checksum - The checksum for verifying the integrity of the distribution data.
+ * @param {IDistributionMapEntry[]} entries - Array of distribution map entries.
+ * @param {SupportedCompressionStrategies} compressionStrategy - Strategy used for compressing the data.
+ * @param {string} originalFilename - The original filename of the data being distributed.
+ * @param {string} checksum - A checksum value for data integrity verification.
  * @param {number} encryptedDataLength - The length of the encrypted data.
- * @returns {Buffer} - The serialized distribution map.
+ * @returns {Buffer} Serialized buffer representation of the distribution map.
  */
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
-    isCompressed: boolean,
+    compressionStrategy: SupportedCompressionStrategies,
     originalFilename: string,
     checksum: string,
     encryptedDataLength: number, // New parameter
@@ -100,7 +105,7 @@ export function createDistributionMap(
     const distributionMap: IDistributionMap = {
         entries,
         originalFilename,
-        compressed: isCompressed,
+        compressionStrategy,
         checksum,
         encryptedDataLength,
     };
@@ -108,19 +113,24 @@ export function createDistributionMap(
 }
 
 /**
- * Generates a distribution map text for the given entries.
+ * Generates a detailed distribution map text, providing information about chunks embedded
+ * in various PNG files, checksum, original filename, and additional metadata.
  *
- * @param {IDistributionMapEntry[]} entries - An array of distribution map entries.
- * @param {string} originalFilename - The name of the original file.
- * @param {string} distributionCarrier - The filename of the png which is used as carrier for the distribution map.
- * @param {string} checksum - The checksum of the original file.
- * @return {string} The formatted distribution map text.
+ * @param {IDistributionMapEntry[]} entries - Array of distribution map entries containing information
+ *                                            about the chunks embedded in each PNG file.
+ * @param {string} originalFilename - The original filename from which the distribution map is generated.
+ * @param {string} distributionCarrier - The PNG file used as a carrier for the distribution.
+ * @param {string} checksum - The checksum value used for verification.
+ * @param {string} compressionStrategy - The compression strategy employed during the distribution.
+ * @return {string} Text representation of the distribution map including detailed information about
+ *                  each PNG file, checksum, original filename, compression strategy, and distribution carrier.
  */
 export function generateDistributionMapText(
     entries: IDistributionMapEntry[],
     originalFilename: string,
     distributionCarrier: string,
     checksum: string,
+    compressionStrategy: string,
 ): string {
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
 
@@ -149,6 +159,7 @@ export function generateDistributionMapText(
 
     text += `Checksum: ${checksum}\n`;
     text += `Original Filename: ${originalFilename}\n`;
+    text += `Picked compression strategy: ${compressionStrategy}\n`;
     text += `Distribution Carrier PNG: ${distributionCarrier}\n`;
 
     return text;

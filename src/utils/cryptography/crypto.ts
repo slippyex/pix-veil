@@ -45,9 +45,7 @@ export function decryptData(
     logger: ILogger,
     encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
 ): Buffer {
-    if (logger.verbose) logger.info('Encrypting the compressed data...');
-    const checksum = generateChecksum(encryptedBuffer);
-    logger.info(`checksum : ${checksum}`);
+    if (logger.verbose) logger.info('Decrypting the compressed data...');
     return encryptionStrategy.decrypt(encryptedBuffer, password);
 }
 /**

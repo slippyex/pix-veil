@@ -2,6 +2,7 @@
 
 import type { Buffer } from 'node:buffer';
 import sharp from 'sharp';
+import { SupportedCompressionStrategies } from '../utils/compression/compressionStrategies.ts';
 
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
@@ -24,7 +25,7 @@ export interface IDistributionMap {
     originalFilename: string;
     checksum: string;
     encryptedDataLength: number; // New field added
-    compressed: boolean;
+    compressionStrategy: SupportedCompressionStrategies;
 }
 
 export interface ImageToneCache {
@@ -45,6 +46,7 @@ export interface IEncodeOptions {
     verbose: boolean;
     debugVisual: boolean;
     logger: ILogger;
+    verify?: boolean;
 }
 
 export interface IDecodeOptions {
