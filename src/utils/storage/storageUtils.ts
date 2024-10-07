@@ -1,8 +1,27 @@
 // src/utils/storage/storageUtils.ts
 
+import { dirname, extname, join } from 'jsr:@std/path';
 import { Buffer } from 'node:buffer';
-import fs, { exists, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+
+/**
+ * Converts a Buffer to Uint8Array.
+ *
+ * @param {Buffer} buffer - The Buffer to convert.
+ * @returns {Uint8Array} - The resulting Uint8Array.
+ */
+export function bufferToUint8Array(buffer: Buffer): Uint8Array {
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
+/**
+ * Converts a Uint8Array to Buffer.
+ *
+ * @param {Uint8Array} uint8Array - The Uint8Array to convert.
+ * @returns {Buffer} - The resulting Buffer.
+ */
+export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
+    return Buffer.from(uint8Array);
+}
 
 /**
  * Ensures that the specified output directory exists. If the directory
@@ -12,41 +31,45 @@ import { dirname, join } from 'node:path';
  * @return {void}
  */
 export function ensureOutputDirectory(outputFolder: string): void {
-    if (!fs.existsSync(outputFolder)) {
-        fs.mkdirSync(outputFolder, { recursive: true });
-    }
+    Deno.mkdirSync(outputFolder, { recursive: true });
 }
 
 /**
  * Writes a buffer to a file at the specified path.
  *
  * @param {string} filePath - The path of the file where the data will be written.
- * @param {Buffer} data - The buffer containing data to write to the file.
+ * @param {Buffer | Uint8Array} data - The buffer containing data to write to the file.
  *
  * @return {void}
  */
 export function writeBufferToFile(filePath: string, data: Buffer): void {
-    fs.writeFileSync(filePath, data);
+    Deno.writeFileSync(filePath, bufferToUint8Array(data));
 }
 
 /**
  * Reads the entire contents of a file into a buffer.
  *
  * @param {string} filePath - The file path of the file to be read.
- * @returns {Buffer} - The contents of the file as a buffer.
+ * @returns {Buffer | Uint8Array} - The contents of the file as a Buffer or Uint8Array.
  */
 export function readBufferFromFile(filePath: string): Buffer {
-    return fs.readFileSync(filePath);
+    const data = Deno.readFileSync(filePath);
+    return uint8ArrayToBuffer(data);
 }
 
 /**
  * Reads the contents of a directory synchronously.
  *
- * @param {string} filePath - The path of the directory to read.
+ * @param {string} dirPath - The path of the directory to read.
  * @return {string[]} - An array of filenames in the directory.
  */
-export function readDirectory(filePath: string): string[] {
-    return fs.readdirSync(filePath);
+export function readDirectory(dirPath: string): string[] {
+    const entries = Deno.readDirSync(dirPath);
+    const names: string[] = [];
+    for (const entry of entries) {
+        names.push(entry.name);
+    }
+    return names;
 }
 
 /**
@@ -56,7 +79,15 @@ export function readDirectory(filePath: string): string[] {
  * @return {boolean} Returns true if the file or directory exists, otherwise false.
  */
 export function filePathExists(filePath: string): boolean {
-    return fs.existsSync(filePath);
+    try {
+        Deno.statSync(filePath);
+        return true;
+    } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+            return false;
+        }
+        throw error; // Re-throw if it's a different error
+    }
 }
 
 /**
@@ -64,7 +95,7 @@ export function filePathExists(filePath: string): boolean {
  *
  * @param {string} startPath - The directory to start searching from.
  * @param {string[]} markerFiles - An array of filenames that signify the project root.
- * @return {Promise<string | null>} - The path to the project root or null if not found.
+ * @return {string | null} - The path to the project root or null if not found.
  */
 export function findProjectRoot(
     startPath: string,
@@ -74,7 +105,7 @@ export function findProjectRoot(
     while (true) {
         for (const marker of markerFiles) {
             const markerPath = join(currentPath, marker);
-            if (existsSync(markerPath)) {
+            if (filePathExists(markerPath)) {
                 return currentPath;
             }
         }
@@ -98,7 +129,6 @@ export function isCompressed(filename: string): boolean {
         '.zip',
         '.tar',
         '.gz',
-        '.tar.gz',
         '.rar',
         '.7z',
         '.bz2',
@@ -125,14 +155,5 @@ export function isCompressed(filename: string): boolean {
  * If no extension is found, an empty string is returned.
  */
 function getFileExtension(filename: string): string {
-    // Find the last occurrence of '.' to get the extension
-    const lastDotIndex = filename.lastIndexOf('.');
-
-    // If there's no dot, return an empty string (no extension)
-    if (lastDotIndex === -1) {
-        return '';
-    }
-
-    // Return the file extension, including the dot
-    return filename.substring(lastDotIndex);
+    return extname(filename);
 }

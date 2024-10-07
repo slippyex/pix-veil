@@ -8,6 +8,7 @@ import { getLogger } from '../utils/logging/logUtils.ts';
 import process from 'node:process';
 import figlet from 'figlet';
 import inquirer from 'inquirer';
+import { config } from '../config/index.ts';
 
 const program = new Command();
 
@@ -24,7 +25,9 @@ program
     .requiredOption('-i, --input <file>', 'Input file to hide')
     .requiredOption('-p, --png-folder <folder>', 'Folder with input PNG files')
     .requiredOption('-o, --output <folder>', 'Output folder to store PNG files')
-    .requiredOption('-w, --password', 'Prompt for password')
+    .option('--max-chunks-per-png <number>', 'Maximum number of chunks per PNG (Default: 16)', parseInt)
+    .option('--max-chunk-size <number>', 'Maximum size of each chunk in bytes (Default: 4096)', parseInt)
+    .option('--min-chunk-size <number>', 'Minimum size of each chunk in bytes (minimum 16, Default: 16)', parseInt)
     .option('--no-verify', 'Skip verification step during encoding') // Added flag
     .showHelpAfterError()
     .action(async (options) => {
@@ -35,45 +38,63 @@ program
         const inputPngFolder = path.resolve(options.pngFolder);
         const outputFolder = path.resolve(options.output);
 
-        let password: string;
-        if (options.password) {
-            const answers = await inquirer.prompt([
-                {
-                    type: 'password',
-                    name: 'password',
-                    message: 'Enter password:',
-                    mask: '*',
-                    validate: (value) => {
-                        if (value.length === 0) {
-                            return 'Password cannot be empty';
-                        }
-                        return true;
-                    },
+        const answers = await inquirer.prompt([
+            {
+                type: 'password',
+                name: 'password',
+                message: 'Enter password:',
+                mask: '*',
+                validate: (value) => {
+                    if (value.length === 0) {
+                        return 'Password cannot be empty';
+                    }
+                    return true;
                 },
-                {
-                    type: 'password',
-                    name: 'confirmPassword',
-                    message: 'Confirm password:',
-                    mask: '*',
-                    validate: (value) => {
-                        if (value.length === 0) {
-                            return 'Password cannot be empty';
-                        }
-                        return true;
-                    },
+            },
+            {
+                type: 'password',
+                name: 'confirmPassword',
+                message: 'Confirm password:',
+                mask: '*',
+                validate: (value) => {
+                    if (value.length === 0) {
+                        return 'Password cannot be empty';
+                    }
+                    return true;
                 },
-            ]);
+            },
+        ]);
 
-            if (answers.password !== answers.confirmPassword) {
-                console.error('Passwords do not match. Please try again.');
-                process.exit(1);
-            }
-
-            password = answers.password;
-        } else {
-            console.error('Password is required');
+        if (answers.password !== answers.confirmPassword) {
+            console.error('Passwords do not match. Please try again.');
             process.exit(1);
         }
+
+        const password = answers.password;
+
+        // Retrieve and Validate Chunk Parameters
+        const maxChunksPerPng = options.maxChunksPerPng !== undefined
+            ? options.maxChunksPerPng
+            : config.chunksDefinition.maxChunksPerPng;
+        const maxChunkSize = options.maxChunkSize !== undefined
+            ? options.maxChunkSize
+            : config.chunksDefinition.maxChunkSize;
+        const minChunkSize = options.minChunkSize !== undefined
+            ? options.minChunkSize
+            : config.chunksDefinition.minChunkSize;
+
+        // Enforce minimum chunk size of 16 bytes
+        if (minChunkSize < 16) {
+            console.error('minChunkSize cannot be less than 16 bytes.');
+            process.exit(1);
+        }
+
+        config.chunksDefinition = {
+            ...config.chunksDefinition,
+            maxChunksPerPng,
+            maxChunkSize,
+            minChunkSize,
+        };
 
         const logger = getLogger('encoder', verbose);
 
@@ -100,7 +121,6 @@ program
     .description('Decode a file from PNG images')
     .requiredOption('-i, --input <folder>', 'Input folder with PNG files')
     .requiredOption('-o, --output <folder>', 'Output file path')
-    .requiredOption('-w, --password', 'Prompt for password')
     .showHelpAfterError()
     .action(async (options) => {
         const verbose = program.opts().verbose || false;
@@ -108,28 +128,22 @@ program
         const inputFolder = path.resolve(options.input);
         const outputFolder = path.resolve(options.output);
 
-        let password: string;
-        if (options.password) {
-            const answers = await inquirer.prompt([
-                {
-                    type: 'password',
-                    name: 'password',
-                    message: 'Enter password:',
-                    mask: '*',
-                    validate: (value) => {
-                        if (value.length === 0) {
-                            return 'Password cannot be empty';
-                        }
-                        return true;
-                    },
+        const answers = await inquirer.prompt([
+            {
+                type: 'password',
+                name: 'password',
+                message: 'Enter password:',
+                mask: '*',
+                validate: (value) => {
+                    if (value.length === 0) {
+                        return 'Password cannot be empty';
+                    }
+                    return true;
                 },
-            ]);
+            },
+        ]);
 
-            password = answers.password;
-        } else {
-            console.error('Password is required');
-            process.exit(1);
-        }
+        const password = answers.password;
 
         const logger = getLogger('decoder', verbose);
 

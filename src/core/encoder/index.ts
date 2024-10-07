@@ -1,8 +1,6 @@
 // src/core/encoder/index.ts
 
-import type { IEncodeOptions } from '../../@types/index.ts';
-
-import path from 'node:path';
+import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
@@ -18,7 +16,8 @@ import type { Buffer } from 'node:buffer';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 import { decode } from '../decoder/index.ts';
-import fs from 'node:fs';
+
+import { basename, join } from 'jsr:@std/path';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -37,7 +36,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verify, verbose, debugVisual, logger } = options;
     const fileData = readBufferFromFile(options.inputFile);
     // Capture only the filename (no path) using path.basename
-    const originalFilename = path.basename(inputFile);
+    const originalFilename = basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
     await processImageTones(inputPngFolder, logger);
 
@@ -117,39 +116,19 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             // Step 10: Verification Step (if enabled)
             if (verify) {
                 logger.info('Starting verification step...');
-                const tempDecodedFolder = path.join(outputFolder, 'temp_decoded');
+                const tempDecodedFolder = join(outputFolder, 'temp_decoded');
                 ensureOutputDirectory(tempDecodedFolder);
-
-                try {
-                    await decode({
-                        inputFolder: outputFolder,
-                        outputFolder: tempDecodedFolder,
+                if (
+                    await verificationStep(
+                        fileData,
+                        inputFile,
+                        outputFolder,
+                        compressionStrategy,
                         password,
                         verbose,
                         logger,
-                    });
-
-                    // Compare the original file and the decoded file
-                    const decodedFilePath = path.join(tempDecodedFolder, path.basename(inputFile));
-                    const decodedBuffer = readBufferFromFile(decodedFilePath);
-
-                    if (decodedBuffer.subarray(0, fileData.length).equals(fileData)) {
-                        logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);
-                        // Clean up temporary folder
-
-                        fs.rmSync(tempDecodedFolder, { recursive: true, force: true });
-                        logger.info('Encoding completed successfully.');
-                        break; // Exit the compression strategy loop
-                    } else {
-                        logger.error(`Verification failed with compression strategy: ${compressionStrategy}`);
-                        throw new Error('Verification failed during encoding.');
-                    }
-                } catch (verificationError) {
-                    logger.error(`Verification step failed with compression strategy: ${compressionStrategy}`);
-                    logger.error(`Error: ${(verificationError as Error).message}`);
-                    // Clean up temporary folder before retrying
-                    fs.rmSync(tempDecodedFolder, { recursive: true, force: true });
-                }
+                    )
+                ) break;
             } else {
                 logger.info('Verification step skipped.');
                 break;
@@ -157,5 +136,52 @@ export async function encode(options: IEncodeOptions): Promise<void> {
         } catch (error) {
             logger.error(`Encoding failed: ${error}`);
         }
+    }
+}
+
+async function verificationStep(
+    originalFileData: Buffer,
+    inputFile: string,
+    inputFolder: string,
+    compressionStrategy: SupportedCompressionStrategies,
+    password: string,
+    verbose: boolean,
+    logger: ILogger,
+): Promise<boolean> {
+    logger.info('Starting verification step...');
+    const tempDecodedFolder = join(inputFolder, 'temp_decoded');
+    ensureOutputDirectory(tempDecodedFolder);
+
+    try {
+        await decode({
+            inputFolder,
+            outputFolder: tempDecodedFolder,
+            password,
+            verbose,
+            logger,
+        });
+
+        // Compare the original file and the decoded file
+        const decodedFilePath = join(tempDecodedFolder, basename(inputFile));
+        const decodedBuffer = readBufferFromFile(decodedFilePath);
+
+        if (decodedBuffer.subarray(0, originalFileData.length).equals(originalFileData)) {
+            logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);
+            // Clean up temporary folder
+
+            Deno.removeSync(tempDecodedFolder, { recursive: true });
+
+            logger.info('Encoding completed successfully.');
+        } else {
+            logger.error(`Verification failed with compression strategy: ${compressionStrategy}`);
+            throw new Error('Verification failed during encoding.');
+        }
+        return true;
+    } catch (verificationError) {
+        logger.error(`Verification step failed with compression strategy: ${compressionStrategy}`);
+        logger.error(`Error: ${(verificationError as Error).message}`);
+        // Clean up temporary folder before retrying
+        Deno.removeSync(tempDecodedFolder, { recursive: true });
+        return false;
     }
 }

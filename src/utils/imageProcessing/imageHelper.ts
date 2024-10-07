@@ -276,7 +276,11 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
             const r = data[i];
             const g = info.channels >= 2 ? data[i + 1] : 0; // Handle grayscale images
             const b = info.channels >= 3 ? data[i + 2] : 0; // Handle grayscale or RGB images
-            const brightness = (r + g + b) / 3;
+
+            // const brightness = (r + g + b) / 3;
+            // why? utilizing the "luminance formula" in order to cater
+            // for the human eye perception (green is perceived brighter than red or blue)
+            const brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
             if (brightness < 85) {
                 capacity.low += 1;
