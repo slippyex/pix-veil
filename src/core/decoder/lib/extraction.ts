@@ -35,7 +35,7 @@ export async function extractChunks(
 
         const { data: imageData, info } = (await getImage(pngPath)) as IAssembledImageData;
         // Calculate the number of bits to extract based on bitsPerChannel in the distribution map
-        const chunkBits = (entry.endPosition - entry.startPosition) * entry.bitsPerChannel;
+        const chunkBits = (entry.endChannelPosition - entry.startChannelPosition) * entry.bitsPerChannel;
 
         // Extract data
         const chunkBuffer = extractDataFromBuffer(
@@ -43,7 +43,7 @@ export async function extractChunks(
             imageData,
             entry.bitsPerChannel,
             entry.channelSequence,
-            entry.startPosition,
+            entry.startChannelPosition,
             chunkBits,
             logger,
             info.channels,

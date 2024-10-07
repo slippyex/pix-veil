@@ -22,7 +22,7 @@ export function analyzePngCapacities(
     inputPngFolder: string,
     logger: ILogger,
 ): {
-    analyzed: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[];
+    pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[];
     distributionCarrier: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' };
 } {
     if (logger.verbose) {
@@ -80,7 +80,7 @@ export function analyzePngCapacities(
     const distributionCarrier = analyzedFiles.reduce((prev, curr) => (prev.capacity < curr.capacity ? prev : curr));
 
     return {
-        analyzed: analyzedFiles.filter((af) => af.file !== distributionCarrier.file),
+        pngCapacities: analyzedFiles.filter((af) => af.file !== distributionCarrier.file),
         distributionCarrier,
     };
 }

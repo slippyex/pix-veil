@@ -2,7 +2,7 @@
 
 import type { CompressionStrategy } from '../../../@types/compressionStrategy.ts';
 
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import zlib from 'node:zlib';
 
 /**

@@ -113,18 +113,18 @@ export async function injectChunksIntoPngs(
                             // Calculate pixel positions based on startPosition
                             const pixelsPerChunk = Math.ceil((chunkData.length * 8) / entry.bitsPerChannel);
                             const totalPixels = info.width * info.height;
-                            if (entry.startPosition + pixelsPerChunk > totalPixels) {
+                            if (entry.startChannelPosition + pixelsPerChunk > totalPixels) {
                                 logger.error(`Chunk ${entry.chunkId} exceeds image capacity. Skipping.`);
                                 continue;
                             }
 
                             // Determine x, y for start debug block
-                            const startPixel = entry.startPosition;
+                            const startPixel = entry.startChannelPosition;
                             const startX = startPixel % info.width;
                             const startY = Math.floor(startPixel / info.width);
 
                             // Determine x, y for end debug block
-                            const endPixel = entry.endPosition;
+                            const endPixel = entry.endChannelPosition;
                             const endX = endPixel % info.width;
                             const endY = Math.floor(endPixel / info.width);
 
@@ -147,13 +147,13 @@ export async function injectChunksIntoPngs(
                                 chunkData,
                                 entry.bitsPerChannel,
                                 entry.channelSequence,
-                                entry.startPosition,
+                                entry.startChannelPosition,
                                 debugVisual,
                                 logger,
                                 info.width,
                                 info.height,
                                 info.channels,
-                                entry.endPosition,
+                                entry.endChannelPosition,
                             );
 
                             if (debugVisual) {
@@ -175,7 +175,7 @@ export async function injectChunksIntoPngs(
                                 imageData,
                                 entry.bitsPerChannel,
                                 entry.channelSequence,
-                                entry.startPosition,
+                                entry.startChannelPosition,
                                 entry.bitsPerChannel,
                                 logger,
                                 info.channels,

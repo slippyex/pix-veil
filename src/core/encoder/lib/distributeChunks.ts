@@ -1,6 +1,13 @@
 // src/core/encoder/lib/distributeChunks.ts
 
-import type { ChannelSequence, IChunk, IDistributionMapEntry, ILogger, IUsedPng } from '../../../@types/index.ts';
+import type {
+    ChannelSequence,
+    IChunk,
+    IChunkDistributionInfo,
+    IDistributionMapEntry,
+    ILogger,
+    IUsedPng,
+} from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
@@ -28,7 +35,7 @@ export function createChunkDistributionInformation(
     pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[],
     inputPngFolder: string,
     logger: ILogger,
-): { distributionMapEntries: IDistributionMapEntry[]; chunkMap: Map<number, Buffer> } {
+): IChunkDistributionInfo {
     if (logger.verbose) logger.info('Distributing chunks across PNG images based on tones...');
 
     const distributionMapEntries: IDistributionMapEntry[] = [];
@@ -123,8 +130,8 @@ export function createChunkDistributionInformation(
             distributionMapEntries.push({
                 chunkId: chunk.id,
                 pngFile: png.file,
-                startPosition: start, // Now in channels
-                endPosition: end, // Now in channels
+                startChannelPosition: start,
+                endChannelPosition: end,
                 bitsPerChannel: bitsPerChannel,
                 channelSequence, // Deterministic sequence
             });

@@ -3,7 +3,7 @@
 import type { ILogger } from '../../@types/index.ts';
 import type { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
 
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
 

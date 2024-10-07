@@ -5,7 +5,6 @@ import { expect } from 'jsr:@std/expect';
 
 import { encode } from '../src/core/encoder/index.ts';
 import { decode } from '../src/core/decoder/index.ts';
-import fs from 'node:fs';
 
 import seedrandom from 'seedrandom';
 import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
@@ -13,6 +12,12 @@ import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
+import {
+    ensureOutputDirectory,
+    filePathExists,
+    readBufferFromFile,
+    readDirectory,
+} from '../src/utils/storage/storageUtils.ts';
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
@@ -32,14 +37,10 @@ describe('Codec tests', () => {
 
     const password = 'test';
     beforeAll(() => {
-        fs.rmSync(encodedFolder, { recursive: true, force: true });
-        fs.rmSync(decodedFolder, { recursive: true, force: true });
-        if (!fs.existsSync(encodedFolder)) {
-            fs.mkdirSync(encodedFolder, { recursive: true });
-        }
-        if (!fs.existsSync(decodedFolder)) {
-            fs.mkdirSync(decodedFolder, { recursive: true });
-        }
+        Deno.removeSync(encodedFolder, { recursive: true });
+        Deno.removeSync(decodedFolder, { recursive: true });
+        ensureOutputDirectory(encodedFolder);
+        ensureOutputDirectory(decodedFolder);
     });
 
     it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {
@@ -56,7 +57,7 @@ describe('Codec tests', () => {
         });
 
         // Check if output PNGs are created
-        const outputPngFiles = fs.readdirSync(encodedFolder).filter((file) => file.endsWith('.png'));
+        const outputPngFiles = readDirectory(encodedFolder).filter((file) => file.endsWith('.png'));
         expect(outputPngFiles.length).toBeGreaterThan(1); // Ensure multiple PNGs are used
     });
 
@@ -71,10 +72,10 @@ describe('Codec tests', () => {
         });
 
         // Check if decoded file exists and matches the original
-        expect(fs.existsSync(decodedFile)).toBe(true);
+        expect(filePathExists(decodedFile)).toBe(true);
 
-        const original = fs.readFileSync(inputFile);
-        const decoded = fs.readFileSync(decodedFile);
+        const original = readBufferFromFile(inputFile);
+        const decoded = readBufferFromFile(decodedFile);
         expect(decoded.equals(original)).toBe(true);
     });
 
@@ -104,16 +105,16 @@ describe('Codec tests', () => {
             {
                 chunkId: 0,
                 pngFile: 'image1.png',
-                startPosition: 0,
-                endPosition: 10,
+                startChannelPosition: 0,
+                endChannelPosition: 10,
                 bitsPerChannel: 2,
                 channelSequence: ['R', 'G', 'B'],
             },
             {
                 chunkId: 1,
                 pngFile: 'image2.png',
-                startPosition: 10,
-                endPosition: 20,
+                startChannelPosition: 10,
+                endChannelPosition: 20,
                 bitsPerChannel: 2,
                 channelSequence: ['G', 'B', 'R'],
             },

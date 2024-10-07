@@ -12,7 +12,7 @@ import { CompressionStrategyMap, SupportedCompressionStrategies } from './compre
  */
 export function compressBuffer(input: Buffer, compressionStrategy: SupportedCompressionStrategies): Buffer {
     const compressor = CompressionStrategyMap[compressionStrategy];
-    return compressor ? compressor.compress(input) : input;
+    return compressor.compress(input);
 }
 
 /**
@@ -24,5 +24,5 @@ export function compressBuffer(input: Buffer, compressionStrategy: SupportedComp
  */
 export function decompressBuffer(input: Buffer, compressionStrategy: SupportedCompressionStrategies): Buffer {
     const compressor = CompressionStrategyMap[compressionStrategy];
-    return compressor ? compressor.decompress(input) : input;
+    return compressor.decompress(input);
 }

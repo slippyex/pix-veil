@@ -14,8 +14,8 @@ export interface IChunk {
 export interface IDistributionMapEntry {
     chunkId: number;
     pngFile: string;
-    startPosition: number;
-    endPosition: number;
+    startChannelPosition: number;
+    endChannelPosition: number;
     bitsPerChannel: number;
     channelSequence: ChannelSequence[];
 }
@@ -84,4 +84,9 @@ export type IOutputInfo = sharp.OutputInfo;
 export interface IAssembledImageData {
     data: Buffer;
     info: IOutputInfo;
+}
+
+export interface IChunkDistributionInfo {
+    distributionMapEntries: IDistributionMapEntry[];
+    chunkMap: Map<number, Buffer>;
 }

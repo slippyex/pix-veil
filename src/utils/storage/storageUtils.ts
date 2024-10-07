@@ -1,7 +1,7 @@
 // src/utils/storage/storageUtils.ts
 
-import { dirname, extname, join } from 'jsr:@std/path';
 import { Buffer } from 'node:buffer';
+import { dirname, extname, join } from 'jsr:@std/path';
 
 /**
  * Converts a Buffer to Uint8Array.
@@ -10,7 +10,7 @@ import { Buffer } from 'node:buffer';
  * @returns {Uint8Array} - The resulting Uint8Array.
  */
 export function bufferToUint8Array(buffer: Buffer): Uint8Array {
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
 }
 
 /**
@@ -22,7 +22,6 @@ export function bufferToUint8Array(buffer: Buffer): Uint8Array {
 export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
     return Buffer.from(uint8Array);
 }
-
 /**
  * Ensures that the specified output directory exists. If the directory
  * does not exist, it creates the directory and any necessary subdirectories.
@@ -64,12 +63,7 @@ export function readBufferFromFile(filePath: string): Buffer {
  * @return {string[]} - An array of filenames in the directory.
  */
 export function readDirectory(dirPath: string): string[] {
-    const entries = Deno.readDirSync(dirPath);
-    const names: string[] = [];
-    for (const entry of entries) {
-        names.push(entry.name);
-    }
-    return names;
+    return Array.from(Deno.readDirSync(dirPath), (entry) => entry.name);
 }
 
 /**

@@ -164,8 +164,8 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
     buffers.push(serializeString(entry.pngFile));
 
     // Serialize startPosition and endPosition (4 bytes each)
-    buffers.push(serializeUInt32(entry.startPosition));
-    buffers.push(serializeUInt32(entry.endPosition));
+    buffers.push(serializeUInt32(entry.startChannelPosition));
+    buffers.push(serializeUInt32(entry.endChannelPosition));
 
     // Serialize bitsPerChannel (1 byte)
     buffers.push(serializeUInt8(entry.bitsPerChannel));
@@ -214,8 +214,8 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
     const entry: IDistributionMapEntry = {
         chunkId,
         pngFile,
-        startPosition,
-        endPosition,
+        startChannelPosition: startPosition,
+        endChannelPosition: endPosition,
         bitsPerChannel,
         channelSequence,
     };

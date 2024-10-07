@@ -1,9 +1,8 @@
 // src/utils/imageProcessing/debugHelper.ts
 
-import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
+import type { IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { getPixelIndex } from './imageHelper.ts';
 import path from 'node:path';
 import { config } from '../../config/index.ts';
 import { generateDistributionMapText } from '../distributionMap/mapUtils.ts';
@@ -36,7 +35,7 @@ export function addDebugBlock(
     const blockSize = 8; // 8x8 pixels
     const colors = {
         start: { R: 255, G: 0, B: 0 }, // Red for start
-        end: { R: 0, G: 0, B: 255 },   // Blue for end
+        end: { R: 0, G: 0, B: 255 }, // Blue for end
     };
 
     const color = colors[markerType];

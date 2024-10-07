@@ -62,7 +62,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             const chunks = splitDataIntoChunks(encryptedData, logger);
 
             // Step 4: Analyze PNG images for capacity
-            const { analyzed: pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
+            const { pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
 
             // Step 5: Distribute chunks across PNG images and obtain chunk map
             const { distributionMapEntries, chunkMap } = createChunkDistributionInformation(
@@ -139,6 +139,18 @@ export async function encode(options: IEncodeOptions): Promise<void> {
     }
 }
 
+/**
+ * Executes a verification step to ensure the integrity of encoded data by decoding it and comparing it to the original file data.
+ *
+ * @param {Buffer} originalFileData - The buffer containing the original file's data.
+ * @param {string} inputFile - The path to the input file.
+ * @param {string} inputFolder - The directory containing the input file.
+ * @param {SupportedCompressionStrategies} compressionStrategy - The strategy used for compression.
+ * @param {string} password - The password to use for the decoding process.
+ * @param {boolean} verbose - Flag indicating whether to log verbose output.
+ * @param {ILogger} logger - The logger instance used for logging information.
+ * @return {Promise<boolean>} - A promise that resolves to true if verification succeeds, otherwise false.
+ */
 async function verificationStep(
     originalFileData: Buffer,
     inputFile: string,
@@ -173,15 +185,15 @@ async function verificationStep(
 
             logger.info('Encoding completed successfully.');
         } else {
-            logger.error(`Verification failed with compression strategy: ${compressionStrategy}`);
-            throw new Error('Verification failed during encoding.');
+            throw new Error('Verification failed due to different data after extraction.');
         }
         return true;
     } catch (verificationError) {
         logger.error(`Verification step failed with compression strategy: ${compressionStrategy}`);
         logger.error(`Error: ${(verificationError as Error).message}`);
         // Clean up temporary folder before retrying
-        Deno.removeSync(tempDecodedFolder, { recursive: true });
         return false;
+    } finally {
+        Deno.removeSync(tempDecodedFolder, { recursive: true });
     }
 }

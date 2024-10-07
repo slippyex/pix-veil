@@ -148,9 +148,9 @@ export function generateDistributionMapText(
         text += `Chunks Embedded: ${pngMap[png].length}\n`;
         text += `Details:\n`;
         pngMap[png].forEach((entry) => {
-            const length = entry.endPosition - entry.startPosition;
+            const length = entry.endChannelPosition - entry.startChannelPosition;
             text +=
-                `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startPosition}-${entry.endPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${
+                `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startChannelPosition}-${entry.endChannelPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${
                     entry.channelSequence.join(', ')
                 }\n`;
         });

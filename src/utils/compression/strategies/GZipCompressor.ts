@@ -2,13 +2,12 @@
 
 import type { CompressionStrategy } from '../../../@types/compressionStrategy.ts';
 
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import zlib from 'node:zlib';
 
 /**
- * Class representing a GZip compression strategy.
- *
- * This class provides methods to compress and decompress data using the Brotli algorithm.
+ * The GZipCompressor class implements the CompressionStrategy interface,
+ * providing methods for compressing and decompressing data using the GZip algorithm.
  */
 export class GZipCompressor implements CompressionStrategy {
     public compress(data: Buffer): Buffer {

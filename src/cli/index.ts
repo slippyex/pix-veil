@@ -9,6 +9,7 @@ import process from 'node:process';
 import figlet from 'figlet';
 import inquirer from 'inquirer';
 import { config } from '../config/index.ts';
+import { rainbow } from 'gradient-string';
 
 const program = new Command();
 
@@ -164,7 +165,7 @@ program
 
 if (import.meta.main) {
     console.clear();
-    console.log(
+    console.log(rainbow.multiline(
         figlet.textSync('Pix-Veil', {
             font: 'DOS Rebel',
             horizontalLayout: 'default',
@@ -172,7 +173,8 @@ if (import.meta.main) {
             width: 80,
             whitespaceBreak: true,
         }),
-    );
-    console.log(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`);
+    ));
+
+    console.log(rainbow(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`));
     program.parse(process.argv);
 }
