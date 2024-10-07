@@ -22,7 +22,7 @@ beforeAll(() => {
 });
 
 describe('Codec tests', () => {
-    const fileUnderSubject = '117.json';
+    const fileUnderSubject = 'secret.pdf';
     const inputFile = path.join(__dirname, 'test_input', 'files', fileUnderSubject);
     const inputPngFolder = path.join(__dirname, 'test_input', 'images');
 

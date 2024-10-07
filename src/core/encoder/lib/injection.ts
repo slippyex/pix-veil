@@ -10,7 +10,7 @@ import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
-import { addDebugBlocks } from '../../../utils/imageProcessing/debugHelper.ts';
+import { addDebugBlock } from '../../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
 import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
@@ -109,6 +109,39 @@ export async function injectChunksIntoPngs(
                                 logger.error(`Chunk data for chunkId ${entry.chunkId} not found. Skipping this chunk.`);
                                 continue;
                             }
+
+                            // Calculate pixel positions based on startPosition
+                            const pixelsPerChunk = Math.ceil((chunkData.length * 8) / entry.bitsPerChannel);
+                            const totalPixels = info.width * info.height;
+                            if (entry.startPosition + pixelsPerChunk > totalPixels) {
+                                logger.error(`Chunk ${entry.chunkId} exceeds image capacity. Skipping.`);
+                                continue;
+                            }
+
+                            // Determine x, y for start debug block
+                            const startPixel = entry.startPosition;
+                            const startX = startPixel % info.width;
+                            const startY = Math.floor(startPixel / info.width);
+
+                            // Determine x, y for end debug block
+                            const endPixel = entry.endPosition;
+                            const endX = endPixel % info.width;
+                            const endY = Math.floor(endPixel / info.width);
+
+                            if (debugVisual) {
+                                // Insert start debug block
+                                addDebugBlock(
+                                    imageData,
+                                    info.width,
+                                    info.height,
+                                    info.channels,
+                                    'start',
+                                    startX,
+                                    startY,
+                                    logger,
+                                );
+                            }
+
                             injectDataIntoBuffer(
                                 imageData,
                                 chunkData,
@@ -122,6 +155,20 @@ export async function injectChunksIntoPngs(
                                 info.channels,
                                 entry.endPosition,
                             );
+
+                            if (debugVisual) {
+                                // Insert end debug block
+                                addDebugBlock(
+                                    imageData,
+                                    info.width,
+                                    info.height,
+                                    info.channels,
+                                    'end',
+                                    endX,
+                                    endY,
+                                    logger,
+                                );
+                            }
 
                             const verifyChunkData = extractDataFromBuffer(
                                 entry.pngFile,
@@ -294,22 +341,6 @@ export function injectDataIntoBuffer(
     // Calculate bits used, accounting for any padding bits
     const bitsUsed = Math.ceil(totalDataBits / bitsPerChannel) * bitsPerChannel;
     const finalEndChannelPosition = startChannelPosition + Math.ceil(bitsUsed / bitsPerChannel);
-
-    // If debugVisual is enabled, add red and blue blocks
-    if (debugVisual && endChannelPosition !== undefined) {
-        logger.debug(`Adding debug visual blocks to buffer.`);
-        addDebugBlocks(
-            imageData,
-            width,
-            height,
-            channels,
-            startChannelPosition,
-            finalEndChannelPosition,
-            bitsPerChannel,
-            channelSequence,
-            logger,
-        );
-    }
 
     logger.debug(
         `Data injection completed. Start Channel: ${startChannelPosition}, End Channel: ${finalEndChannelPosition}.`,
