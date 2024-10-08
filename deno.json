@@ -17,6 +17,7 @@
         "semiColons": true,
         "singleQuote": true,
         "proseWrap": "never",
-        "include": ["src/", "tests/"]
+        "include": ["src/", "tests/"],
+        "exclude": ["tests/test_input", "tests/test_output"]
     }
 }

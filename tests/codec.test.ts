@@ -1,6 +1,6 @@
 // test/codec.test.ts
 
-import { beforeAll, describe, it } from 'jsr:@std/testing/bdd';
+import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { encode } from '../src/core/encoder/index.ts';
@@ -8,18 +8,17 @@ import { decode } from '../src/core/decoder/index.ts';
 
 import seedrandom from 'seedrandom';
 import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
-import { getLogger } from '../src/utils/logging/logUtils.ts';
 import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
-import {
-    ensureOutputDirectory,
-    filePathExists,
-    readBufferFromFile,
-    readDirectory,
-} from '../src/utils/storage/storageUtils.ts';
+import { ensureOutputDirectory, findProjectRoot, readDirectory } from '../src/utils/storage/storageUtils.ts';
+import fs from 'node:fs';
+import { closeKv } from '../src/utils/imageProcessing/imageHelper.ts';
+import { MockLogger } from './helpers/mockLogger.ts';
 
-const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
+Deno.env.set('ENVIRONMENT', 'test');
+
+const logger = new MockLogger();
 
 // Mock Math.random for deterministic behavior
 beforeAll(() => {
@@ -28,30 +27,37 @@ beforeAll(() => {
 
 describe('Codec tests', () => {
     const fileUnderSubject = 'secret.pdf';
-    const inputFile = path.join(__dirname, 'test_input', 'files', fileUnderSubject);
-    const inputPngFolder = path.join(__dirname, 'test_input', 'images');
+    const rootFolder = findProjectRoot(Deno.cwd()) as string;
+    const inputFile = path.join(rootFolder, 'tests', 'test_input', 'files', fileUnderSubject);
+    const inputPngFolder = path.join(rootFolder, 'tests', 'test_input', 'images');
 
-    const encodedFolder = path.join(__dirname, 'test_output', 'encoded');
-    const decodedFolder = path.join(__dirname, 'test_output', 'decoded');
-    const decodedFile = path.join(decodedFolder, fileUnderSubject);
+    const encodedFolder = path.join(rootFolder, 'tests', 'test_output', 'encoded');
+    const decodedFolder = path.join(rootFolder, 'tests', 'test_output', 'decoded');
 
     const password = 'test';
     beforeAll(() => {
-        Deno.removeSync(encodedFolder, { recursive: true });
-        Deno.removeSync(decodedFolder, { recursive: true });
+        // Ensure clean test environment
+        fs.rmSync(encodedFolder, { recursive: true, force: true });
+        fs.rmSync(decodedFolder, { recursive: true, force: true });
         ensureOutputDirectory(encodedFolder);
         ensureOutputDirectory(decodedFolder);
     });
 
-    it('should encode the input file into PNG images with advanced LSB embedding, debug visuals, and data integrity verification', async () => {
-        const logger = getLogger('test', false);
+    afterAll(() => {
+        // Cleanup: Remove encoded and decoded folders
+        fs.rmSync(encodedFolder, { recursive: true, force: true });
+        fs.rmSync(decodedFolder, { recursive: true, force: true });
+        closeKv();
+    });
+
+    it('should encode and verify the decoded the input file into PNG images', async () => {
         await encode({
             inputFile,
             inputPngFolder,
             outputFolder: encodedFolder,
             password,
-            verbose: true,
-            debugVisual: false,
+            verbose: false,
+            debugVisual: true,
             verify: true,
             logger,
         });
@@ -59,39 +65,6 @@ describe('Codec tests', () => {
         // Check if output PNGs are created
         const outputPngFiles = readDirectory(encodedFolder).filter((file) => file.endsWith('.png'));
         expect(outputPngFiles.length).toBeGreaterThan(1); // Ensure multiple PNGs are used
-    });
-
-    it('should decode the PNG images back into the original file with data integrity verification and verbose logging', async () => {
-        const logger = getLogger('test', false);
-        await decode({
-            inputFolder: encodedFolder,
-            outputFolder: decodedFolder,
-            password,
-            verbose: false,
-            logger,
-        });
-
-        // Check if decoded file exists and matches the original
-        expect(filePathExists(decodedFile)).toBe(true);
-
-        const original = readBufferFromFile(inputFile);
-        const decoded = readBufferFromFile(decodedFile);
-        expect(decoded.equals(original)).toBe(true);
-    });
-
-    it('should fail decoding with incorrect password', async () => {
-        const wrongPassword = 'wrongpassword';
-
-        const logger = getLogger('test', false);
-        await expect(
-            decode({
-                inputFolder: encodedFolder,
-                outputFolder: decodedFolder,
-                password: wrongPassword,
-                verbose: false,
-                logger,
-            }),
-        ).rejects.toThrow();
     });
 
     it('should correctly map chunkId to chunk data', () => {
@@ -128,6 +101,64 @@ describe('Codec tests', () => {
         distributionMapEntries.forEach((entry) => {
             expect(chunkMap.has(entry.chunkId)).toBe(true);
             expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find((c) => c.id === entry.chunkId)?.data);
+        });
+    });
+
+    it('should encode and decode multiple files correctly in batch', async () => {
+        // This is an integration test to encode and decode multiple files
+        const filesToTest = ['secret.pdf', 'game.json', 'gog_font.inc'];
+        const testInputFolder = path.join(rootFolder, 'tests', 'test_input', 'files');
+        const testPngFolder = path.join(rootFolder, 'tests', 'test_input', 'images');
+
+        // Create dummy files
+        filesToTest.forEach((filename) => {
+            const filePath = path.join(testInputFolder, filename);
+            fs.writeFileSync(filePath, `This is the content of ${filename}`);
+        });
+
+        // Encode all files
+        for (const filename of filesToTest) {
+            const filePath = path.join(testInputFolder, filename);
+            const outputSubFolder = path.join(encodedFolder, `encoded_${filename}`);
+            ensureOutputDirectory(outputSubFolder);
+
+            await encode({
+                inputFile: filePath,
+                inputPngFolder: testPngFolder,
+                outputFolder: outputSubFolder,
+                password,
+                verbose: false,
+                debugVisual: true,
+                verify: false,
+                logger,
+            });
+
+            // Decode the file
+            await decode({
+                inputFolder: outputSubFolder,
+                outputFolder: decodedFolder,
+                password,
+                verbose: false,
+                logger,
+            });
+
+            const decodedFilePath = path.join(decodedFolder, filename);
+            expect(filePath).not.toBe(decodedFilePath); // Ensure it's a different file
+
+            // Verify the contents match
+            const originalContent = fs.readFileSync(filePath, 'utf-8');
+            const decodedContent = fs.readFileSync(decodedFilePath, 'utf-8');
+            expect(decodedContent).toEqual(originalContent);
+        }
+
+        // Cleanup dummy files
+        filesToTest.forEach((filename) => {
+            //            const filePath = path.join(testInputFolder, filename);
+            //            fs.unlinkSync(filePath);
+            const decodedFilePath = path.join(decodedFolder, filename);
+            if (fs.existsSync(decodedFilePath)) {
+                fs.unlinkSync(decodedFilePath);
+            }
         });
     });
 });

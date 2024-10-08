@@ -185,15 +185,12 @@ async function verificationStep(
 
             logger.info('Encoding completed successfully.');
         } else {
-            throw new Error('Verification failed due to different data after extraction.');
+            throw new Error('decoded buffer does not match the original input');
         }
         return true;
     } catch (verificationError) {
         logger.error(`Verification step failed with compression strategy: ${compressionStrategy}`);
         logger.error(`Error: ${(verificationError as Error).message}`);
-        // Clean up temporary folder before retrying
-        return false;
-    } finally {
-        Deno.removeSync(tempDecodedFolder, { recursive: true });
+        throw verificationError;
     }
 }

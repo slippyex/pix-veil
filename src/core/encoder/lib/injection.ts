@@ -140,23 +140,6 @@ export async function injectChunksIntoPngs(
                                     startY,
                                     logger,
                                 );
-                            }
-
-                            injectDataIntoBuffer(
-                                imageData,
-                                chunkData,
-                                entry.bitsPerChannel,
-                                entry.channelSequence,
-                                entry.startChannelPosition,
-                                debugVisual,
-                                logger,
-                                info.width,
-                                info.height,
-                                info.channels,
-                                entry.endChannelPosition,
-                            );
-
-                            if (debugVisual) {
                                 // Insert end debug block
                                 addDebugBlock(
                                     imageData,
@@ -169,6 +152,16 @@ export async function injectChunksIntoPngs(
                                     logger,
                                 );
                             }
+
+                            injectDataIntoBuffer(
+                                imageData,
+                                chunkData,
+                                entry.bitsPerChannel,
+                                entry.channelSequence,
+                                entry.startChannelPosition,
+                                logger,
+                                info.channels,
+                            );
 
                             const verifyChunkData = extractDataFromBuffer(
                                 entry.pngFile,
@@ -231,10 +224,7 @@ export async function injectDistributionMapIntoCarrierPng(
                     2, // bitsPerChannel
                     ['R', 'G', 'B'], // channelSequence
                     0, // startPosition
-                    false, // debugVisual
                     logger,
-                    width,
-                    height,
                     channels,
                 );
             },
@@ -253,11 +243,7 @@ export async function injectDistributionMapIntoCarrierPng(
  * @param bitsPerChannel - Number of bits per channel to use.
  * @param channelSequence - Sequence of channels to inject into.
  * @param startChannelPosition - Channel index to start injection.
- * @param endChannelPosition - Channel index to end injection.
- * @param debugVisual - Whether to add debug visual blocks.
  * @param logger - Logger instance for debugging.
- * @param width - Image width.
- * @param height - Image height.
  * @param channels - Number of channels in the image.
  */
 export function injectDataIntoBuffer(
@@ -266,12 +252,8 @@ export function injectDataIntoBuffer(
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
     startChannelPosition: number,
-    debugVisual: boolean,
     logger: ILogger,
-    width: number,
-    height: number,
     channels: 1 | 2 | 3 | 4,
-    endChannelPosition?: number, // Optional parameter for debug visuals
 ) {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {

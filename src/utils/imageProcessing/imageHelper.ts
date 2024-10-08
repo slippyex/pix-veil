@@ -13,7 +13,7 @@ import type {
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
 import path from 'node:path';
-import type { Buffer } from 'node:buffer';
+import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import openKv = Deno.openKv;
 
@@ -24,7 +24,7 @@ const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
 
 // Initialize Deno KV
-const kv = await initializeKvStore();
+let kv: Deno.Kv; // = await initializeKvStore();
 
 /**
  * Initializes and returns a Deno KV store instance.
@@ -33,9 +33,17 @@ const kv = await initializeKvStore();
  */
 async function initializeKvStore(): Promise<Deno.Kv> {
     const rootDirectory = findProjectRoot(Deno.cwd());
+    // if (Deno.env.get('ENVIRONMENT') === 'test') {
+    //     return await openKv(':memory:');
+    // } else {
+    //     return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
+    // }
     return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
 }
 
+export function closeKv() {
+    kv.close();
+}
 /**
  * Retrieves an image from the specified path, processing it and caching the result.
  *
@@ -50,33 +58,16 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
     return imageMap.get(pngPath);
 }
 
+/**
+ * Asynchronously retrieves image data and associated information from a PNG file.
+ *
+ * @param {string} pngPath - The file path to the PNG image.
+ * @returns {Promise<{ data: Buffer; info: sharp.OutputInfo }>}
+ *          A promise that resolves to an object containing the image data buffer and output information.
+ */
 export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     return await image.raw().toBuffer({ resolveWithObject: true });
-}
-/**
- * Calculates the x and y coordinates of a pixel in an image based on
- * the channel position and various image parameters.
- *
- * @param {number} width - The width of the image in pixels.
- * @param {number} channelPosition - The position of the desired channel.
- * @param {number} bitsPerChannel - The number of bits used to represent a channel value.
- * @param {ChannelSequence[]} channelSequence - The array representing the sequence of channels.
- * @return {Object} The coordinates of the pixel.
- * @return {number} return.x - The x-coordinate of the pixel.
- * @return {number} return.y - The y-coordinate of the pixel.
- */
-export function getPixelIndex(
-    width: number,
-    channelPosition: number,
-    bitsPerChannel: number,
-    channelSequence: ChannelSequence[],
-): { x: number; y: number } {
-    const channelIndex = Math.floor(channelPosition / bitsPerChannel);
-    const pixelNumber = Math.floor(channelIndex / channelSequence.length);
-    const x = pixelNumber % width;
-    const y = Math.floor(pixelNumber / width);
-    return { x, y };
 }
 
 /**
@@ -184,6 +175,9 @@ export function getRandomPosition(
 async function retrieveImageCapacity(imagePath: string, fileSize: number): Promise<ImageCapacity | null> {
     const key = getToneCacheKey(imagePath, fileSize);
     try {
+        if (!kv) {
+            kv = await initializeKvStore();
+        }
         const { value } = await kv.get<ImageCapacity>(['pix-veil', key]);
         return value;
     } catch (error) {
@@ -215,6 +209,9 @@ function getToneCacheKey(imagePath: string, fileSize: number): string {
 async function storeImageCapacity(imagePath: string, fileSize: number, capacity: ImageCapacity): Promise<void> {
     const key = getToneCacheKey(imagePath, fileSize);
     try {
+        if (!kv) {
+            await initializeKvStore();
+        }
         await kv.set(['pix-veil', key], capacity);
     } catch (error) {
         console.error(`Failed to store cache for "${imagePath}": ${(error as Error).message}`);
