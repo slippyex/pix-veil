@@ -77,7 +77,6 @@ pix-veil encode \
   -i path/to/secret.file \
   -p path/to/png/folder \
   -o path/to/output/folder \
-  -w \
   --verbose
 ~~~
 
@@ -86,7 +85,10 @@ pix-veil encode \
 - `-i, --input <file>`: Input file to hide.
 - `-p, --png-folder <folder>`: Folder containing PNG images to use.
 - `-o, --output <folder>`: Output folder to store the modified images.
-- `-w, --password`: Prompt for password
+- `--max-chunks-per-png <number>  Maximum number of chunks per PNG (Default: 16)`
+- `--max-chunk-size <number>      Maximum size of each chunk in bytes (Default: 4096)`
+- `--min-chunk-size <number>      Minimum size of each chunk in bytes (minimum 16, Default: 16)`
+- `--no-verify                    Skip verification step during encoding`
 - `--verbose`: Enable verbose logging.
 - `--debug-visual`: Enable debug visual blocks in images.
 
@@ -98,7 +100,6 @@ To extract the hidden file from PNG images:
 pix-veil decode \
   -i path/to/encoded/png/folder \
   -o path/to/output/folder \
-  -w \
   --verbose
 ~~~
 
@@ -106,7 +107,6 @@ pix-veil decode \
 
 - `-i, --input <folder>`: Input folder containing the modified PNG images.
 - `-o, --output <folder>`: Output folder to save the extracted file.
-- `-w, --password`: Prompt for password.
 - `--verbose`: Enable verbose logging.
 
 ---
@@ -145,7 +145,7 @@ flowchart TD
     O --> P[End Encoding Process]
 ~~~
 
-#### LSB Manipulation Illustration
+### LSB Manipulation Illustration
 
 *Example: Embedding Byte 0xDE into RGB Channels Using 2 Bits Per Channel*
 
@@ -159,7 +159,7 @@ Now, split this byte into three 2-bit parts:
 2. **Green channel**: `01`
 3. **Blue channel**: `10`
 
-### Initial RGB Pixel Values:
+#### Initial RGB Pixel Values:
 
 Let’s assume the initial RGB values of a pixel are as follows (in decimal and binary):
 
@@ -167,7 +167,7 @@ Let’s assume the initial RGB values of a pixel are as follows (in decimal and 
 - **Green**: 150 (binary: `10010110`)
 - **Blue**: 100 (binary: `01100100`)
 
-### Modifying the 2 LSBs of Each Channel:
+#### Modifying the 2 LSBs of Each Channel:
 
 We will embed the 2 bits for each channel into the two least significant bits of the original pixel values.
 
@@ -183,7 +183,7 @@ We will embed the 2 bits for each channel into the two least significant bits of
     - Original Blue: `01100100` (100)
     - Modified Blue: `01100110` (102)
 
-### Final RGB Values After Embedding:
+#### Final RGB Values After Embedding:
 
 - **Red**: `207` (binary: `11001111`)
 - **Green**: `149` (binary: `10010101`)
