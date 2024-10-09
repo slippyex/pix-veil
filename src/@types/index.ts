@@ -63,6 +63,12 @@ export interface IUsedPng {
     chunks: IChunk[];
 }
 
+export interface ILogFacility {
+    log(...input: unknown[]): void;
+    warn(...input: unknown[]): void;
+    error(...input: unknown[]): void;
+}
+
 export interface ILogger {
     debugMessages: string[];
     errorMessages: string[];

@@ -10,11 +10,12 @@ import type {
 } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import path from 'node:path';
+import * as path from 'jsr:@std/path';
 import { config } from '../../../config/index.ts';
 import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
 import crypto from 'node:crypto';
+import seedrandom from 'seedrandom';
 
 /**
  * Distributes the given chunks across multiple PNG images based on their tone capacities.
@@ -179,11 +180,11 @@ function generateDeterministicChannelSequence(chunkId: number): ChannelSequence[
 }
 
 /**
- * Shuffles an array of ChannelSequence objects deterministically based on a provided seed using the Fisher-Yates algorithm.
+ * Shuffles an array deterministically using the Fisher-Yates shuffle algorithm with a provided seed.
  *
  * @param {ChannelSequence[]} array - The array of ChannelSequence objects to be shuffled.
- * @param {number} seed - The seed to initialize the pseudo-random number generator for deterministic shuffling.
- * @return {ChannelSequence[]} The shuffled array of ChannelSequence objects.
+ * @param {number} seed - The seed for the pseudo-random number generator to ensure deterministic shuffling.
+ * @return {ChannelSequence[]} - The shuffled array of ChannelSequence objects.
  */
 function shuffleArrayDeterministic(array: ChannelSequence[], seed: number): ChannelSequence[] {
     // Simple deterministic shuffle using Fisher-Yates algorithm with seed
@@ -193,8 +194,7 @@ function shuffleArrayDeterministic(array: ChannelSequence[], seed: number): Chan
     let randomIndex: number;
 
     // Initialize a pseudo-random number generator with the seed
-    const prng = mulberry32(seed);
-
+    const prng = seedrandom(`chunk-${seed}`);
     while (currentIndex !== 0) {
         randomIndex = Math.floor(prng() * currentIndex);
         currentIndex -= 1;
@@ -206,20 +206,4 @@ function shuffleArrayDeterministic(array: ChannelSequence[], seed: number): Chan
     }
 
     return shuffled;
-}
-
-/**
- * Generates a pseudo-random number generator function based on the Mulberry32 algorithm.
- * Mulberry32 is a simple yet effective algorithm for generating pseudo-random numbers.
- *
- * @param {number} a - The seed value used to initialize the generator. Must be a positive integer.
- * @return {function(): number} A function that returns a pseudo-random number between 0 (inclusive) and 1 (exclusive) each time it is called.
- */
-function mulberry32(a: number): () => number {
-    return function () {
-        let t = (a += 0x6d2b79f5);
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
 }

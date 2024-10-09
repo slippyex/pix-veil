@@ -3,21 +3,30 @@
 import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
-import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
-import { ensureOutputDirectory, isCompressed, readBufferFromFile } from '../../utils/storage/storageUtils.ts';
+import {
+    createHumanReadableDistributionMap,
+    prepareDistributionMapForInjection,
+} from '../../utils/distributionMap/mapUtils.ts';
+import {
+    ensureOutputDirectory,
+    isCompressed,
+    readBufferFromFile,
+    writeBufferToFile,
+} from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
-import { createHumanReadableDistributionMap } from '../../utils/imageProcessing/debugHelper.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
 import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
-import type { Buffer } from 'node:buffer';
+import { Buffer } from 'node:buffer';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 import { decode } from '../decoder/index.ts';
 
 import { basename, join } from 'jsr:@std/path';
+import * as path from 'jsr:@std/path';
+import { config } from '../../config/index.ts';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -34,7 +43,7 @@ const compressionOrder: SupportedCompressionStrategies[] = [
  */
 export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verify, verbose, debugVisual, logger } = options;
-    const fileData = readBufferFromFile(options.inputFile);
+    const fileData = await readBufferFromFile(options.inputFile);
     // Capture only the filename (no path) using path.basename
     const originalFilename = basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
@@ -103,15 +112,17 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 9: Generate human-readable distribution map text file
-            createHumanReadableDistributionMap(
+            const distributionMapText = createHumanReadableDistributionMap(
                 distributionMapEntries,
                 distributionCarrier.file,
                 originalFilename,
                 checksum,
-                outputFolder,
                 compressionStrategy,
                 logger,
             );
+            const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
+            await writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
+            if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 
             // Step 10: Verification Step (if enabled)
             if (verify) {
@@ -175,7 +186,7 @@ async function verificationStep(
 
         // Compare the original file and the decoded file
         const decodedFilePath = join(tempDecodedFolder, basename(inputFile));
-        const decodedBuffer = readBufferFromFile(decodedFilePath);
+        const decodedBuffer = await readBufferFromFile(decodedFilePath);
 
         if (decodedBuffer.subarray(0, originalFileData.length).equals(originalFileData)) {
             logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);

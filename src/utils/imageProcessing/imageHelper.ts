@@ -12,9 +12,9 @@ import type {
 } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
-import path from 'node:path';
+import * as path from 'jsr:@std/path';
 import { Buffer } from 'node:buffer';
-import fs from 'node:fs';
+
 import openKv = Deno.openKv;
 
 /**
@@ -234,8 +234,8 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
         let fileSize: number;
 
         try {
-            const stats = fs.statSync(imagePath);
-            if (!stats.isFile()) {
+            const stats = await Deno.stat(imagePath);
+            if (!stats.isFile) {
                 logger.warn(`"${imagePath}" is not a file. Skipping.`);
                 continue;
             }

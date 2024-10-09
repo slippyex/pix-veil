@@ -11,6 +11,10 @@ import { SupportedCompressionStrategies } from '../src/utils/compression/compres
 
 Deno.env.set('ENVIRONMENT', 'test');
 
+const checksum = 'abcdef1234567890';
+const encryptionLength = 1024; // Example encrypted data length
+const compressionStrategy = SupportedCompressionStrategies.Brotli;
+
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
         const originalFilename = 'file.ext';
@@ -32,9 +36,6 @@ describe('Distribution Map Serialization', () => {
                 channelSequence: ['R', 'G', 'B'],
             },
         ];
-        const checksum = 'abcdef1234567890';
-        const encryptionLength = 1024; // Example encrypted data length
-        const compressionStrategy = SupportedCompressionStrategies.Brotli;
 
         const serialized = createDistributionMap(
             entries,

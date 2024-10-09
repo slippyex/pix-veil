@@ -4,7 +4,7 @@ import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../../@
 
 import { Buffer } from 'node:buffer';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
-import path from 'node:path';
+import * as path from 'jsr:@std/path';
 import sharp from 'sharp';
 import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
@@ -217,7 +217,7 @@ export async function injectDistributionMapIntoCarrierPng(
         await processImage(
             inputPngPath,
             outputPngPath,
-            (imageData, { width, height, channels }, logger) => {
+            (imageData, { channels }, logger) => {
                 injectDataIntoBuffer(
                     imageData,
                     Buffer.concat([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
@@ -315,9 +315,7 @@ export function injectDataIntoBuffer(
 
         // Inject the bits into the channel's LSBs using bitUtils
         const originalByte = imageData[channelIndex];
-        const modifiedByte = insertBits(originalByte, bits, 0, bitsPerChannel);
-        // logger.debug(`changed byte ${originalByte} to ${modifiedByte}`);
-        imageData[channelIndex] = modifiedByte;
+        imageData[channelIndex] = insertBits(originalByte, bits, 0, bitsPerChannel);
     }
 
     // Calculate bits used, accounting for any padding bits

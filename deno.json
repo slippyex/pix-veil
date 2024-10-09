@@ -19,5 +19,9 @@
         "proseWrap": "never",
         "include": ["src/", "tests/"],
         "exclude": ["tests/test_input", "tests/test_output"]
+    },
+    "lint": {
+        "include": ["src/", "tests/"],
+        "exclude": ["tests/test_input", "tests/test_output"]
     }
 }

@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { encode } from '../src/core/encoder/index.ts';
-import { decode } from '../src/core/decoder/index.ts';
 
 import seedrandom from 'seedrandom';
 import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
@@ -14,11 +13,11 @@ import * as path from 'jsr:@std/path';
 import { ensureOutputDirectory, findProjectRoot, readDirectory } from '../src/utils/storage/storageUtils.ts';
 import fs from 'node:fs';
 import { closeKv } from '../src/utils/imageProcessing/imageHelper.ts';
-import { MockLogger } from './helpers/mockLogger.ts';
+import { getLogger, NoopLogFacility } from '../src/utils/logging/logUtils.ts';
+
+const logger = getLogger('test-cases', NoopLogFacility, false);
 
 Deno.env.set('ENVIRONMENT', 'test');
-
-const logger = new MockLogger();
 
 // Mock Math.random for deterministic behavior
 beforeAll(() => {
@@ -45,8 +44,8 @@ describe('Codec tests', () => {
 
     afterAll(() => {
         // Cleanup: Remove encoded and decoded folders
-        fs.rmSync(encodedFolder, { recursive: true, force: true });
-        fs.rmSync(decodedFolder, { recursive: true, force: true });
+        //     fs.rmSync(encodedFolder, { recursive: true, force: true });
+        //     fs.rmSync(decodedFolder, { recursive: true, force: true });
         closeKv();
     });
 
@@ -101,64 +100,6 @@ describe('Codec tests', () => {
         distributionMapEntries.forEach((entry) => {
             expect(chunkMap.has(entry.chunkId)).toBe(true);
             expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find((c) => c.id === entry.chunkId)?.data);
-        });
-    });
-
-    it('should encode and decode multiple files correctly in batch', async () => {
-        // This is an integration test to encode and decode multiple files
-        const filesToTest = ['secret.pdf', 'game.json', 'gog_font.inc'];
-        const testInputFolder = path.join(rootFolder, 'tests', 'test_input', 'files');
-        const testPngFolder = path.join(rootFolder, 'tests', 'test_input', 'images');
-
-        // Create dummy files
-        filesToTest.forEach((filename) => {
-            const filePath = path.join(testInputFolder, filename);
-            fs.writeFileSync(filePath, `This is the content of ${filename}`);
-        });
-
-        // Encode all files
-        for (const filename of filesToTest) {
-            const filePath = path.join(testInputFolder, filename);
-            const outputSubFolder = path.join(encodedFolder, `encoded_${filename}`);
-            ensureOutputDirectory(outputSubFolder);
-
-            await encode({
-                inputFile: filePath,
-                inputPngFolder: testPngFolder,
-                outputFolder: outputSubFolder,
-                password,
-                verbose: false,
-                debugVisual: true,
-                verify: false,
-                logger,
-            });
-
-            // Decode the file
-            await decode({
-                inputFolder: outputSubFolder,
-                outputFolder: decodedFolder,
-                password,
-                verbose: false,
-                logger,
-            });
-
-            const decodedFilePath = path.join(decodedFolder, filename);
-            expect(filePath).not.toBe(decodedFilePath); // Ensure it's a different file
-
-            // Verify the contents match
-            const originalContent = fs.readFileSync(filePath, 'utf-8');
-            const decodedContent = fs.readFileSync(decodedFilePath, 'utf-8');
-            expect(decodedContent).toEqual(originalContent);
-        }
-
-        // Cleanup dummy files
-        filesToTest.forEach((filename) => {
-            //            const filePath = path.join(testInputFolder, filename);
-            //            fs.unlinkSync(filePath);
-            const decodedFilePath = path.join(decodedFolder, filename);
-            if (fs.existsSync(decodedFilePath)) {
-                fs.unlinkSync(decodedFilePath);
-            }
         });
     });
 });

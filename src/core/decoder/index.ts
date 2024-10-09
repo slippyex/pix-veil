@@ -39,7 +39,7 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         const decompressedData = decompressBuffer(decryptedData, distributionMap.compressionStrategy);
         const outputFile = path.join(outputFolder, distributionMap.originalFilename);
         if (logger.verbose) logger.info('Writing the output file...');
-        writeBufferToFile(outputFile, decompressedData);
+        await writeBufferToFile(outputFile, decompressedData);
 
         if (verbose) logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
     } catch (error) {

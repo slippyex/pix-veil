@@ -3,12 +3,13 @@
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
-import fs from 'node:fs/promises';
 import * as path from 'jsr:@std/path';
 import process from 'node:process';
 
 import cliProgress from 'cli-progress';
 import { ILogger } from '../@types/index.ts';
+import { ensureOutputDirectory, readDirectory, writeBufferToFile } from '../utils/storage/storageUtils.ts';
+import { Buffer } from 'node:buffer';
 
 /**
  * Interface representing a report entry for each file processed.
@@ -28,7 +29,7 @@ const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
  * @return {Promise<void>} Resolves when the batch processing is complete.
  */
 async function batchProcess(): Promise<void> {
-    const logger = getLogger('testbatch', false);
+    const logger = getLogger('testbatch', console, false);
     // Configuration Constants
     const inputDir = path.resolve(__dirname, '../../tests/test_input/files'); // Directory containing files to process
     const inputPngFolder = path.resolve(__dirname, '../../tests/test_input/images'); // Directory containing PNG images
@@ -44,22 +45,22 @@ async function batchProcess(): Promise<void> {
     const password = 'testpassword';
 
     // Ensure Output Directories Exist
-    await ensureDirectory(decodedFolder);
-    await ensureDirectory(failedFolder);
-    await ensureDirectory(successFolder);
+    ensureOutputDirectory(decodedFolder);
+    ensureOutputDirectory(failedFolder);
+    ensureOutputDirectory(successFolder);
 
     // Read All Files from Input Directory
     let files: string[] = [];
     try {
-        files = await fs.readdir(inputDir);
-        console.log(`Found ${files.length} files in input directory.`);
+        files = readDirectory(inputDir);
+        logger.info(`Found ${files.length} files in input directory.`);
     } catch (err) {
-        console.error(`Failed to read input directory "${inputDir}": ${(err as Error).message}`);
+        logger.error(`Failed to read input directory "${inputDir}": ${(err as Error).message}`);
         process.exit(1);
     }
 
     if (files.length === 0) {
-        console.warn('No files found to process. Exiting.');
+        logger.warn('No files found to process. Exiting.');
         process.exit(0);
     }
 
@@ -78,7 +79,7 @@ async function batchProcess(): Promise<void> {
     // Process Each File Sequentially
     for (const file of files) {
         const encodedFolder = path.join(path.resolve(__dirname, '../../tests/test_output/encoded'), file); // Output directory for encoded PNGs
-        await ensureDirectory(encodedFolder);
+        ensureOutputDirectory(encodedFolder);
 
         const filePath = path.join(inputDir, file);
 
@@ -141,7 +142,7 @@ async function batchProcess(): Promise<void> {
 async function writeReport(reportPath: string, report: ReportEntry[], logger: ILogger): Promise<void> {
     // Save Report
     try {
-        await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf-8');
+        await writeBufferToFile(reportPath, Buffer.from(JSON.stringify(report, null, 2)));
         //    logger.success(`Report saved at "${reportPath}".`);
     } catch (err) {
         logger.error(`Failed to write report: ${(err as Error).message}`);
@@ -155,13 +156,13 @@ async function writeReport(reportPath: string, report: ReportEntry[], logger: IL
  * @param {string} dirPath - The path to the directory that needs to be ensured.
  * @return {Promise<void>} A promise that resolves when the directory has been ensured.
  */
-async function ensureDirectory(dirPath: string): Promise<void> {
-    try {
-        await fs.mkdir(dirPath, { recursive: true });
-    } catch (_err) {
-        process.exit(1);
-    }
-}
+// async function ensureDirectory(dirPath: string): Promise<void> {
+//     try {
+//         await ensureDirectory(dirPath, { recursive: true });
+//     } catch (_err) {
+//         process.exit(1);
+//     }
+// }
 
 /**
  * Handles the failure of file processing by moving the file to a specified failed directory.
@@ -174,8 +175,7 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
     try {
         const fileName = path.basename(filePath);
         const destination = path.join(failedDir, fileName);
-        await fs.rename(filePath, destination);
-        //await fs.copyFile(filePath, destination);
+        await Deno.rename(filePath, destination);
     } catch (_err) {
         console.error(`Failed to move file "${filePath}" to failed directory: ${(_err as Error).message}`);
     }
@@ -189,17 +189,16 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
  */
 async function cleanDirectory(dirPath: string): Promise<void> {
     try {
-        const files = await fs.readdir(dirPath);
+        const files = await readDirectory(dirPath);
         const deletePromises = files.map(async (file) => {
             const filePath = path.join(dirPath, file);
-            const stat = await fs.lstat(filePath);
+            const stat = await Deno.stat(filePath);
 
-            if (stat.isDirectory()) {
+            if (stat.isDirectory) {
                 await cleanDirectory(filePath); // Recursively clean subdirectories
-                await fs.rmdir(filePath);
-            } else {
-                await fs.unlink(filePath);
+                await Deno.remove(filePath);
             }
+            await Deno.remove(filePath);
         });
 
         await Promise.all(deletePromises);

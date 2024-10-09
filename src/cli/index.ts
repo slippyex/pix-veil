@@ -1,7 +1,7 @@
 // src/cli/index.ts
 
 import { Command } from 'commander';
-import path from 'node:path';
+import * as path from 'jsr:@std/path';
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
@@ -97,7 +97,7 @@ program
             minChunkSize,
         };
 
-        const logger = getLogger('encoder', verbose);
+        const logger = getLogger('encoder', console, verbose);
 
         try {
             await encode({

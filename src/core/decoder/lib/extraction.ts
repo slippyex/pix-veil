@@ -4,7 +4,7 @@ import type { ChannelSequence, IAssembledImageData, IDistributionMap, ILogger } 
 
 import { Buffer } from 'node:buffer';
 import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
-import path from 'node:path';
+import * as path from 'jsr:@std/path';
 
 import { getChannelOffset, getImage } from '../../../utils/imageProcessing/imageHelper.ts';
 import { MAGIC_BYTE } from '../../../config/index.ts';

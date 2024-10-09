@@ -164,3 +164,32 @@ export function generateDistributionMapText(
 
     return text;
 }
+
+/**
+ * Creates a human-readable distribution map text file from the given distribution map entries and other metadata.
+ *
+ * @param {IDistributionMapEntry[]} distributionMapEntries - The entries to be included in the distribution map.
+ * @param {string} distributionCarrier - The carrier responsible for distribution.
+ * @param {string} originalFilename - The original filename of the content being distributed.
+ * @param {string} checksum - The checksum of the original content file.
+ * @param {string} compressionStrategy - The strategy used for compressing the data.
+ * @param {ILogger} logger - The logger instance used for logging information.
+ * @return {void}
+ */
+export function createHumanReadableDistributionMap(
+    distributionMapEntries: IDistributionMapEntry[],
+    distributionCarrier: string,
+    originalFilename: string,
+    checksum: string,
+    compressionStrategy: string,
+    logger: ILogger,
+): string {
+    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
+    return generateDistributionMapText(
+        distributionMapEntries,
+        originalFilename,
+        distributionCarrier,
+        checksum,
+        compressionStrategy,
+    );
+}
