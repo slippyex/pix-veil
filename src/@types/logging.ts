@@ -1,3 +1,5 @@
+// src/@types/logging.ts
+
 export interface ILogFacility {
     log(...input: unknown[]): void;
     warn(...input: unknown[]): void;

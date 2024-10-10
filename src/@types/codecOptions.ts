@@ -1,3 +1,5 @@
+// src/@types/codecOptions.ts
+
 import { ILogger } from './logging.ts';
 
 export interface IEncodeOptions {

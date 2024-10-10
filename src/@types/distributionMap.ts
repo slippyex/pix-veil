@@ -1,3 +1,5 @@
+// src/@types/distributionMap.ts
+
 import { ChannelSequence, SupportedCompressionStrategies } from './index.ts';
 import type { Buffer } from 'node:buffer';
 
