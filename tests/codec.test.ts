@@ -34,12 +34,12 @@ describe('Codec tests', () => {
     const decodedFolder = path.join(rootFolder, 'tests', 'test_output', 'decoded');
 
     const password = 'test';
-    beforeAll(() => {
+    beforeAll(async () => {
         // Ensure clean test environment
         fs.rmSync(encodedFolder, { recursive: true, force: true });
         fs.rmSync(decodedFolder, { recursive: true, force: true });
-        ensureOutputDirectory(encodedFolder);
-        ensureOutputDirectory(decodedFolder);
+        await ensureOutputDirectory(encodedFolder);
+        await ensureOutputDirectory(decodedFolder);
     });
 
     afterAll(() => {

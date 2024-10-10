@@ -4,11 +4,10 @@
         "strict": true
     },
     "imports": {
-        "@std/assert": "jsr:@std/assert@1",
+        "@std/assert": "jsr:@std/assert@^1.0.6",
         "@std/expect": "jsr:@std/expect@^1.0.4",
         "@std/path": "jsr:@std/path@^1.0.6",
-        "@std/testing": "jsr:@std/testing@^1.0.3",
-        "node:buffer": "npm:buffer@latest"
+        "@std/testing": "jsr:@std/testing@^1.0.3"
     },
     "fmt": {
         "useTabs": false,

@@ -3,11 +3,10 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { IDistributionMapEntry } from '../src/@types/index.ts';
+import {IDistributionMapEntry, SupportedCompressionStrategies} from '../src/@types/index.ts';
 import { createDistributionMap } from '../src/utils/distributionMap/mapUtils.ts';
 import { deserializeDistributionMap } from '../src/utils/distributionMap/mapHelpers.ts';
 
-import { SupportedCompressionStrategies } from '../src/utils/compression/compressionStrategies.ts';
 
 Deno.env.set('ENVIRONMENT', 'test');
 

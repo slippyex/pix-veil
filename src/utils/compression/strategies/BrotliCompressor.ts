@@ -1,9 +1,9 @@
 // src/utils/compression/strategies/BrotliCompressor.ts
 
-import type { CompressionStrategy } from '../../../@types/compressionStrategy.ts';
-
+import type { CompressionStrategy } from '../../../@types/index.ts';
+import { compress as brotliCompress, decompress as brotliDecompress } from 'https://deno.land/x/brotli/mod.ts';
 import type { Buffer } from 'node:buffer';
-import zlib from 'node:zlib';
+import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 
 /**
  * Class representing a Brotli compression strategy.
@@ -12,9 +12,9 @@ import zlib from 'node:zlib';
  */
 export class BrotliCompressor implements CompressionStrategy {
     public compress(data: Buffer): Buffer {
-        return zlib.brotliCompressSync(data);
+        return uint8ArrayToBuffer(brotliCompress(data));
     }
     public decompress(data: Buffer): Buffer {
-        return zlib.brotliDecompressSync(data);
+        return uint8ArrayToBuffer(brotliDecompress(uint8ArrayToBuffer(data)));
     }
 }

@@ -1,6 +1,6 @@
 // src/core/decoder/index.ts
 
-import type { IDecodeOptions } from '../../@types/index.ts';
+import { IDecodeOptions, SupportedCompressionStrategies } from '../../@types/index.ts';
 
 import * as path from 'jsr:@std/path';
 
@@ -9,7 +9,6 @@ import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
 import { assembleChunks, extractChunks } from './lib/extraction.ts';
 import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
-import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 /**
  * Decodes encrypted data from the input folder, decrypts it using the provided password, and writes the

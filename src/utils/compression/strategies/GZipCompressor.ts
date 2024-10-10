@@ -1,9 +1,9 @@
 // src/utils/compression/strategies/BrotliCompressor.ts
 
-import type { CompressionStrategy } from '../../../@types/compressionStrategy.ts';
-
+import type { CompressionStrategy } from '../../../@types/index.ts';
+import { gunzip, gzip } from 'https://deno.land/x/compress@v0.4.5/mod.ts';
 import type { Buffer } from 'node:buffer';
-import zlib from 'node:zlib';
+import { bufferToUint8Array, uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 
 /**
  * The GZipCompressor class implements the CompressionStrategy interface,
@@ -11,9 +11,9 @@ import zlib from 'node:zlib';
  */
 export class GZipCompressor implements CompressionStrategy {
     public compress(data: Buffer): Buffer {
-        return zlib.gzipSync(data);
+        return uint8ArrayToBuffer(gzip(bufferToUint8Array(data)));
     }
     public decompress(data: Buffer): Buffer {
-        return zlib.gunzipSync(data);
+        return uint8ArrayToBuffer(gunzip(bufferToUint8Array(data)));
     }
 }

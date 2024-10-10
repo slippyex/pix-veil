@@ -1,6 +1,11 @@
 // src/utils/distributionMap/mapHelpers.ts
 
-import type { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import {
+    ChannelSequence,
+    IDistributionMap,
+    IDistributionMapEntry,
+    SupportedCompressionStrategies,
+} from '../../@types/index.ts';
 
 import { MAGIC_BYTE } from '../../config/index.ts';
 import { Buffer } from 'node:buffer';
@@ -10,7 +15,6 @@ import {
     serializeUInt32,
     serializeUInt8,
 } from '../serialization/serializationHelpers.ts';
-import { SupportedCompressionStrategies } from '../compression/compressionStrategies.ts';
 
 /**
  * Serializes a distribution map into a Buffer.

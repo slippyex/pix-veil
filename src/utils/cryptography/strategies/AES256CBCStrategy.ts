@@ -1,6 +1,6 @@
 // src/utils/cryptography/strategies/AES256CBCStrategy.ts
 
-import type { EncryptionStrategy } from '../../../@types/encryptionStrategy.ts';
+import type { IEncryptionStrategy } from '../../../@types/encryptionStrategy.ts';
 
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
  *
  * This class implements the EncryptionStrategy interface.
  */
-export class AES256CBCStrategy implements EncryptionStrategy {
+export class AES256CBCStrategy implements IEncryptionStrategy {
     private readonly algorithm = 'aes-256-cbc';
     private readonly ivLength = 16;
 

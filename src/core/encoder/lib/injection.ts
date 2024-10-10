@@ -83,7 +83,7 @@ export async function injectChunksIntoPngs(
 ): Promise<void> {
     try {
         if (logger.verbose) logger.info('Injecting chunks into PNG images...');
-        ensureOutputDirectory(outputFolder);
+        await ensureOutputDirectory(outputFolder);
         if (logger.verbose) logger.debug(`Ensured output folder "${outputFolder}".`);
 
         const pngToChunksMap: PngToChunksMap = distributionMapEntries.reduce((acc, entry) => {

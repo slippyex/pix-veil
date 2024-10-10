@@ -1,7 +1,6 @@
 // src/utils/cryptography/crypto.ts
 
-import type { ILogger } from '../../@types/index.ts';
-import type { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
+import type { IEncryptionStrategy, ILogger } from '../../@types/index.ts';
 
 import type { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
@@ -14,14 +13,14 @@ import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
  * @param {Buffer} data - The data to be encrypted, provided as a buffer.
  * @param {string} password - The password used to encrypt the data.
  * @param {ILogger} logger - The logger used to log the encryption process, especially if verbose mode is set to true.
- * @param {EncryptionStrategy} [encryptionStrategy=AES256CBCStrategy()] - The encryption strategy to be used. Defaults to AES-256-CBC if not provided.
+ * @param {IEncryptionStrategy} [encryptionStrategy=AES256CBCStrategy()] - The encryption strategy to be used. Defaults to AES-256-CBC if not provided.
  * @returns {Buffer} The encrypted data as a buffer.
  */
 export function encryptData(
     data: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: IEncryptionStrategy = new AES256CBCStrategy(),
 ): Buffer {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
     const encryptedData = encryptionStrategy.encrypt(data, password);
@@ -36,14 +35,14 @@ export function encryptData(
  * @param {Buffer} encryptedBuffer - The buffer containing encrypted data to be decrypted.
  * @param {string} password - The password used for the decryption process.
  * @param {ILogger} logger - The logger object used for logging information.
- * @param {EncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
+ * @param {IEncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
  * @returns {Buffer} - The decrypted buffer.
  */
 export function decryptData(
     encryptedBuffer: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: IEncryptionStrategy = new AES256CBCStrategy(),
 ): Buffer {
     if (logger.verbose) logger.info('Decrypting the compressed data...');
     return encryptionStrategy.decrypt(encryptedBuffer, password);

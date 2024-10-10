@@ -2,7 +2,7 @@
 
 import type { Buffer } from 'node:buffer';
 
-export interface EncryptionStrategy {
+export interface IEncryptionStrategy {
     encrypt(data: Buffer, password: string): Buffer;
     decrypt(data: Buffer, password: string): Buffer;
 }

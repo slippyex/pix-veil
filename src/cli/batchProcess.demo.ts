@@ -39,15 +39,13 @@ async function batchProcess(): Promise<void> {
     const successFolder = path.resolve(__dirname, '../../tests/test_input/success'); // Directory to store succeeded files
     const reportPath = path.resolve(__dirname, '../../tests/test_input/failedReport.json'); // Path for the report file
 
-    // Initialize Logger
-
     // Prompt for Password Securely
     const password = 'testpassword';
 
     // Ensure Output Directories Exist
-    ensureOutputDirectory(decodedFolder);
-    ensureOutputDirectory(failedFolder);
-    ensureOutputDirectory(successFolder);
+    await ensureOutputDirectory(decodedFolder);
+    await ensureOutputDirectory(failedFolder);
+    await ensureOutputDirectory(successFolder);
 
     // Read All Files from Input Directory
     let files: string[] = [];
@@ -79,7 +77,7 @@ async function batchProcess(): Promise<void> {
     // Process Each File Sequentially
     for (const file of files) {
         const encodedFolder = path.join(path.resolve(__dirname, '../../tests/test_output/encoded'), file); // Output directory for encoded PNGs
-        ensureOutputDirectory(encodedFolder);
+        await ensureOutputDirectory(encodedFolder);
 
         const filePath = path.join(inputDir, file);
 

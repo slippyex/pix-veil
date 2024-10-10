@@ -1,7 +1,8 @@
 // src/utils/compression/compression.ts
 
 import { Buffer } from 'node:buffer';
-import { CompressionStrategyMap, SupportedCompressionStrategies } from './compressionStrategies.ts';
+import { CompressionStrategyMap } from './compressionStrategies.ts';
+import { SupportedCompressionStrategies } from '../../@types/index.ts';
 
 /**
  * Compresses the given buffer using the specified compression strategy.

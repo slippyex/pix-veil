@@ -29,8 +29,8 @@ export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
  * @param {string} outputFolder - The path of the output directory to ensure.
  * @return {void}
  */
-export function ensureOutputDirectory(outputFolder: string): void {
-    Deno.mkdirSync(outputFolder, { recursive: true });
+export async function ensureOutputDirectory(outputFolder: string): Promise<void> {
+    await Deno.mkdir(outputFolder, { recursive: true });
 }
 
 /**

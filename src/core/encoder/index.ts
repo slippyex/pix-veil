@@ -1,6 +1,6 @@
 // src/core/encoder/index.ts
 
-import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
+import { IEncodeOptions, ILogger, SupportedCompressionStrategies } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import {
@@ -20,7 +20,6 @@ import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
 import { Buffer } from 'node:buffer';
-import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 import { decode } from '../decoder/index.ts';
 
@@ -128,7 +127,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             if (verify) {
                 logger.info('Starting verification step...');
                 const tempDecodedFolder = join(outputFolder, 'temp_decoded');
-                ensureOutputDirectory(tempDecodedFolder);
+                await ensureOutputDirectory(tempDecodedFolder);
                 if (
                     await verificationStep(
                         fileData,
@@ -173,7 +172,7 @@ async function verificationStep(
 ): Promise<boolean> {
     logger.info('Starting verification step...');
     const tempDecodedFolder = join(inputFolder, 'temp_decoded');
-    ensureOutputDirectory(tempDecodedFolder);
+    await ensureOutputDirectory(tempDecodedFolder);
 
     try {
         await decode({

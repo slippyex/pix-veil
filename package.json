@@ -30,8 +30,7 @@
     "lodash": "^4.17.21",
     "p-limit": "^6.1.0",
     "seedrandom": "^3.0.5",
-    "sharp": "^0.33.5",
-    "zlib": "^1.0.5"
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.8",
