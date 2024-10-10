@@ -51,7 +51,7 @@ export class AES256CBCStrategy implements IEncryptionStrategy {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
-                salt: new Uint8Array(16), // You may want to replace this with a proper salt
+                salt: new Uint8Array(16),
                 iterations: 100000,
                 hash: 'SHA-256',
             },
