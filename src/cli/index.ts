@@ -5,7 +5,7 @@ import * as path from 'jsr:@std/path';
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
-import process from 'node:process';
+
 import figlet from 'figlet';
 import inquirer from 'inquirer';
 import { config } from '../config/index.ts';
@@ -68,7 +68,7 @@ program
 
         if (answers.password !== answers.confirmPassword) {
             console.error('Passwords do not match. Please try again.');
-            process.exit(1);
+            Deno.exit(1);
         }
 
         const password = answers.password;
@@ -87,7 +87,7 @@ program
         // Enforce minimum chunk size of 16 bytes
         if (minChunkSize < 16) {
             console.error('minChunkSize cannot be less than 16 bytes.');
-            process.exit(1);
+            Deno.exit(1);
         }
 
         config.chunksDefinition = {
@@ -110,10 +110,10 @@ program
                 logger,
                 verify: options.verify !== false, // Pass the verify flag
             });
-            process.exit(0);
+            Deno.exit(0);
         } catch (error) {
             logger.error(`Encoding failed: ${error}`);
-            process.exit(1);
+            Deno.exit(1);
         }
     });
 
@@ -156,10 +156,10 @@ program
                 verbose,
                 logger,
             });
-            process.exit(0);
+            Deno.exit(0);
         } catch (error) {
             logger.error(`Decoding failed: ${error}`);
-            process.exit(1);
+            Deno.exit(1);
         }
     });
 
@@ -176,5 +176,5 @@ if (import.meta.main) {
     ));
 
     console.log(rainbow(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`));
-    program.parse(process.argv);
+    program.parse(Deno.args);
 }

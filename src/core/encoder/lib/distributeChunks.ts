@@ -14,8 +14,9 @@ import * as path from 'jsr:@std/path';
 import { config } from '../../../config/index.ts';
 import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
-import crypto from 'node:crypto';
+
 import seedrandom from 'seedrandom';
+import { generateChecksum } from '../../../utils/cryptography/crypto.ts';
 
 /**
  * Distributes the given chunks across multiple PNG images based on their tone capacities.
@@ -31,12 +32,12 @@ import seedrandom from 'seedrandom';
  * @return {IDistributionMapEntry[]} return.distributionMapEntries - Array of distribution map entries that map chunks to PNG images.
  * @return {Map<number, Buffer>} return.chunkMap - Map storing chunk IDs and their corresponding chunk data.
  */
-export function createChunkDistributionInformation(
+export async function createChunkDistributionInformation(
     chunks: IChunk[],
     pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[],
     inputPngFolder: string,
     logger: ILogger,
-): IChunkDistributionInfo {
+): Promise<IChunkDistributionInfo> {
     if (logger.verbose) logger.info('Distributing chunks across PNG images based on tones...');
 
     const distributionMapEntries: IDistributionMapEntry[] = [];
@@ -125,7 +126,7 @@ export function createChunkDistributionInformation(
             chunkMap.set(chunk.id, chunk.data);
 
             // Generate a deterministic channel sequence based on chunk ID
-            const channelSequence = generateDeterministicChannelSequence(chunk.id);
+            const channelSequence = await generateDeterministicChannelSequence(chunk.id);
 
             // Create distribution map entry
             distributionMapEntries.push({
@@ -167,10 +168,10 @@ export function createChunkDistributionInformation(
  * @param {number} chunkId - The identifier of the chunk, used to generate a unique channel sequence.
  * @return {ChannelSequence[]} A deterministic sequence of channels ordered based on the provided chunk identifier.
  */
-function generateDeterministicChannelSequence(chunkId: number): ChannelSequence[] {
+async function generateDeterministicChannelSequence(chunkId: number): Promise<ChannelSequence[]> {
     // Create a hash from the chunk ID
-    const hash = crypto.createHash('sha256').update(chunkId.toString()).digest('hex');
-
+    //    const hash = crypto.createHash('sha256').update(chunkId.toString()).digest('hex');
+    const hash = await generateChecksum(Buffer.from(chunkId + ''));
     // Convert hash to a seed value
     const seed = parseInt(hash.substring(0, 8), 16);
 

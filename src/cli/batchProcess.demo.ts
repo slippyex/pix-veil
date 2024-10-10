@@ -4,7 +4,6 @@ import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
 import * as path from 'jsr:@std/path';
-import process from 'node:process';
 
 import cliProgress from 'cli-progress';
 import { ILogger } from '../@types/index.ts';
@@ -54,12 +53,12 @@ async function batchProcess(): Promise<void> {
         logger.info(`Found ${files.length} files in input directory.`);
     } catch (err) {
         logger.error(`Failed to read input directory "${inputDir}": ${(err as Error).message}`);
-        process.exit(1);
+        Deno.exit(1);
     }
 
     if (files.length === 0) {
         logger.warn('No files found to process. Exiting.');
-        process.exit(0);
+        Deno.exit(0);
     }
 
     // Initialize Report
@@ -213,7 +212,7 @@ if (import.meta.main) {
             await batchProcess();
         } catch (err) {
             console.error(`Unhandled error in batchProcess: ${(err as Error).message}`);
-            process.exit(1);
+            Deno.exit(1);
         }
     })();
 }

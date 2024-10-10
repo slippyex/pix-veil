@@ -25,7 +25,7 @@ import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
  * @param {ILogger} logger - The logger instance for logging information.
  * @returns {Buffer} The encrypted buffer containing the compressed distribution map.
  */
-export function prepareDistributionMapForInjection(
+export async function prepareDistributionMapForInjection(
     distributionMapEntries: IDistributionMapEntry[],
     compressionStrategy: SupportedCompressionStrategies,
     inputFile: string,
@@ -33,7 +33,7 @@ export function prepareDistributionMapForInjection(
     password: string,
     encryptedDataLength: number, // New parameter
     logger: ILogger,
-): Buffer {
+): Promise<Buffer> {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(
         distributionMapEntries,
@@ -43,7 +43,7 @@ export function prepareDistributionMapForInjection(
         encryptedDataLength,
     );
     const distributionMapCompressed = compressBuffer(serializedMap, SupportedCompressionStrategies.Brotli);
-    const encrypted = encryptData(distributionMapCompressed, password, logger);
+    const encrypted = await encryptData(distributionMapCompressed, password, logger);
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
     return encrypted;
 }
@@ -63,7 +63,7 @@ export async function readAndProcessDistributionMap(
 ): Promise<IDistributionMap> {
     const distributionMapFromCarrier = await scanForDistributionMap(inputFolder, logger);
     if (distributionMapFromCarrier) {
-        return processDistributionMap(distributionMapFromCarrier, password, logger);
+        return await processDistributionMap(distributionMapFromCarrier, password, logger);
     }
     throw new Error('Distribution map not found in input folder.');
 }
@@ -76,12 +76,12 @@ export async function readAndProcessDistributionMap(
  * @param {ILogger} logger - The logger instance used to log relevant information and errors.
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
  */
-function processDistributionMap(
+async function processDistributionMap(
     rawDistributionMapEncrypted: Buffer,
     password: string,
     logger: ILogger,
-): IDistributionMap {
-    const rawDistributionMapDecrypted = decryptData(rawDistributionMapEncrypted, password, logger);
+): Promise<IDistributionMap> {
+    const rawDistributionMapDecrypted = await decryptData(rawDistributionMapEncrypted, password, logger);
     const rawDistributionMapDecompressed = decompressBuffer(
         rawDistributionMapDecrypted,
         SupportedCompressionStrategies.Brotli,

@@ -30,8 +30,8 @@ export async function decode(options: IDecodeOptions): Promise<void> {
         const exactEncryptedData = encryptedData.subarray(0, distributionMap.encryptedDataLength);
 
         if (logger.verbose) logger.info('Verifying and decrypting data...');
-        verifyDataIntegrity(exactEncryptedData, distributionMap.checksum, logger);
-        const decryptedData = decryptData(exactEncryptedData, password, logger);
+        await verifyDataIntegrity(exactEncryptedData, distributionMap.checksum, logger);
+        const decryptedData = await decryptData(exactEncryptedData, password, logger);
         if (logger.verbose && distributionMap.compressionStrategy !== SupportedCompressionStrategies.None) {
             logger.info('Decompressing data...');
         }

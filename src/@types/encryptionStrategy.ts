@@ -3,6 +3,6 @@
 import type { Buffer } from 'node:buffer';
 
 export interface IEncryptionStrategy {
-    encrypt(data: Buffer, password: string): Buffer;
-    decrypt(data: Buffer, password: string): Buffer;
+    encrypt(data: Buffer, password: string): Promise<Buffer>;
+    decrypt(data: Buffer, password: string): Promise<Buffer>;
 }

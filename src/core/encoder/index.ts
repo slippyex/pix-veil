@@ -62,9 +62,9 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             }
 
             // Step 2: Encrypt the compressed data and generate checksum
-            const encryptedData = encryptData(compressedData, options.password, logger);
+            const encryptedData = await encryptData(compressedData, options.password, logger);
             const encryptedDataLength = encryptedData.length;
-            const checksum = generateChecksum(encryptedData);
+            const checksum = await generateChecksum(encryptedData);
 
             // Step 3: Split encrypted data into chunks
             const chunks = splitDataIntoChunks(encryptedData, logger);
@@ -73,7 +73,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             const { pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
 
             // Step 5: Distribute chunks across PNG images and obtain chunk map
-            const { distributionMapEntries, chunkMap } = createChunkDistributionInformation(
+            const { distributionMapEntries, chunkMap } = await createChunkDistributionInformation(
                 chunks,
                 pngCapacities,
                 inputPngFolder,
@@ -91,7 +91,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 7: Create and store the distribution map
-            const encryptedMapContent = prepareDistributionMapForInjection(
+            const encryptedMapContent = await prepareDistributionMapForInjection(
                 distributionMapEntries,
                 compressionStrategy,
                 originalFilename,
