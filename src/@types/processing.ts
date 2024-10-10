@@ -10,7 +10,11 @@ export interface IChunk {
     data: Buffer;
 }
 
-export interface IFileCapacityInfo { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }
+export interface IFileCapacityInfo {
+    file: string;
+    capacity: number;
+    tone: 'low' | 'mid' | 'high';
+}
 export interface ImageToneCache {
     [imagePath: string]: ImageCapacity;
 }
