@@ -63,7 +63,8 @@ export async function readBufferFromFile(filePath: string): Promise<Buffer> {
  * @return {string[]} - An array of filenames in the directory.
  */
 export function readDirectory(dirPath: string): string[] {
-    return Array.from(Deno.readDirSync(dirPath), (entry) => entry.name);
+    const entries = Deno.readDirSync(dirPath);
+    return Array.from(entries, (entry) => entry.name) as string[];
 }
 
 /**

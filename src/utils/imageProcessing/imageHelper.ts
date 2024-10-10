@@ -9,12 +9,56 @@ import { Buffer } from 'node:buffer';
 
 import { createCacheKey, getCacheValue, setCacheValue } from '../cache/cacheHelper.ts';
 import { weightedRandomChoice } from '../misc/helpers.ts';
+import { config } from '../../config/index.ts';
 
 /**
  * In-memory cache for image tones.
  */
 const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
+
+/**
+ * Processes an image by reading it from an input path, applying an injector function,
+ * and then saving the modified image to an output path.
+ *
+ * @param {string} inputPngPath - The input path of the PNG image to be processed.
+ * @param {string} outputPngPath - The output path where the processed PNG image will be saved.
+ * @param {function} injectorFn - A function that modifies the image data. This function takes
+ *                                three arguments: imageData (Buffer), info (sharp.OutputInfo), and logger (ILogger).
+ * @param {ILogger} logger - A logger instance used for logging messages.
+ * @return {Promise<void>} - A promise that resolves when the image processing is completed.
+ */
+export async function processImageInjection(
+    inputPngPath: string,
+    outputPngPath: string,
+    injectorFn: (imageData: Buffer, info: sharp.OutputInfo, logger: ILogger) => void,
+    logger: ILogger,
+): Promise<void> {
+    try {
+        const { data: imageData, info } = await loadImageData(inputPngPath);
+
+        injectorFn(imageData, info, logger);
+
+        await sharp(imageData, {
+            raw: {
+                width: info.width,
+                height: info.height,
+                channels: info.channels,
+            },
+        })
+            .png({
+                compressionLevel: config.imageCompression.compressionLevel,
+                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
+                palette: false,
+            })
+            .toFile(outputPngPath);
+
+        logger.verbose && logger.info(`Processed image "${path.basename(outputPngPath)}" and saved to output folder.`);
+    } catch (error) {
+        logger.error(`Failed to process image "${inputPngPath}": ${(error as Error).message}`);
+        throw error;
+    }
+}
 
 /**
  * Retrieves an image from the specified path, processing it and caching the result.

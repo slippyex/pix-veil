@@ -5,9 +5,10 @@ import * as path from 'jsr:@std/path';
 import { Buffer } from 'node:buffer';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
-import { assembleChunks, extractChunks } from '../lib/extraction.ts';
+import { extractChunks } from '../lib/extraction.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
+import { assembleChunks } from '../lib/assembleChunks.ts';
 
 type StateHandler = () => Promise<void> | void;
 

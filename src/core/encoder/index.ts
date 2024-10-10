@@ -11,7 +11,7 @@ import {
     writeBufferToFile,
 } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
-import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from '../lib/injection.ts';
+import { embedChunksInImageBuffer } from '../lib/injection.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
 import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
@@ -23,6 +23,7 @@ import { decode } from '../decoder/index.ts';
 import { basename, join } from 'jsr:@std/path';
 import * as path from 'jsr:@std/path';
 import { config } from '../../config/index.ts';
+import { injectDistributionMapIntoCarrierPng } from '../lib/distributionMap.ts';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -78,7 +79,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 6: Inject chunks into PNG images
-            await injectChunksIntoPngs(
+            await embedChunksInImageBuffer(
                 distributionMapEntries,
                 chunkMap,
                 inputPngFolder,

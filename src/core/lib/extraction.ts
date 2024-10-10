@@ -3,11 +3,10 @@
 import type { ChannelSequence, IAssembledImageData, IChunk, IDistributionMap, ILogger } from '../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { filePathExists, readDirectory } from '../../utils/storage/storageUtils.ts';
+import { filePathExists } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 
 import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
-import { MAGIC_BYTE } from '../../config/index.ts';
 import { extractBits } from '../../utils/bitManipulation/bitUtils.ts';
 import { getChannelOffset } from '../../utils/misc/helpers.ts';
 
@@ -53,113 +52,6 @@ export async function extractChunks(
         encryptedDataArray.push({ chunkId: entry.chunkId, data: chunkBuffer });
     }
     return encryptedDataArray;
-}
-
-/**
- * Assembles chunks of encrypted data into a single Buffer.
- *
- * @param {Object[]} encryptedDataArray - An array of objects containing the chunkId and data buffer.
- * @param {number} encryptedDataArray[].chunkId - The unique identifier for the chunk.
- * @param {Buffer} encryptedDataArray[].data - The data buffer for the chunk.
- * @param {ILogger} logger - The logger instance to log debug messages.
- * @returns {Buffer} - The concatenated buffer containing the assembled encrypted data.
- */
-export function assembleChunks(encryptedDataArray: { chunkId: number; data: Buffer }[], logger: ILogger): Buffer {
-    // Sort chunks by chunkId to ensure correct order
-    encryptedDataArray.sort((a, b) => a.chunkId - b.chunkId);
-
-    verifyChunkIds(encryptedDataArray);
-    // Concatenate all chunks to form the encrypted data
-    const concatenatedEncryptedData = Buffer.concat(encryptedDataArray.map((chunk) => chunk.data));
-
-    logger.debug(
-        `All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`,
-    );
-
-    return concatenatedEncryptedData;
-}
-
-/**
- * Verifies that each chunk in the encrypted data array has the correct sequential chunkId.
- *
- * @param {Array} encryptedDataArray - An array of objects containing chunkId and data. Each chunkId should be a number and data should be a Buffer.
- * @return {void} This function does not return a value. It throws an error if a chunkId is missing or out of order.
- */
-function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Buffer }[]): void {
-    encryptedDataArray.forEach((chunk, index) => {
-        if (chunk.chunkId !== index) {
-            throw new Error(
-                `Missing or out-of-order chunk detected. Expected chunkId ${index}, found ${chunk.chunkId}.`,
-            );
-        }
-    });
-}
-
-/**
- * Scans the given folder for PNG images and attempts to extract a distribution map from each image.
- *
- * @param {string} inputFolder - The path to the folder containing PNG images to scan.
- * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
- * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
- */
-export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
-    const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
-    for (const png of carrierPngs) {
-        const pngPath = path.join(inputFolder, png);
-
-        logger.debug(`Scanning for distributionMap in file "${png}".`);
-
-        const { data: imageData, info } = (await getImage(pngPath)) as IAssembledImageData;
-
-        // Step 1: Extract [MAGIC_BYTE][SIZE]
-        const magicSizeBits = (MAGIC_BYTE.length + 4) * 8; // MAGIC_BYTE + SIZE (4 bytes)
-        const magicSizeBuffer = extractDataFromBuffer(
-            png,
-            imageData,
-            2,
-            ['R', 'G', 'B'], // channelSequence
-            0,
-            magicSizeBits,
-            logger,
-            info.channels,
-        );
-
-        // Validate MAGIC_BYTE
-        if (!magicSizeBuffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {
-            logger.debug(`MAGIC_BYTE not found at the beginning of "${png}".`);
-            continue;
-        }
-
-        // Extract SIZE
-        const sizeBuffer = magicSizeBuffer.subarray(MAGIC_BYTE.length, MAGIC_BYTE.length + 4);
-        const shiftExtraction = MAGIC_BYTE.length + sizeBuffer.length;
-        const size = sizeBuffer.readUInt32BE(0);
-        logger.debug(`Found distributionMap size: ${size} bytes in "${png}".`);
-
-        // Step 2: Extract [DISTRIBUTION_MAP] based on SIZE
-        const distributionMapBits = size * 8;
-        const distributionMapBuffer = extractDataFromBuffer(
-            png,
-            imageData,
-            2,
-            ['R', 'G', 'B'],
-            0,
-            distributionMapBits + magicSizeBits,
-            logger,
-            info.channels,
-        );
-
-        const extractedDistributionMapBuffer = distributionMapBuffer.subarray(shiftExtraction, size + shiftExtraction);
-        if (extractedDistributionMapBuffer.length === size) {
-            logger.info(`Distribution map successfully extracted from "${png}".`);
-            return extractedDistributionMapBuffer;
-        } else {
-            logger.warn(
-                `Incomplete distribution map extracted from "${png}". Expected ${size} bytes, got ${extractedDistributionMapBuffer.length} bytes.`,
-            );
-        }
-    }
-    return null;
 }
 
 /**

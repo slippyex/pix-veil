@@ -11,7 +11,7 @@ import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpe
 import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../../utils/compression/compression.ts';
 import { decryptData, encryptData } from '../../utils/cryptography/crypto.ts';
-import { scanForDistributionMap } from '../lib/extraction.ts';
+import { scanForDistributionMap } from '../lib/distributionMap.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
