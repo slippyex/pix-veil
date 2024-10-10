@@ -1,8 +1,6 @@
 // src/@types/encryptionStrategy.ts
 
-import type { Buffer } from 'node:buffer';
-
 export interface IEncryptionStrategy {
-    encrypt(data: Buffer, password: string): Promise<Buffer>;
-    decrypt(data: Buffer, password: string): Promise<Buffer>;
+    encrypt(data: Uint8Array, password: string): Promise<Uint8Array>;
+    decrypt(data: Uint8Array, password: string): Promise<Uint8Array>;
 }

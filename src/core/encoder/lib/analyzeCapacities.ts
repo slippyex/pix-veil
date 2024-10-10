@@ -41,7 +41,7 @@ export function analyzePngCapacities(
 
     const analyzedFiles = pngFiles.map((png) => {
         const pngPath = path.join(inputPngFolder, png);
-        const capacity = getCachedImageTones(pngPath, logger); // { low, mid, high }
+        const capacity = getCachedImageTones(pngPath); // { low, mid, high }
 
         const bitsPerChannel = config.bitsPerChannelForDistributionMap;
         const channelsPerPixel = 3; // R, G, B

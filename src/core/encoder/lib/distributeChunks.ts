@@ -54,7 +54,7 @@ export async function createChunkDistributionInformation(
 
     for (const png of pngCapacities) {
         const pngPath = path.join(inputPngFolder, png.file);
-        const capacity = getCachedImageTones(pngPath, logger);
+        const capacity = getCachedImageTones(pngPath);
         pngToneChannels[png.file] = {
             low: capacity.low,
             mid: capacity.mid,
@@ -110,7 +110,7 @@ export async function createChunkDistributionInformation(
                 );
             } catch (_error) {
                 logger.warn(
-                    `Unable to find non-overlapping position for chunk ${chunk.id} in "${png.file}". Trying next PNG.`,
+                    `Unable to find non-overlapping position for chunk ${chunk.chunkId} in "${png.file}". Trying next PNG.`,
                 );
                 continue; // Try next PNG
             }
@@ -123,14 +123,14 @@ export async function createChunkDistributionInformation(
             usedPngs[png.file].chunks.push(chunk);
 
             // Add to chunkMap
-            chunkMap.set(chunk.id, chunk.data);
+            chunkMap.set(chunk.chunkId, chunk.data);
 
             // Generate a deterministic channel sequence based on chunk ID
-            const channelSequence = await generateDeterministicChannelSequence(chunk.id);
+            const channelSequence = await generateDeterministicChannelSequence(chunk.chunkId);
 
             // Create distribution map entry
             distributionMapEntries.push({
-                chunkId: chunk.id,
+                chunkId: chunk.chunkId,
                 pngFile: png.file,
                 startChannelPosition: start,
                 endChannelPosition: end,
@@ -140,7 +140,7 @@ export async function createChunkDistributionInformation(
 
             if (logger.verbose) {
                 logger.info(
-                    `Assigned chunk ${chunk.id} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}, Channels: ${
+                    `Assigned chunk ${chunk.chunkId} (Length: ${chunk.data.length} bytes) to "${png.file}" with ${bitsPerChannel} bits per channel. Position: ${start}-${end}, Channels: ${
                         channelSequence.join(
                             ', ',
                         )
@@ -153,7 +153,7 @@ export async function createChunkDistributionInformation(
         }
 
         if (!assigned) {
-            throw new Error(`Not enough capacity to embed chunk ${chunk.id} within the PNG images.`);
+            throw new Error(`Not enough capacity to embed chunk ${chunk.chunkId} within the PNG images.`);
         }
     }
 
@@ -170,7 +170,6 @@ export async function createChunkDistributionInformation(
  */
 async function generateDeterministicChannelSequence(chunkId: number): Promise<ChannelSequence[]> {
     // Create a hash from the chunk ID
-    //    const hash = crypto.createHash('sha256').update(chunkId.toString()).digest('hex');
     const hash = await generateChecksum(Buffer.from(chunkId + ''));
     // Convert hash to a seed value
     const seed = parseInt(hash.substring(0, 8), 16);
@@ -181,14 +180,13 @@ async function generateDeterministicChannelSequence(chunkId: number): Promise<Ch
 }
 
 /**
- * Shuffles an array deterministically using the Fisher-Yates shuffle algorithm with a provided seed.
+ * Shuffles an array deterministically with a provided seed.
  *
  * @param {ChannelSequence[]} array - The array of ChannelSequence objects to be shuffled.
  * @param {number} seed - The seed for the pseudo-random number generator to ensure deterministic shuffling.
  * @return {ChannelSequence[]} - The shuffled array of ChannelSequence objects.
  */
 function shuffleArrayDeterministic(array: ChannelSequence[], seed: number): ChannelSequence[] {
-    // Simple deterministic shuffle using Fisher-Yates algorithm with seed
     const shuffled = array.slice();
     let currentIndex = shuffled.length;
     let temporaryValue: ChannelSequence;

@@ -1,14 +1,15 @@
-// src/core/decoder/lib/extraction.ts
+// src/core/lib/extraction.ts
 
-import type { ChannelSequence, IAssembledImageData, IDistributionMap, ILogger } from '../../../@types/index.ts';
+import type { ChannelSequence, IAssembledImageData, IChunk, IDistributionMap, ILogger } from '../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { filePathExists, readDirectory } from '../../../utils/storage/storageUtils.ts';
+import { filePathExists, readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 
-import { getChannelOffset, getImage } from '../../../utils/imageProcessing/imageHelper.ts';
-import { MAGIC_BYTE } from '../../../config/index.ts';
-import { extractBits } from '../../../utils/bitManipulation/bitUtils.ts';
+import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
+import { MAGIC_BYTE } from '../../config/index.ts';
+import { extractBits } from '../../utils/bitManipulation/bitUtils.ts';
+import { getChannelOffset } from '../../utils/misc/helpers.ts';
 
 /**
  * Extracts chunks of data from given PNG files as specified in the distribution map.
@@ -22,7 +23,7 @@ export async function extractChunks(
     distributionMap: IDistributionMap,
     inputFolder: string,
     logger: ILogger,
-): Promise<{ chunkId: number; data: Buffer }[]> {
+): Promise<IChunk[]> {
     const encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
 
     for (const entry of distributionMap.entries) {

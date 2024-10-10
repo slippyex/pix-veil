@@ -1,21 +1,14 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-/// <reference lib="deno.unstable" />
-
 import sharp from 'sharp';
-import type {
-    ChannelSequence,
-    IAssembledImageData,
-    ILogger,
-    ImageCapacity,
-    ImageToneCache,
-} from '../../@types/index.ts';
+import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
-import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
+import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 import { Buffer } from 'node:buffer';
 
-import openKv = Deno.openKv;
+import { createCacheKey, getCacheValue, setCacheValue } from '../cache/cacheHelper.ts';
+import { weightedRandomChoice } from '../misc/helpers.ts';
 
 /**
  * In-memory cache for image tones.
@@ -23,27 +16,6 @@ import openKv = Deno.openKv;
 const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
 
-// Initialize Deno KV
-let kv: Deno.Kv; // = await initializeKvStore();
-
-/**
- * Initializes and returns a Deno KV store instance.
- *
- * @return {Promise<Deno.Kv>} The initialized KV store.
- */
-async function initializeKvStore(): Promise<Deno.Kv> {
-    const rootDirectory = findProjectRoot(Deno.cwd());
-    // if (Deno.env.get('ENVIRONMENT') === 'test') {
-    //     return await openKv(':memory:');
-    // } else {
-    //     return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
-    // }
-    return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
-}
-
-export function closeKv() {
-    kv.close();
-}
 /**
  * Retrieves an image from the specified path, processing it and caching the result.
  *
@@ -52,7 +24,7 @@ export function closeKv() {
  */
 export async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
     if (!imageMap.has(pngPath)) {
-        const data = await getImageData(pngPath);
+        const data = await loadImageData(pngPath);
         imageMap.set(pngPath, data);
     }
     return imageMap.get(pngPath);
@@ -65,7 +37,7 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
  * @returns {Promise<{ data: Buffer; info: sharp.OutputInfo }>}
  *          A promise that resolves to an object containing the image data buffer and output information.
  */
-export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
+export async function loadImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     return await image.raw().toBuffer({ resolveWithObject: true });
 }
@@ -172,30 +144,15 @@ export function getRandomPosition(
  * @param {number} fileSize - The size of the PNG image in bytes.
  * @return {Promise<ImageCapacity | null>} - The image capacity or null if not found.
  */
-async function retrieveImageCapacity(imagePath: string, fileSize: number): Promise<ImageCapacity | null> {
-    const key = getToneCacheKey(imagePath, fileSize);
+async function getImageCapacity(imagePath: string, fileSize: number): Promise<ImageCapacity | null> {
+    const key = createCacheKey(imagePath, fileSize);
     try {
-        if (!kv) {
-            kv = await initializeKvStore();
-        }
-        const { value } = await kv.get<ImageCapacity>(['pix-veil', key]);
-        return value;
+        return await getCacheValue<ImageCapacity>('pix-veil', key);
     } catch (error) {
         // Log the error and return null to indicate a cache miss
         console.error(`Failed to retrieve cache for "${imagePath}": ${(error as Error).message}`);
         return null;
     }
-}
-
-/**
- * Constructs a unique cache key using the full path and file size.
- *
- * @param {string} imagePath - The full path to the PNG image.
- * @param {number} fileSize - The size of the PNG image in bytes.
- * @return {string} - The constructed cache key.
- */
-function getToneCacheKey(imagePath: string, fileSize: number): string {
-    return `${imagePath}:${fileSize}`;
 }
 
 /**
@@ -206,13 +163,11 @@ function getToneCacheKey(imagePath: string, fileSize: number): string {
  * @param {ImageCapacity} capacity - The image capacity data.
  * @return {Promise<void>} - Resolves when the data is stored.
  */
-async function storeImageCapacity(imagePath: string, fileSize: number, capacity: ImageCapacity): Promise<void> {
-    const key = getToneCacheKey(imagePath, fileSize);
+async function setImageCapacity(imagePath: string, fileSize: number, capacity: ImageCapacity): Promise<void> {
     try {
-        if (!kv) {
-            await initializeKvStore();
-        }
-        await kv.set(['pix-veil', key], capacity);
+        // Store the result in Deno KV
+        const cacheKey = createCacheKey(imagePath, fileSize);
+        await setCacheValue('pix-veil', cacheKey, capacity);
     } catch (error) {
         console.error(`Failed to store cache for "${imagePath}": ${(error as Error).message}`);
     }
@@ -246,7 +201,7 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
         }
 
         // Attempt to retrieve from Deno KV
-        const cachedCapacity = await retrieveImageCapacity(imagePath, fileSize);
+        const cachedCapacity = await getImageCapacity(imagePath, fileSize);
         if (cachedCapacity) {
             toneCache[imagePath] = cachedCapacity;
             logger.debug(`Cache hit for "${imagePath}". Loaded capacity from Deno KV.`);
@@ -259,7 +214,7 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
         let info: sharp.OutputInfo;
 
         try {
-            const imageData = await getImageData(imagePath);
+            const imageData = await loadImageData(imagePath);
             data = imageData.data;
             info = imageData.info;
         } catch (error) {
@@ -295,7 +250,7 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
         );
 
         // Store the result in Deno KV
-        await storeImageCapacity(imagePath, fileSize, capacity);
+        await setImageCapacity(imagePath, fileSize, capacity);
         logger.debug(`Stored capacity for "${imagePath}" in Deno KV.`);
     }
 }
@@ -309,59 +264,11 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
  * @return {ImageCapacity} - The image capacity data.
  * @throws {Error} - If no cache entry is found for the image.
  */
-export function getCachedImageTones(imagePath: string, logger: ILogger): ImageCapacity {
+export function getCachedImageTones(imagePath: string): ImageCapacity {
     const capacity = toneCache[imagePath];
     if (capacity) {
-        logger.debug(`Retrieved cached tones for "${imagePath}" from in-memory cache.`);
         return capacity;
     } else {
         throw new Error(`No cache entry found for "${imagePath}". Ensure that "processImageTones" has been run.`);
     }
-}
-
-/**
- * Helper function to get the channel offset based on the channel name.
- * @param channel - The channel name ('R', 'G', 'B', 'A').
- * @returns The channel offset index.
- */
-export function getChannelOffset(channel: ChannelSequence): number {
-    switch (channel) {
-        case 'R':
-            return 0;
-        case 'G':
-            return 1;
-        case 'B':
-            return 2;
-        case 'A':
-            return 3;
-        default:
-            throw new Error(`Invalid channel specified: ${channel}`);
-    }
-}
-
-/**
- * Selects a weighted random choice from an array of objects containing weight and tone.
- *
- * @param {Array<{ weight: number; tone: 'low' | 'mid' | 'high' }>} choices - The array of choice objects where each object has a weight and tone.
- * @param {ILogger} logger - Logger for debugging the selection process.
- * @return {'low' | 'mid' | 'high'} - The randomly selected tone based on the provided weights.
- */
-function weightedRandomChoice(
-    choices: Array<{ weight: number; tone: 'low' | 'mid' | 'high' }>,
-    logger: ILogger,
-): 'low' | 'mid' | 'high' {
-    const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
-    const random = Math.random() * totalWeight;
-    let cumulative = 0;
-    for (const choice of choices) {
-        cumulative += choice.weight;
-        if (random < cumulative) {
-            logger.debug(`Weighted random choice selected tone "${choice.tone}" with weight ${choice.weight}.`);
-            return choice.tone;
-        }
-    }
-    // Fallback
-    const fallback = choices[choices.length - 1].tone;
-    logger.debug(`Weighted random choice fallback to tone "${fallback}".`);
-    return fallback;
 }

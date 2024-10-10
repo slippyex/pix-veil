@@ -1,19 +1,20 @@
-// src/core/encoder/lib/injection.ts
+// src/core/lib/injection.ts
 
-import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
+import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
+import { ensureOutputDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 import sharp from 'sharp';
-import { config, MAGIC_BYTE } from '../../../config/index.ts';
+import { config, MAGIC_BYTE } from '../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
-import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
-import { addDebugBlock } from '../../../utils/imageProcessing/debugHelper.ts';
-import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
-import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
-import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
+import { serializeUInt32 } from '../../utils/serialization/serializationHelpers.ts';
+import { addDebugBlock } from '../../utils/imageProcessing/debugHelper.ts';
+import { extractBits, insertBits } from '../../utils/bitManipulation/bitUtils.ts';
+import { loadImageData } from '../../utils/imageProcessing/imageHelper.ts';
+import { extractDataFromBuffer } from './extraction.ts';
+import { getChannelOffset } from '../../utils/misc/helpers.ts';
 
 const cpuCount = os.cpus().length;
 
@@ -35,7 +36,7 @@ async function processImage(
     logger: ILogger,
 ): Promise<void> {
     try {
-        const { data: imageData, info } = await getImageData(inputPngPath);
+        const { data: imageData, info } = await loadImageData(inputPngPath);
 
         injectorFn(imageData, info, logger);
 

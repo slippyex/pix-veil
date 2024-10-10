@@ -1,5 +1,4 @@
 import type { CompressionStrategy } from '../../../@types/index.ts';
-import type { Buffer } from 'node:buffer';
 
 /**
  * The NoneCompressor class provides an implementation of the CompressionStrategy
@@ -10,10 +9,10 @@ import type { Buffer } from 'node:buffer';
  * - decompress: Returns the input data unchanged.
  */
 export class NoopCompressor implements CompressionStrategy {
-    public compress(data: Buffer): Buffer {
+    public compress(data: Uint8Array): Uint8Array {
         return data;
     }
-    public decompress(data: Buffer): Buffer {
+    public decompress(data: Uint8Array): Uint8Array {
         return data;
     }
 }

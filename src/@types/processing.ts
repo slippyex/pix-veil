@@ -6,10 +6,11 @@ import sharp from 'sharp';
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
 export interface IChunk {
-    id: number;
+    chunkId: number;
     data: Buffer;
 }
 
+export interface IFileCapacityInfo { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }
 export interface ImageToneCache {
     [imagePath: string]: ImageCapacity;
 }

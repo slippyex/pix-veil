@@ -3,10 +3,7 @@
 import { IEncodeOptions, ILogger, SupportedCompressionStrategies } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
-import {
-    createHumanReadableDistributionMap,
-    prepareDistributionMapForInjection,
-} from '../../utils/distributionMap/mapUtils.ts';
+import { createHumanReadableDistributionMap, prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
 import {
     ensureOutputDirectory,
     isCompressed,
@@ -14,7 +11,7 @@ import {
     writeBufferToFile,
 } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
-import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
+import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from '../lib/injection.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
 import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';

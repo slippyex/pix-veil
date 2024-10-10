@@ -41,19 +41,19 @@ export async function ensureOutputDirectory(outputFolder: string): Promise<void>
  *
  * @return {void}
  */
-export async function writeBufferToFile(filePath: string, data: Buffer): Promise<void> {
-    await Deno.writeFile(filePath, bufferToUint8Array(data));
+export async function writeBufferToFile(filePath: string, data: Uint8Array): Promise<void> {
+    await Deno.writeFile(filePath, data);
 }
 
 /**
  * Reads the entire contents of a file into a buffer.
  *
  * @param {string} filePath - The file path of the file to be read.
- * @returns {Buffer | Uint8Array} - The contents of the file as a Buffer or Uint8Array.
+ * @returns {Buffer} - The contents of the file as a Buffer or Uint8Array.
  */
 export async function readBufferFromFile(filePath: string): Promise<Buffer> {
     const data = await Deno.readFile(filePath);
-    return uint8ArrayToBuffer(data);
+    return data as Buffer;
 }
 
 /**

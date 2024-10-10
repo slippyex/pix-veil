@@ -26,7 +26,7 @@ export async function encryptData(
     const encryptedData = await encryptionStrategy.encrypt(data, password);
     const checksum = await generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
-    return encryptedData;
+    return encryptedData as Buffer;
 }
 
 /**
@@ -39,13 +39,13 @@ export async function encryptData(
  * @returns {Buffer} - The decrypted buffer.
  */
 export async function decryptData(
-    encryptedBuffer: Buffer,
+    encryptedBuffer: Uint8Array,
     password: string,
     logger: ILogger,
     encryptionStrategy: IEncryptionStrategy = new AES256CBCStrategy(),
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Decrypting the compressed data...');
-    return await encryptionStrategy.decrypt(encryptedBuffer, password);
+    return await encryptionStrategy.decrypt(encryptedBuffer, password) as Buffer;
 }
 /**
  * Verifies the integrity of the encrypted data using checksum.
@@ -66,7 +66,7 @@ export async function verifyDataIntegrity(encryptedData: Buffer, checksum: strin
  * @param {Buffer} buffer - The buffer for which to generate the checksum.
  * @return {string} The generated SHA-256 checksum encoded as a hexadecimal string.
  */
-export async function generateChecksum(buffer: Buffer): Promise<string> {
+export async function generateChecksum(buffer: Uint8Array): Promise<string> {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     return Array.from(new Uint8Array(hashBuffer))
         .map((b) => b.toString(16).padStart(2, '0'))
