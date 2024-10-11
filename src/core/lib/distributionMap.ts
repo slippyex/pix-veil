@@ -3,7 +3,7 @@
 import { extractDataFromBuffer } from './extraction.ts';
 import { MAGIC_BYTE } from '../../config/index.ts';
 import { getImage, processImageInjection } from '../../utils/imageProcessing/imageHelper.ts';
-import { IAssembledImageData, ILogger } from '../../@types/index.ts';
+import { IAssembledImageData, IFileCapacityInfo, ILogger } from '../../@types/index.ts';
 
 import { readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
@@ -92,7 +92,7 @@ export async function scanForDistributionMap(inputFolder: string, logger: ILogge
 export async function injectDistributionMapIntoCarrierPng(
     inputPngFolder: string,
     outputFolder: string,
-    distributionCarrier: { file: string; capacity: number },
+    distributionCarrier: IFileCapacityInfo,
     encryptedMapContent: Uint8Array,
     logger: ILogger,
 ): Promise<void> {

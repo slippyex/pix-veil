@@ -23,7 +23,7 @@ export async function extractChunks(
     inputFolder: string,
     logger: ILogger,
 ): Promise<IChunk[]> {
-    const encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
+    const encryptedDataArray: IChunk[] = [];
 
     for (const entry of distributionMap.entries) {
         const pngPath = path.join(inputFolder, entry.pngFile);

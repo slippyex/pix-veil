@@ -24,3 +24,8 @@ export interface IChunkDistributionInfo {
     distributionMapEntries: IDistributionMapEntry[];
     chunkMap: Map<number, Uint8Array>;
 }
+
+export interface ISerializeInfo {
+    value: number;
+    newOffset: number;
+}

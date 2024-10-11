@@ -1,6 +1,6 @@
 // src/core/distributionMap/mapHelpers.ts
 
-import { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
+import { ChannelSequence, IDistributionMap, IDistributionMapEntry, ISerializeInfo } from '../../@types/index.ts';
 
 import { MAGIC_BYTE } from '../../config/index.ts';
 import { Buffer } from 'node:buffer';
@@ -289,7 +289,7 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
         );
     }
 
-    const value = buffer.slice(offset, offset + length).toString('utf-8');
+    const value = buffer.subarray(offset, offset + length).toString('utf-8');
     return { value, newOffset: offset + length };
 }
 

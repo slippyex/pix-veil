@@ -1,7 +1,7 @@
 // src/core/lib/assembleChunks.ts
 
 import { Buffer } from 'node:buffer';
-import { ILogger } from '../../@types/index.ts';
+import { IChunk, ILogger } from '../../@types/index.ts';
 
 /**
  * Assembles chunks of encrypted data into a single Buffer.
@@ -12,7 +12,7 @@ import { ILogger } from '../../@types/index.ts';
  * @param {ILogger} logger - The logger instance to log debug messages.
  * @returns {Buffer} - The concatenated buffer containing the assembled encrypted data.
  */
-export function assembleChunks(encryptedDataArray: { chunkId: number; data: Uint8Array }[], logger: ILogger): Buffer {
+export function assembleChunks(encryptedDataArray: IChunk[], logger: ILogger): Buffer {
     // Sort chunks by chunkId to ensure correct order
     encryptedDataArray.sort((a, b) => a.chunkId - b.chunkId);
 
@@ -33,7 +33,7 @@ export function assembleChunks(encryptedDataArray: { chunkId: number; data: Uint
  * @param {Array} encryptedDataArray - An array of objects containing chunkId and data. Each chunkId should be a number and data should be a Buffer.
  * @return {void} This function does not return a value. It throws an error if a chunkId is missing or out of order.
  */
-function verifyChunkIds(encryptedDataArray: { chunkId: number; data: Uint8Array }[]): void {
+function verifyChunkIds(encryptedDataArray: IChunk[]): void {
     encryptedDataArray.forEach((chunk, index) => {
         if (chunk.chunkId !== index) {
             throw new Error(
