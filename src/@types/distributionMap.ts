@@ -22,5 +22,5 @@ export interface IDistributionMap {
 
 export interface IChunkDistributionInfo {
     distributionMapEntries: IDistributionMapEntry[];
-    chunkMap: Map<number, Buffer>;
+    chunkMap: Map<number, Uint8Array>;
 }

@@ -8,7 +8,7 @@ import {
 } from '../../@types/index.ts';
 
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
-import { Buffer } from 'node:buffer';
+
 import { compressBuffer, decompressBuffer } from '../../utils/compression/compression.ts';
 import { decryptData, encryptData } from '../../utils/cryptography/crypto.ts';
 import { scanForDistributionMap } from '../lib/distributionMap.ts';
@@ -33,7 +33,7 @@ export async function prepareDistributionMapForInjection(
     password: string,
     encryptedDataLength: number, // New parameter
     logger: ILogger,
-): Promise<Buffer> {
+): Promise<Uint8Array> {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(
         distributionMapEntries,
@@ -77,7 +77,7 @@ export async function readAndProcessDistributionMap(
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
  */
 async function processDistributionMap(
-    rawDistributionMapEncrypted: Buffer,
+    rawDistributionMapEncrypted: Uint8Array,
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
@@ -105,7 +105,7 @@ export function createDistributionMap(
     originalFilename: string,
     checksum: string,
     encryptedDataLength: number, // New parameter
-): Buffer {
+): Uint8Array {
     const distributionMap: IDistributionMap = {
         entries,
         originalFilename,

@@ -1,8 +1,8 @@
 // src/core/decoder/stateMachine.ts
 
 import type { IChunk, IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
+import type { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
-import { Buffer } from 'node:buffer';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
 import { extractChunks } from '../lib/extraction.ts';

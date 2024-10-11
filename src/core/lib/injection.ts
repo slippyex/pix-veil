@@ -30,7 +30,7 @@ type PngToChunksMap = Record<string, IDistributionMapEntry[]>;
  */
 export async function embedChunksInImageBuffer(
     distributionMapEntries: IDistributionMapEntry[],
-    chunkMap: Map<number, Buffer>,
+    chunkMap: Map<number, Uint8Array>,
     inputPngFolder: string,
     outputFolder: string,
     debugVisual: boolean,
@@ -158,8 +158,8 @@ export async function embedChunksInImageBuffer(
  * @param channels - Number of channels in the image.
  */
 export function injectDataIntoBuffer(
-    imageData: Buffer,
-    data: Buffer,
+    imageData: Uint8Array,
+    data: Uint8Array,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
     startChannelPosition: number,

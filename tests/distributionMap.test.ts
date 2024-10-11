@@ -6,6 +6,7 @@ import { expect } from 'jsr:@std/expect';
 import { IDistributionMapEntry, SupportedCompressionStrategies } from '../src/@types/index.ts';
 import { createDistributionMap } from '../src/core/distributionMap/mapUtils.ts';
 import { deserializeDistributionMap } from '../src/core/distributionMap/mapHelpers.ts';
+import type { Buffer } from 'node:buffer';
 
 Deno.env.set('ENVIRONMENT', 'test');
 
@@ -42,7 +43,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized);
+        const deserialized = deserializeDistributionMap(serialized as Buffer);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -65,7 +66,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized);
+        const deserialized = deserializeDistributionMap(serialized as Buffer);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -101,7 +102,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized);
+        const deserialized = deserializeDistributionMap(serialized as Buffer);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -133,7 +134,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized);
+        const deserialized = deserializeDistributionMap(serialized as Buffer);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -172,7 +173,7 @@ describe('Distribution Map Serialization', () => {
         serialized[2] = 0x00;
         serialized[3] = 0x00;
 
-        expect(() => deserializeDistributionMap(serialized)).toThrow(
+        expect(() => deserializeDistributionMap(serialized as Buffer)).toThrow(
             'Magic bytes not found at the start of the distribution map.',
         );
     });

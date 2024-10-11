@@ -9,7 +9,7 @@ import type {
     IUsedPng,
 } from '../../../@types/index.ts';
 
-import { Buffer } from 'node:buffer';
+
 import * as path from 'jsr:@std/path';
 import { config } from '../../../config/index.ts';
 import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
@@ -73,7 +73,7 @@ export async function createChunkDistributionInformation(
     );
 
     // Create a Map to store chunkId to chunk data
-    const chunkMap = new Map<number, Buffer>();
+    const chunkMap = new Map<number, Uint8Array>();
 
     for (const chunk of chunks) {
         let assigned = false;
@@ -170,7 +170,7 @@ export async function createChunkDistributionInformation(
  */
 async function generateDeterministicChannelSequence(chunkId: number): Promise<ChannelSequence[]> {
     // Create a hash from the chunk ID
-    const hash = await generateChecksum(Buffer.from(chunkId + ''));
+    const hash = await generateChecksum(new Uint8Array(chunkId));
     // Convert hash to a seed value
     const seed = parseInt(hash.substring(0, 8), 16);
 

@@ -4,7 +4,7 @@ import { extractDataFromBuffer } from './extraction.ts';
 import { MAGIC_BYTE } from '../../config/index.ts';
 import { getImage, processImageInjection } from '../../utils/imageProcessing/imageHelper.ts';
 import { IAssembledImageData, ILogger } from '../../@types/index.ts';
-import { Buffer } from 'node:buffer';
+
 import { readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 import { serializeUInt32 } from '../../utils/serialization/serializationHelpers.ts';
@@ -17,7 +17,7 @@ import { injectDataIntoBuffer } from './injection.ts';
  * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
  * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
-export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
+export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
     for (const png of carrierPngs) {
         const pngPath = path.join(inputFolder, png);
@@ -93,7 +93,7 @@ export async function injectDistributionMapIntoCarrierPng(
     inputPngFolder: string,
     outputFolder: string,
     distributionCarrier: { file: string; capacity: number },
-    encryptedMapContent: Buffer,
+    encryptedMapContent: Uint8Array,
     logger: ILogger,
 ): Promise<void> {
     try {
@@ -105,7 +105,7 @@ export async function injectDistributionMapIntoCarrierPng(
             (imageData, { channels }, logger) => {
                 injectDataIntoBuffer(
                     imageData,
-                    Buffer.concat([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
+                    concatUint8Arrays([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
                     2, // bitsPerChannel
                     ['R', 'G', 'B'], // channelSequence
                     0, // startPosition
@@ -119,4 +119,21 @@ export async function injectDistributionMapIntoCarrierPng(
         logger.error(`Failed to inject distribution map into carrier PNG: ${(error as Error).message}`);
         throw error;
     }
+}
+
+function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
+    // Calculate total length
+    const totalLength = arrays.reduce((acc, curr) => acc + curr.length, 0);
+
+    // Allocate a new Uint8Array
+    const result = new Uint8Array(totalLength);
+
+    // Set each array into the result
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+
+    return result;
 }

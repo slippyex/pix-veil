@@ -7,7 +7,7 @@ export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
 
 export interface IChunk {
     chunkId: number;
-    data: Buffer;
+    data: Uint8Array;
 }
 
 export interface IFileCapacityInfo {

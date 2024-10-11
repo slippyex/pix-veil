@@ -1,6 +1,6 @@
 // src/core/encoder/lib/splitChunks.ts
 import type { IChunk, ILogger } from '../../../@types/index.ts';
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import { config } from '../../../config/index.ts';
 
 /**
@@ -22,7 +22,7 @@ export function splitDataIntoChunks(encryptedData: Buffer, logger: ILogger): ICh
         const size = calculateChunkSize(remaining);
         const chunkData = encryptedData.subarray(offset, offset + size);
 
-        chunks.push({ chunkId: chunkId++, data: Buffer.from(chunkData) });
+        chunks.push({ chunkId: chunkId++, data: new Uint8Array(chunkData)});
         offset += size;
     }
 
