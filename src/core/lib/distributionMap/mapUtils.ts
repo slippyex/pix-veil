@@ -11,7 +11,7 @@ import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpe
 
 import { compressBuffer, decompressBuffer } from '../../../utils/compression/compression.ts';
 import { decryptData, encryptData } from '../../../utils/cryptography/crypto.ts';
-import { scanForDistributionMap } from './distributionMap.ts';
+import { scanAndExtractDistributionMap } from './distributionMap.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -61,7 +61,7 @@ export async function readAndProcessDistributionMap(
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
-    const distributionMapFromCarrier = await scanForDistributionMap(inputFolder, logger);
+    const distributionMapFromCarrier = await scanAndExtractDistributionMap(inputFolder, logger);
     if (distributionMapFromCarrier) {
         return await processDistributionMap(distributionMapFromCarrier, password, logger);
     }

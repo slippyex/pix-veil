@@ -18,7 +18,7 @@ import { concatUint8Arrays } from '../../../utils/misc/helpers.ts';
  * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
  * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
-export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
+export async function scanAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png')) as string[];
     for (const png of carrierPngs) {
         const pngPath = path.join(inputFolder, png);
