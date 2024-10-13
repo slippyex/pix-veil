@@ -6,7 +6,7 @@ import { getLogger } from '../utils/logging/logUtils.ts';
 import * as path from 'jsr:@std/path';
 
 import cliProgress from 'cli-progress';
-import { ILogger } from '../@types/index.ts';
+import type { ILogger } from '../@types/index.ts';
 import { ensureOutputDirectory, readDirectory, writeBufferToFile } from '../utils/storage/storageUtils.ts';
 import { Buffer } from 'node:buffer';
 
@@ -147,21 +147,6 @@ async function writeReport(reportPath: string, report: ReportEntry[], logger: IL
 }
 
 /**
- * Ensures that a directory exists at the specified path. If the directory does
- * not exist, it is created along with any necessary parent directories.
- *
- * @param {string} dirPath - The path to the directory that needs to be ensured.
- * @return {Promise<void>} A promise that resolves when the directory has been ensured.
- */
-// async function ensureDirectory(dirPath: string): Promise<void> {
-//     try {
-//         await ensureDirectory(dirPath, { recursive: true });
-//     } catch (_err) {
-//         process.exit(1);
-//     }
-// }
-
-/**
  * Handles the failure of file processing by moving the file to a specified failed directory.
  *
  * @param {string} filePath - The path of the file that failed to process.
@@ -186,7 +171,7 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
  */
 async function cleanDirectory(dirPath: string): Promise<void> {
     try {
-        const files = await readDirectory(dirPath);
+        const files = readDirectory(dirPath);
         const deletePromises = files.map(async (file) => {
             const filePath = path.join(dirPath, file);
             const stat = await Deno.stat(filePath);

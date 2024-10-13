@@ -8,7 +8,7 @@ import * as path from 'jsr:@std/path';
 
 import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
 import { extractBits } from '../../utils/bitManipulation/bitUtils.ts';
-import { getChannelOffset } from '../../utils/misc/helpers.ts';
+import { getChannelOffset } from '../../utils/misc/lookups.ts';
 
 /**
  * Extracts chunks of data from given PNG files as specified in the distribution map.

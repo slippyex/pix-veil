@@ -1,7 +1,7 @@
 // src/core/lib/assembleChunks.ts
 
 import { Buffer } from 'node:buffer';
-import { IChunk, ILogger } from '../../@types/index.ts';
+import type { IChunk, ILogger } from '../../../@types/index.ts';
 
 /**
  * Assembles chunks of encrypted data into a single Buffer.

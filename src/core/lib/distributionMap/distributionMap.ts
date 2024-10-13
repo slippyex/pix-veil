@@ -1,14 +1,15 @@
 // src/core/lib/distributionMap.ts
 
-import { extractDataFromBuffer } from './extraction.ts';
-import { MAGIC_BYTE } from '../../config/index.ts';
-import { getImage, processImageInjection } from '../../utils/imageProcessing/imageHelper.ts';
-import { IAssembledImageData, IFileCapacityInfo, ILogger } from '../../@types/index.ts';
+import { extractDataFromBuffer } from '../extraction.ts';
+import { MAGIC_BYTE } from '../../../config/index.ts';
+import { getImage, processImageInjection } from '../../../utils/imageProcessing/imageHelper.ts';
+import type { IAssembledImageData, IFileCapacityInfo, ILogger } from '../../../@types/index.ts';
 
-import { readDirectory } from '../../utils/storage/storageUtils.ts';
+import { readDirectory } from '../../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
-import { serializeUInt32 } from '../../utils/serialization/serializationHelpers.ts';
-import { injectDataIntoBuffer } from './injection.ts';
+import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
+import { injectDataIntoBuffer } from '../injection.ts';
+import { concatUint8Arrays } from '../../../utils/misc/helpers.ts';
 
 /**
  * Scans the given folder for PNG images and attempts to extract a distribution map from each image.
@@ -18,7 +19,7 @@ import { injectDataIntoBuffer } from './injection.ts';
  * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
 export async function scanForDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
-    const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
+    const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png')) as string[];
     for (const png of carrierPngs) {
         const pngPath = path.join(inputFolder, png);
 
@@ -119,21 +120,4 @@ export async function injectDistributionMapIntoCarrierPng(
         logger.error(`Failed to inject distribution map into carrier PNG: ${(error as Error).message}`);
         throw error;
     }
-}
-
-function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
-    // Calculate total length
-    const totalLength = arrays.reduce((acc, curr) => acc + curr.length, 0);
-
-    // Allocate a new Uint8Array
-    const result = new Uint8Array(totalLength);
-
-    // Set each array into the result
-    let offset = 0;
-    for (const arr of arrays) {
-        result.set(arr, offset);
-        offset += arr.length;
-    }
-
-    return result;
 }

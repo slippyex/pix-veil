@@ -1,14 +1,12 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-import sharp from 'sharp';
 import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
-import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
+import type { Buffer } from 'node:buffer';
+
+import sharp from 'sharp';
 import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
-import { Buffer } from 'node:buffer';
-
 import { createCacheKey, getCacheValue, setCacheValue } from '../cache/cacheHelper.ts';
-import { weightedRandomChoice } from '../misc/helpers.ts';
 import { config } from '../../config/index.ts';
 
 /**
@@ -84,101 +82,6 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
 export async function loadImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     return await image.raw().toBuffer({ resolveWithObject: true });
-}
-
-/**
- * Generates a random position within the provided image capacity that does not overlap with already used positions.
- * Prioritizes channels based on tone weights.
- *
- * @param {number} lowChannels - Number of low-tone channels.
- * @param {number} midChannels - Number of mid-tone channels.
- * @param {number} highChannels - Number of high-tone channels.
- * @param {number} chunkSize - The size of the chunk to hide within the image.
- * @param {number} bitsPerChannel - The number of bits used per channel in the image.
- * @param {Uint8Array} used - A Uint8Array indicating which channels have already been used.
- * @param {ILogger} logger - Logger instance for debugging information.
- * @return {{ start: number, end: number }} An object containing the start and end channel indices for the chunk within the image.
- * @throws {Error} If unable to find a non-overlapping position for the chunk.
- */
-export function getRandomPosition(
-    lowChannels: number,
-    midChannels: number,
-    highChannels: number,
-    chunkSize: number,
-    bitsPerChannel: number,
-    used: Uint8Array,
-    logger: ILogger,
-): { start: number; end: number } {
-    const channelsNeeded = Math.ceil((chunkSize * 8) / bitsPerChannel); // Number of channels needed
-    const attempts = 100; // Prevent infinite loops
-
-    for (let i = 0; i < attempts; i++) {
-        // Weighted random selection based on tone
-        const tone = weightedRandomChoice(
-            [
-                { weight: 4, tone: 'low' as const },
-                { weight: 2, tone: 'mid' as const },
-                { weight: 1, tone: 'high' as const },
-            ],
-            logger,
-        );
-
-        let channelIndex;
-        switch (tone) {
-            case 'low':
-                channelIndex = Math.floor(Math.random() * lowChannels);
-                break;
-            case 'mid':
-                channelIndex = Math.floor(Math.random() * midChannels);
-                break;
-            case 'high':
-                channelIndex = Math.floor(Math.random() * highChannels);
-                break;
-        }
-
-        // Calculate absolute channel position based on tone
-        let absoluteChannel;
-        switch (tone) {
-            case 'low':
-                absoluteChannel = channelIndex;
-                break;
-            case 'mid':
-                absoluteChannel = lowChannels + channelIndex;
-                break;
-            case 'high':
-                absoluteChannel = lowChannels + midChannels + channelIndex;
-                break;
-        }
-
-        const start = absoluteChannel;
-        const end = start + channelsNeeded;
-
-        // Ensure end does not exceed total channels
-        const totalChannels = lowChannels + midChannels + highChannels;
-        if (end > totalChannels) {
-            continue; // Try another position
-        }
-
-        // Check for overlap
-        let overlap = false;
-        for (let j = start; j < end; j++) {
-            if (isBitSet(used, j)) {
-                overlap = true;
-                break;
-            }
-        }
-
-        if (!overlap) {
-            // Mark positions as used
-            for (let j = start; j < end; j++) {
-                setBit(used, j);
-            }
-            logger.debug(`Selected channels ${start}-${end} based on tone "${tone}".`);
-            return { start, end };
-        }
-    }
-
-    throw new Error('Unable to find a non-overlapping position for the chunk.');
 }
 
 /**

@@ -4,8 +4,8 @@ import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
 import { IDistributionMapEntry, SupportedCompressionStrategies } from '../src/@types/index.ts';
-import { createDistributionMap } from '../src/core/distributionMap/mapUtils.ts';
-import { deserializeDistributionMap } from '../src/core/distributionMap/mapHelpers.ts';
+import { createDistributionMap } from '../src/core/lib/distributionMap/mapUtils.ts';
+import { deserializeDistributionMap } from '../src/core/lib/distributionMap/mapHelpers.ts';
 import type { Buffer } from 'node:buffer';
 
 Deno.env.set('ENVIRONMENT', 'test');

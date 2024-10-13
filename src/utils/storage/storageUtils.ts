@@ -1,27 +1,8 @@
 // src/utils/storage/storageUtils.ts
 
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import { dirname, extname, join } from 'jsr:@std/path';
 
-/**
- * Converts a Buffer to Uint8Array.
- *
- * @param {Buffer} buffer - The Buffer to convert.
- * @returns {Uint8Array} - The resulting Uint8Array.
- */
-export function bufferToUint8Array(buffer: Buffer): Uint8Array {
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
-}
-
-/**
- * Converts a Uint8Array to Buffer.
- *
- * @param {Uint8Array} uint8Array - The Uint8Array to convert.
- * @returns {Buffer} - The resulting Buffer.
- */
-export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
-    return Buffer.from(uint8Array);
-}
 /**
  * Ensures that the specified output directory exists. If the directory
  * does not exist, it creates the directory and any necessary subdirectories.

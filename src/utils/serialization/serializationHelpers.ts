@@ -1,7 +1,7 @@
 // src/utils/serialization/serializationHelpers.ts
 
 import { Buffer } from 'node:buffer';
-import { ISerializeInfo } from '../../@types/index.ts';
+import type { ISerializeInfo } from '../../@types/index.ts';
 
 /**
  * Serializes a 32-bit unsigned integer into a Buffer.

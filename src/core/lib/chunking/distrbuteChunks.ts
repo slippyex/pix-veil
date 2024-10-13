@@ -1,9 +1,13 @@
-// src/core/encoder/lib/distributeChunks.ts
+// src/core/chunking/chunking/distributeChunks.ts
 
-import type { IChunk, IChunkDistributionInfo, IChunkDistributionStrategy, ILogger } from '../../../@types/index.ts';
-
-import { IFileCapacityInfo } from '../../../@types/index.ts';
-import { ToneAndCapacityChunkDistributor } from '../../chunking/ToneAndCapacityChunkDistributor.ts';
+import type {
+    IChunk,
+    IChunkDistributionInfo,
+    IChunkDistributionStrategy,
+    IFileCapacityInfo,
+    ILogger,
+} from '../../../@types/index.ts';
+import { ToneAndCapacityChunkDistributor } from './strategies/ToneAndCapacityChunkDistributor.ts';
 
 /**
  * Creates chunk distribution information based on the provided distribution strategy.

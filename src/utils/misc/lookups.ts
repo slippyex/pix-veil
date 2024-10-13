@@ -1,4 +1,6 @@
-import { ChannelSequence, SupportedCompressionStrategies } from '../../@types/index.ts';
+// src/utils/misc/lookups.ts
+
+import { type ChannelSequence, SupportedCompressionStrategies } from '../../@types/index.ts';
 
 /**
  * Returns the numerical value associated with the specified channel.
@@ -81,5 +83,25 @@ export function compressionStrategyToValue(strategy: SupportedCompressionStrateg
             return 2;
         default:
             throw new Error(`Unknown compression strategy: ${strategy}`);
+    }
+}
+
+/**
+ * Helper function to get the channel offset based on the channel name.
+ * @param channel - The channel name ('R', 'G', 'B', 'A').
+ * @returns The channel offset index.
+ */
+export function getChannelOffset(channel: ChannelSequence): number {
+    switch (channel) {
+        case 'R':
+            return 0;
+        case 'G':
+            return 1;
+        case 'B':
+            return 2;
+        case 'A':
+            return 3;
+        default:
+            throw new Error(`Invalid channel specified: ${channel}`);
     }
 }

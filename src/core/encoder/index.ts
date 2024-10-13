@@ -1,9 +1,12 @@
 // src/core/encoder/index.ts
 
-import { IEncodeOptions, ILogger, SupportedCompressionStrategies } from '../../@types/index.ts';
+import { type IEncodeOptions, type ILogger, SupportedCompressionStrategies } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
-import { createHumanReadableDistributionMap, prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
+import {
+    createHumanReadableDistributionMap,
+    prepareDistributionMapForInjection,
+} from '../lib/distributionMap/mapUtils.ts';
 import {
     ensureOutputDirectory,
     isCompressed,
@@ -13,17 +16,16 @@ import {
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { embedChunksInImageBuffer } from '../lib/injection.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
-import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
 import { Buffer } from 'node:buffer';
 
 import { decode } from '../decoder/index.ts';
 
-import { basename, join } from 'jsr:@std/path';
 import * as path from 'jsr:@std/path';
 import { config } from '../../config/index.ts';
-import { injectDistributionMapIntoCarrierPng } from '../lib/distributionMap.ts';
+import { injectDistributionMapIntoCarrierPng } from '../lib/distributionMap/distributionMap.ts';
+import { createChunkDistributionInformation } from '../lib/chunking/distrbuteChunks.ts';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -41,8 +43,7 @@ const compressionOrder: SupportedCompressionStrategies[] = [
 export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verify, verbose, debugVisual, logger } = options;
     const fileData = await readBufferFromFile(options.inputFile);
-    // Capture only the filename (no path) using path.basename
-    const originalFilename = basename(inputFile);
+    const originalFilename = path.basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
     await processImageTones(inputPngFolder, logger);
 
@@ -124,7 +125,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             // Step 10: Verification Step (if enabled)
             if (verify) {
                 logger.info('Starting verification step...');
-                const tempDecodedFolder = join(outputFolder, 'temp_decoded');
+                const tempDecodedFolder = path.join(outputFolder, 'temp_decoded');
                 await ensureOutputDirectory(tempDecodedFolder);
                 if (
                     await verificationStep(
@@ -169,9 +170,7 @@ async function verificationStep(
     logger: ILogger,
 ): Promise<boolean> {
     logger.info('Starting verification step...');
-    const tempDecodedFolder = join(inputFolder, 'temp_decoded');
-    await ensureOutputDirectory(tempDecodedFolder);
-
+    const tempDecodedFolder = await Deno.makeTempDir();
     try {
         await decode({
             inputFolder,
@@ -182,14 +181,14 @@ async function verificationStep(
         });
 
         // Compare the original file and the decoded file
-        const decodedFilePath = join(tempDecodedFolder, basename(inputFile));
+        const decodedFilePath = path.join(tempDecodedFolder, path.basename(inputFile));
         const decodedBuffer = await readBufferFromFile(decodedFilePath);
 
         if (decodedBuffer.subarray(0, originalFileData.length).equals(originalFileData)) {
             logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);
             // Clean up temporary folder
 
-            Deno.removeSync(tempDecodedFolder, { recursive: true });
+            await Deno.remove(tempDecodedFolder, { recursive: true });
 
             logger.info('Encoding completed successfully.');
         } else {

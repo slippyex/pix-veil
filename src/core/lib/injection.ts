@@ -10,8 +10,8 @@ import * as os from 'node:os';
 import { addDebugBlock } from '../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../utils/bitManipulation/bitUtils.ts';
 import { extractDataFromBuffer } from './extraction.ts';
-import { getChannelOffset } from '../../utils/misc/helpers.ts';
 import { processImageInjection } from '../../utils/imageProcessing/imageHelper.ts';
+import { getChannelOffset } from '../../utils/misc/lookups.ts';
 
 const cpuCount = os.cpus().length;
 

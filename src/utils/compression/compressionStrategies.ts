@@ -1,6 +1,6 @@
 // src/utils/compression/CompressionStrategies.ts
 
-import { CompressionStrategy, SupportedCompressionStrategies } from '../../@types/index.ts';
+import { type CompressionStrategy, SupportedCompressionStrategies } from '../../@types/index.ts';
 import { BrotliCompressor } from './strategies/BrotliCompressor.ts';
 import { GZipCompressor } from './strategies/GZipCompressor.ts';
 import { NoopCompressor } from './strategies/NoopCompressor.ts';
