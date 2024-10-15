@@ -1,19 +1,64 @@
-// src/core/lib/injection.ts
+// src/core/encoder/lib/injection.ts
 
-import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
+import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
-import { ensureOutputDirectory } from '../../utils/storage/storageUtils.ts';
-import * as path from 'jsr:@std/path';
+import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
+import * as path from 'jsr:/@std/path';
+import sharp from 'sharp';
+import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
-import { addDebugBlock } from '../../utils/imageProcessing/debugHelper.ts';
-import { extractBits, insertBits } from '../../utils/bitManipulation/bitUtils.ts';
-import { extractDataFromBuffer } from './extraction.ts';
-import { processImageInjection } from '../../utils/imageProcessing/imageHelper.ts';
-import { getChannelOffset } from '../../utils/misc/lookups.ts';
+import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
+import { addDebugBlock } from '../../../utils/imageProcessing/debugHelper.ts';
+import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
+import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
+import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 
 const cpuCount = os.cpus().length;
+
+/**
+ * Processes an image by reading it from an input path, applying an injector function,
+ * and then saving the modified image to an output path.
+ *
+ * @param {string} inputPngPath - The input path of the PNG image to be processed.
+ * @param {string} outputPngPath - The output path where the processed PNG image will be saved.
+ * @param {function} injectorFn - A function that modifies the image data. This function takes
+ *                                three arguments: imageData (Buffer), info (sharp.OutputInfo), and logger (ILogger).
+ * @param {ILogger} logger - A logger instance used for logging messages.
+ * @return {Promise<void>} - A promise that resolves when the image processing is completed.
+ */
+async function processImage(
+    inputPngPath: string,
+    outputPngPath: string,
+    injectorFn: (imageData: Buffer, info: sharp.OutputInfo, logger: ILogger) => void,
+    logger: ILogger,
+): Promise<void> {
+    try {
+        const { data: imageData, info } = await getImageData(inputPngPath);
+
+        injectorFn(imageData, info, logger);
+
+        await sharp(imageData, {
+            raw: {
+                width: info.width,
+                height: info.height,
+                channels: info.channels,
+            },
+        })
+            .png({
+                compressionLevel: config.imageCompression.compressionLevel,
+                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
+                palette: false,
+            })
+            .toFile(outputPngPath);
+
+        logger.verbose && logger.info(`Processed image "${path.basename(outputPngPath)}" and saved to output folder.`);
+    } catch (error) {
+        logger.error(`Failed to process image "${inputPngPath}": ${(error as Error).message}`);
+        throw error;
+    }
+}
 
 type PngToChunksMap = Record<string, IDistributionMapEntry[]>;
 
@@ -28,9 +73,9 @@ type PngToChunksMap = Record<string, IDistributionMapEntry[]>;
  * @param {ILogger} logger - Logger instance for logging messages and errors.
  * @return {Promise<void>} A Promise that resolves when all chunk injections are completed.
  */
-export async function embedChunksInImageBuffer(
+export async function injectChunksIntoPngs(
     distributionMapEntries: IDistributionMapEntry[],
-    chunkMap: Map<number, Uint8Array>,
+    chunkMap: Map<number, Buffer>,
     inputPngFolder: string,
     outputFolder: string,
     debugVisual: boolean,
@@ -38,7 +83,7 @@ export async function embedChunksInImageBuffer(
 ): Promise<void> {
     try {
         if (logger.verbose) logger.info('Injecting chunks into PNG images...');
-        await ensureOutputDirectory(outputFolder);
+        ensureOutputDirectory(outputFolder);
         if (logger.verbose) logger.debug(`Ensured output folder "${outputFolder}".`);
 
         const pngToChunksMap: PngToChunksMap = distributionMapEntries.reduce((acc, entry) => {
@@ -54,7 +99,7 @@ export async function embedChunksInImageBuffer(
             const outputPngPath = path.resolve(outputFolder, pngFile);
 
             return limit(() =>
-                processImageInjection(
+                processImage(
                     inputPngPath,
                     outputPngPath,
                     (imageData, info, logger) => {
@@ -148,6 +193,50 @@ export async function embedChunksInImageBuffer(
 }
 
 /**
+ * Injects an encrypted distribution map into a carrier PNG file.
+ *
+ * @param {string} inputPngFolder - Path to the folder containing the input PNG file.
+ * @param {string} outputFolder - Path to the folder where the output PNG file should be saved.
+ * @param {Object} distributionCarrier - Object containing properties of the carrier file.
+ * @param {string} distributionCarrier.file - The name of the carrier PNG file.
+ * @param {number} distributionCarrier.capacity - The capacity of the carrier file.
+ * @param {Buffer} encryptedMapContent - The encrypted distribution map content to be injected.
+ * @param {ILogger} logger - Logger instance for logging operations and errors.
+ * @return {Promise<void>} Resolves when the injection process is complete.
+ */
+export async function injectDistributionMapIntoCarrierPng(
+    inputPngFolder: string,
+    outputFolder: string,
+    distributionCarrier: { file: string; capacity: number },
+    encryptedMapContent: Buffer,
+    logger: ILogger,
+): Promise<void> {
+    try {
+        const inputPngPath = path.resolve(inputPngFolder, distributionCarrier.file);
+        const outputPngPath = path.resolve(outputFolder, distributionCarrier.file);
+        await processImage(
+            inputPngPath,
+            outputPngPath,
+            (imageData, { channels }, logger) => {
+                injectDataIntoBuffer(
+                    imageData,
+                    Buffer.concat([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
+                    2, // bitsPerChannel
+                    ['R', 'G', 'B'], // channelSequence
+                    0, // startPosition
+                    logger,
+                    channels,
+                );
+            },
+            logger,
+        );
+    } catch (error) {
+        logger.error(`Failed to inject distribution map into carrier PNG: ${(error as Error).message}`);
+        throw error;
+    }
+}
+
+/**
  * Injects data into the image buffer using LSB steganography.
  * @param imageData - Raw image buffer data.
  * @param data - Data to inject.
@@ -158,8 +247,8 @@ export async function embedChunksInImageBuffer(
  * @param channels - Number of channels in the image.
  */
 export function injectDataIntoBuffer(
-    imageData: Uint8Array,
-    data: Uint8Array,
+    imageData: Buffer,
+    data: Buffer,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
     startChannelPosition: number,
@@ -226,7 +315,9 @@ export function injectDataIntoBuffer(
 
         // Inject the bits into the channel's LSBs using bitUtils
         const originalByte = imageData[channelIndex];
-        imageData[channelIndex] = insertBits(originalByte, bits, 0, bitsPerChannel);
+        const modifiedByte = insertBits(originalByte, bits, 0, bitsPerChannel);
+        // logger.debug(`changed byte ${originalByte} to ${modifiedByte}`);
+        imageData[channelIndex] = modifiedByte;
     }
 
     // Calculate bits used, accounting for any padding bits

@@ -1,8 +1,27 @@
 // src/utils/storage/storageUtils.ts
 
-import type { Buffer } from 'node:buffer';
+import { Buffer } from 'node:buffer';
 import { dirname, extname, join } from 'jsr:@std/path';
 
+/**
+ * Converts a Buffer to Uint8Array.
+ *
+ * @param {Buffer} buffer - The Buffer to convert.
+ * @returns {Uint8Array} - The resulting Uint8Array.
+ */
+export function bufferToUint8Array(buffer: Buffer): Uint8Array {
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
+}
+
+/**
+ * Converts a Uint8Array to Buffer.
+ *
+ * @param {Uint8Array} uint8Array - The Uint8Array to convert.
+ * @returns {Buffer} - The resulting Buffer.
+ */
+export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
+    return Buffer.from(uint8Array);
+}
 /**
  * Ensures that the specified output directory exists. If the directory
  * does not exist, it creates the directory and any necessary subdirectories.
@@ -10,8 +29,8 @@ import { dirname, extname, join } from 'jsr:@std/path';
  * @param {string} outputFolder - The path of the output directory to ensure.
  * @return {void}
  */
-export async function ensureOutputDirectory(outputFolder: string): Promise<void> {
-    await Deno.mkdir(outputFolder, { recursive: true });
+export function ensureOutputDirectory(outputFolder: string): void {
+    Deno.mkdirSync(outputFolder, { recursive: true });
 }
 
 /**
@@ -22,19 +41,19 @@ export async function ensureOutputDirectory(outputFolder: string): Promise<void>
  *
  * @return {void}
  */
-export async function writeBufferToFile(filePath: string, data: Uint8Array): Promise<void> {
-    await Deno.writeFile(filePath, data);
+export function writeBufferToFile(filePath: string, data: Buffer): void {
+    Deno.writeFileSync(filePath, bufferToUint8Array(data));
 }
 
 /**
  * Reads the entire contents of a file into a buffer.
  *
  * @param {string} filePath - The file path of the file to be read.
- * @returns {Buffer} - The contents of the file as a Buffer or Uint8Array.
+ * @returns {Buffer | Uint8Array} - The contents of the file as a Buffer or Uint8Array.
  */
-export async function readBufferFromFile(filePath: string): Promise<Buffer> {
-    const data = await Deno.readFile(filePath);
-    return data as Buffer;
+export function readBufferFromFile(filePath: string): Buffer {
+    const data = Deno.readFileSync(filePath);
+    return uint8ArrayToBuffer(data);
 }
 
 /**
@@ -44,8 +63,7 @@ export async function readBufferFromFile(filePath: string): Promise<Buffer> {
  * @return {string[]} - An array of filenames in the directory.
  */
 export function readDirectory(dirPath: string): string[] {
-    const entries = Deno.readDirSync(dirPath);
-    return Array.from(entries, (entry) => entry.name) as string[];
+    return Array.from(Deno.readDirSync(dirPath), (entry) => entry.name);
 }
 
 /**

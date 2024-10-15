@@ -1,10 +1,11 @@
 // src/utils/cryptography/crypto.ts
 
-import type { IEncryptionStrategy, ILogger } from '../../@types/index.ts';
+import type { ILogger } from '../../@types/index.ts';
+import type { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
 
 import type { Buffer } from 'node:buffer';
+import crypto from 'node:crypto';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
-import { crypto } from '@std/crypto';
 
 /**
  * Encrypts the given compressed data using the provided encryption strategy.
@@ -13,20 +14,20 @@ import { crypto } from '@std/crypto';
  * @param {Buffer} data - The data to be encrypted, provided as a buffer.
  * @param {string} password - The password used to encrypt the data.
  * @param {ILogger} logger - The logger used to log the encryption process, especially if verbose mode is set to true.
- * @param {IEncryptionStrategy} [encryptionStrategy=AES256CBCStrategy()] - The encryption strategy to be used. Defaults to AES-256-CBC if not provided.
+ * @param {EncryptionStrategy} [encryptionStrategy=AES256CBCStrategy()] - The encryption strategy to be used. Defaults to AES-256-CBC if not provided.
  * @returns {Buffer} The encrypted data as a buffer.
  */
 export async function encryptData(
     data: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: IEncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
     const encryptedData = await encryptionStrategy.encrypt(data, password);
-    const checksum = await generateChecksum(encryptedData);
+    const checksum = generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
-    return encryptedData as Buffer;
+    return encryptedData;
 }
 
 /**
@@ -35,26 +36,26 @@ export async function encryptData(
  * @param {Buffer} encryptedBuffer - The buffer containing encrypted data to be decrypted.
  * @param {string} password - The password used for the decryption process.
  * @param {ILogger} logger - The logger object used for logging information.
- * @param {IEncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
+ * @param {EncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
  * @returns {Buffer} - The decrypted buffer.
  */
-export async function decryptData(
-    encryptedBuffer: Uint8Array,
+export function decryptData(
+    encryptedBuffer: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: IEncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Decrypting the compressed data...');
-    return await encryptionStrategy.decrypt(encryptedBuffer, password) as Buffer;
+    return encryptionStrategy.decrypt(encryptedBuffer, password);
 }
 /**
  * Verifies the integrity of the encrypted data using checksum.
  */
-export async function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): Promise<void> {
+export function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): void {
     if (logger.verbose) logger.info('Verifying data integrity...');
     const isChecksumValid = verifyChecksum(encryptedData, checksum);
     logger.debug(`Expected Checksum: ${checksum}`);
-    logger.debug(`Computed Checksum: ${await generateChecksum(encryptedData)}`);
+    logger.debug(`Computed Checksum: ${generateChecksum(encryptedData)}`);
     if (!isChecksumValid) {
         throw new Error('Data integrity check failed. The data may be corrupted or tampered with.');
     }
@@ -66,12 +67,13 @@ export async function verifyDataIntegrity(encryptedData: Buffer, checksum: strin
  * @param {Buffer} buffer - The buffer for which to generate the checksum.
  * @return {string} The generated SHA-256 checksum encoded as a hexadecimal string.
  */
-export async function generateChecksum(buffer: Uint8Array): Promise<string> {
+export async function generateChecksum(buffer: Buffer): Promise<string> {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     return Array.from(new Uint8Array(hashBuffer))
         .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
 }
+
 /**
  * Verifies whether the provided checksum matches the checksum computed from the given buffer.
  *

@@ -1,17 +1,13 @@
-// src/core/distributionMap/mapUtils.ts
+// src/utils/distributionMap/mapUtils.ts
 
-import {
-    type IDistributionMap,
-    type IDistributionMapEntry,
-    type ILogger,
-    SupportedCompressionStrategies,
-} from '../../../@types/index.ts';
+import type { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
-
-import { compressBuffer, decompressBuffer } from '../../../utils/compression/compression.ts';
-import { decryptData, encryptData } from '../../../utils/cryptography/crypto.ts';
-import { scanAndExtractDistributionMap } from './distributionMap.ts';
+import { Buffer } from 'node:buffer';
+import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
+import { decryptData, encryptData } from '../cryptography/crypto.ts';
+import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
+import { SupportedCompressionStrategies } from '../compression/compressionStrategies.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -33,7 +29,7 @@ export async function prepareDistributionMapForInjection(
     password: string,
     encryptedDataLength: number, // New parameter
     logger: ILogger,
-): Promise<Uint8Array> {
+): Promise<Buffer> {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(
         distributionMapEntries,
@@ -61,9 +57,9 @@ export async function readAndProcessDistributionMap(
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
-    const distributionMapFromCarrier = await scanAndExtractDistributionMap(inputFolder, logger);
+    const distributionMapFromCarrier = await scanForDistributionMap(inputFolder, logger);
     if (distributionMapFromCarrier) {
-        return await processDistributionMap(distributionMapFromCarrier, password, logger);
+        return processDistributionMap(distributionMapFromCarrier, password, logger);
     }
     throw new Error('Distribution map not found in input folder.');
 }
@@ -77,7 +73,7 @@ export async function readAndProcessDistributionMap(
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
  */
 async function processDistributionMap(
-    rawDistributionMapEncrypted: Uint8Array,
+    rawDistributionMapEncrypted: Buffer,
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
@@ -105,7 +101,7 @@ export function createDistributionMap(
     originalFilename: string,
     checksum: string,
     encryptedDataLength: number, // New parameter
-): Uint8Array {
+): Buffer {
     const distributionMap: IDistributionMap = {
         entries,
         originalFilename,
@@ -167,33 +163,4 @@ export function generateDistributionMapText(
     text += `Distribution Carrier PNG: ${distributionCarrier}\n`;
 
     return text;
-}
-
-/**
- * Creates a human-readable distribution map text file from the given distribution map entries and other metadata.
- *
- * @param {IDistributionMapEntry[]} distributionMapEntries - The entries to be included in the distribution map.
- * @param {string} distributionCarrier - The carrier responsible for distribution.
- * @param {string} originalFilename - The original filename of the content being distributed.
- * @param {string} checksum - The checksum of the original content file.
- * @param {string} compressionStrategy - The strategy used for compressing the data.
- * @param {ILogger} logger - The logger instance used for logging information.
- * @return {void}
- */
-export function createHumanReadableDistributionMap(
-    distributionMapEntries: IDistributionMapEntry[],
-    distributionCarrier: string,
-    originalFilename: string,
-    checksum: string,
-    compressionStrategy: string,
-    logger: ILogger,
-): string {
-    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
-    return generateDistributionMapText(
-        distributionMapEntries,
-        originalFilename,
-        distributionCarrier,
-        checksum,
-        compressionStrategy,
-    );
 }

@@ -1,7 +1,7 @@
 // src/cli/index.ts
 
 import { Command } from 'commander';
-import * as path from 'jsr:@std/path';
+import * as path from 'jsr:/@std/path';
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
@@ -146,7 +146,7 @@ program
 
         const password = answers.password;
 
-        const logger = getLogger('decoder', verbose);
+        const logger = getLogger('decoder', console, verbose);
 
         try {
             await decode({
@@ -167,7 +167,7 @@ if (import.meta.main) {
     console.clear();
     console.log(rainbow.multiline(
         figlet.textSync('Pix-Veil', {
-            font: 'Univers',
+            font: 'DOS Rebel',
             horizontalLayout: 'default',
             verticalLayout: 'default',
             width: 80,

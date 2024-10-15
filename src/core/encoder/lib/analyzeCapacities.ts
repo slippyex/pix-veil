@@ -1,11 +1,11 @@
 // src/core/encoder/lib/analyzeCapacities.ts
 
-import type { IFileCapacityInfo, ILogger } from '../../../@types/index.ts';
+import type { ILogger } from '../../../@types/index.ts';
 
+import * as path from 'jsr:/@std/path';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
 import { getCachedImageTones } from '../../../utils/imageProcessing/imageHelper.ts';
 import { config } from '../../../config/index.ts';
-import * as path from 'jsr:@std/path';
 
 /**
  * Analyzes PNG images in a given folder to determine their capacity for embedding data
@@ -22,8 +22,8 @@ export function analyzePngCapacities(
     inputPngFolder: string,
     logger: ILogger,
 ): {
-    pngCapacities: IFileCapacityInfo[];
-    distributionCarrier: IFileCapacityInfo;
+    pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[];
+    distributionCarrier: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' };
 } {
     if (logger.verbose) {
         logger.info('Analyzing PNG images for capacity based on tones...');
@@ -41,7 +41,7 @@ export function analyzePngCapacities(
 
     const analyzedFiles = pngFiles.map((png) => {
         const pngPath = path.join(inputPngFolder, png);
-        const capacity = getCachedImageTones(pngPath); // { low, mid, high }
+        const capacity = getCachedImageTones(pngPath, logger); // { low, mid, high }
 
         const bitsPerChannel = config.bitsPerChannelForDistributionMap;
         const channelsPerPixel = 3; // R, G, B

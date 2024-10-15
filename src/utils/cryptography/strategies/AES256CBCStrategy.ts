@@ -1,16 +1,19 @@
-import type { IEncryptionStrategy } from '../../../@types/index.ts';
-import { crypto } from '@std/crypto';
+import { Buffer } from 'node:buffer';
+
+import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
+import { crypto } from 'jsr:@std/crypto';
+import { EncryptionStrategy } from '../../../@types/encryptionStrategy.ts';
 /**
  * AES256CBCStrategy class provides methods for encrypting and decrypting data
  * using the AES-256-CBC encryption algorithm.
  *
  * This class implements the EncryptionStrategy interface.
  */
-export class AES256CBCStrategy implements IEncryptionStrategy {
+export class AES256CBCStrategy implements EncryptionStrategy {
     private readonly algorithm = 'AES-CBC';
     private readonly ivLength = 16;
 
-    async encrypt(data: Uint8Array, password: string): Promise<Uint8Array> {
+    async encrypt(data: Buffer, password: string): Promise<Buffer> {
         const iv = crypto.getRandomValues(new Uint8Array(this.ivLength));
         const key = await this.generateKeyFromPassword(password);
         const encrypted = await crypto.subtle.encrypt(
@@ -22,10 +25,10 @@ export class AES256CBCStrategy implements IEncryptionStrategy {
         const combined = new Uint8Array(iv.length + encryptedData.length);
         combined.set(iv);
         combined.set(encryptedData, iv.length);
-        return combined;
+        return uint8ArrayToBuffer(combined);
     }
 
-    async decrypt(data: Uint8Array, password: string): Promise<Uint8Array> {
+    async decrypt(data: Buffer, password: string): Promise<Buffer> {
         const iv = data.subarray(0, this.ivLength);
         const encrypted = data.subarray(this.ivLength);
         const key = await this.generateKeyFromPassword(password);
@@ -34,7 +37,7 @@ export class AES256CBCStrategy implements IEncryptionStrategy {
             key,
             encrypted,
         );
-        return decrypted as Uint8Array;
+        return Buffer.from(decrypted);
     }
 
     private async generateKeyFromPassword(password: string): Promise<CryptoKey> {
@@ -49,7 +52,7 @@ export class AES256CBCStrategy implements IEncryptionStrategy {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
-                salt: new Uint8Array(16),
+                salt: new Uint8Array(16), // You may want to replace this with a proper salt
                 iterations: 100000,
                 hash: 'SHA-256',
             },

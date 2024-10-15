@@ -1,14 +1,13 @@
 // src/core/decoder/stateMachine.ts
 
-import type { IChunk, IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
+import type { IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
 import type { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
-import { readAndProcessDistributionMap } from '../lib/distributionMap/mapUtils.ts';
-import { extractChunks } from '../lib/extraction.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
-import { assembleChunks } from '../lib/chunking/assembleChunks.ts';
+import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
+import { assembleChunks, extractChunks } from './lib/extraction.ts';
 
 type StateHandler = () => Promise<void> | void;
 
@@ -26,7 +25,7 @@ export class DecodeStateMachine {
     private state: string = 'INIT';
     private readonly options: IDecodeOptions;
     private distributionMap: IDistributionMap | null = null;
-    private encryptedDataChunks: IChunk[] = [];
+    private encryptedDataChunks: { chunkId: number; data: Buffer }[] = [];
     private encryptedData: Buffer | null = null;
     private decryptedData: Buffer | null = null;
     private decompressedData: Buffer | null = null;
@@ -60,7 +59,7 @@ export class DecodeStateMachine {
         try {
             for (const transition of this.stateTransitions) {
                 this.transitionTo(transition.state);
-                await transition.handler();
+                await transition.handler.bind(this)();
             }
             this.transitionTo('COMPLETED');
         } catch (error) {
@@ -129,7 +128,7 @@ export class DecodeStateMachine {
      */
     private async verifyAndDecryptData(): Promise<void> {
         const { password, logger } = this.options;
-        await verifyDataIntegrity(this.encryptedData!, this.distributionMap!.checksum, logger);
+        verifyDataIntegrity(this.encryptedData!, this.distributionMap!.checksum, logger);
         this.decryptedData = await decryptData(this.encryptedData!, password, logger);
     }
 

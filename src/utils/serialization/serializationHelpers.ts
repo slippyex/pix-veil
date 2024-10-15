@@ -1,7 +1,6 @@
 // src/utils/serialization/serializationHelpers.ts
 
 import { Buffer } from 'node:buffer';
-import type { ISerializeInfo } from '../../@types/index.ts';
 
 /**
  * Serializes a 32-bit unsigned integer into a Buffer.
@@ -22,7 +21,7 @@ export function serializeUInt32(value: number): Buffer {
  * @param {number} offset - The offset in the buffer where the 32-bit unsigned integer starts.
  * @return {{ value: number, newOffset: number }} An object containing the deserialized 32-bit unsigned integer and the new offset.
  */
-export function deserializeUInt32(buffer: Buffer, offset: number): ISerializeInfo {
+export function deserializeUInt32(buffer: Buffer, offset: number): { value: number; newOffset: number } {
     const value = buffer.readUInt32BE(offset);
     return { value, newOffset: offset + 4 };
 }
@@ -46,7 +45,7 @@ export function serializeUInt16(value: number): Buffer {
  * @param {number} offset - The offset in the buffer to start reading from.
  * @return {{ value: number; newOffset: number }} An object containing the deserialized 16-bit unsigned integer and the updated offset.
  */
-export function deserializeUInt16(buffer: Buffer, offset: number): ISerializeInfo {
+export function deserializeUInt16(buffer: Buffer, offset: number): { value: number; newOffset: number } {
     const value = buffer.readUInt16BE(offset);
     return { value, newOffset: offset + 2 };
 }
@@ -72,7 +71,7 @@ export function serializeUInt8(value: number): Buffer {
  * @return {number} return.value - The deserialized unsigned 8-bit integer.
  * @return {number} return.newOffset - The offset after reading the unsigned 8-bit integer.
  */
-export function deserializeUInt8(buffer: Buffer, offset: number): ISerializeInfo {
+export function deserializeUInt8(buffer: Buffer, offset: number): { value: number; newOffset: number } {
     const value = buffer.readUInt8(offset);
     return { value, newOffset: offset + 1 };
 }

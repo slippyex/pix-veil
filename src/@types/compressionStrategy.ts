@@ -1,15 +1,8 @@
 // src/@types/compressionStrategy.ts
 
-export interface CompressionStrategy {
-    compress(data: Uint8Array): Uint8Array;
-    decompress(data: Uint8Array): Uint8Array;
-}
+import type { Buffer } from 'node:buffer';
 
-/**
- * Enumeration of supported compression strategies in the order of preference.
- */
-export enum SupportedCompressionStrategies {
-    Brotli = 'brotli',
-    GZip = 'gzip',
-    None = 'none',
+export interface CompressionStrategy {
+    compress(data: Buffer): Buffer;
+    decompress(data: Buffer): Buffer;
 }

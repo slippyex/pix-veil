@@ -3,12 +3,11 @@
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
+
 import * as path from 'jsr:@std/path';
 
 import cliProgress from 'cli-progress';
-import type { ILogger } from '../@types/index.ts';
-import { ensureOutputDirectory, readDirectory, writeBufferToFile } from '../utils/storage/storageUtils.ts';
-import { Buffer } from 'node:buffer';
+import { ILogger } from '../@types/index.ts';
 
 /**
  * Interface representing a report entry for each file processed.
@@ -38,26 +37,28 @@ async function batchProcess(): Promise<void> {
     const successFolder = path.resolve(__dirname, '../../tests/test_input/success'); // Directory to store succeeded files
     const reportPath = path.resolve(__dirname, '../../tests/test_input/failedReport.json'); // Path for the report file
 
+    // Initialize Logger
+
     // Prompt for Password Securely
     const password = 'testpassword';
 
     // Ensure Output Directories Exist
-    await ensureOutputDirectory(decodedFolder);
-    await ensureOutputDirectory(failedFolder);
-    await ensureOutputDirectory(successFolder);
+    await ensureDirectory(decodedFolder);
+    await ensureDirectory(failedFolder);
+    await ensureDirectory(successFolder);
 
     // Read All Files from Input Directory
     let files: string[] = [];
     try {
-        files = readDirectory(inputDir);
-        logger.info(`Found ${files.length} files in input directory.`);
+        files = Array.from(Deno.readDirSync(inputDir)).map((f) => f.name);
+        console.log(`Found ${files.length} files in input directory.`);
     } catch (err) {
-        logger.error(`Failed to read input directory "${inputDir}": ${(err as Error).message}`);
+        console.error(`Failed to read input directory "${inputDir}": ${(err as Error).message}`);
         Deno.exit(1);
     }
 
     if (files.length === 0) {
-        logger.warn('No files found to process. Exiting.');
+        console.warn('No files found to process. Exiting.');
         Deno.exit(0);
     }
 
@@ -76,7 +77,7 @@ async function batchProcess(): Promise<void> {
     // Process Each File Sequentially
     for (const file of files) {
         const encodedFolder = path.join(path.resolve(__dirname, '../../tests/test_output/encoded'), file); // Output directory for encoded PNGs
-        await ensureOutputDirectory(encodedFolder);
+        await ensureDirectory(encodedFolder);
 
         const filePath = path.join(inputDir, file);
 
@@ -139,10 +140,24 @@ async function batchProcess(): Promise<void> {
 async function writeReport(reportPath: string, report: ReportEntry[], logger: ILogger): Promise<void> {
     // Save Report
     try {
-        await writeBufferToFile(reportPath, Buffer.from(JSON.stringify(report, null, 2)));
-        //    logger.success(`Report saved at "${reportPath}".`);
+        await Deno.writeTextFile(reportPath, JSON.stringify(report, null, 2));
     } catch (err) {
         logger.error(`Failed to write report: ${(err as Error).message}`);
+    }
+}
+
+/**
+ * Ensures that a directory exists at the specified path. If the directory does
+ * not exist, it is created along with any necessary parent directories.
+ *
+ * @param {string} dirPath - The path to the directory that needs to be ensured.
+ * @return {Promise<void>} A promise that resolves when the directory has been ensured.
+ */
+async function ensureDirectory(dirPath: string): Promise<void> {
+    try {
+        await Deno.mkdir(dirPath, { recursive: true });
+    } catch (_err) {
+        Deno.exit(1);
     }
 }
 
@@ -158,6 +173,7 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
         const fileName = path.basename(filePath);
         const destination = path.join(failedDir, fileName);
         await Deno.rename(filePath, destination);
+        //await fs.copyFile(filePath, destination);
     } catch (_err) {
         console.error(`Failed to move file "${filePath}" to failed directory: ${(_err as Error).message}`);
     }
@@ -169,20 +185,35 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
  * @param {string} dirPath - The path of the directory to clean.
  * @return {Promise<void>} A promise that resolves when the directory has been cleaned.
  */
-async function cleanDirectory(dirPath: string): Promise<void> {
+export async function cleanDirectory(dirPath: string): Promise<void> {
     try {
-        const files = readDirectory(dirPath);
-        const deletePromises = files.map(async (file) => {
-            const filePath = path.join(dirPath, file);
-            const stat = await Deno.stat(filePath);
+        const deletePromises: Promise<void>[] = [];
 
-            if (stat.isDirectory) {
-                await cleanDirectory(filePath); // Recursively clean subdirectories
-                await Deno.remove(filePath);
+        // Iterate over each entry in the directory
+        for await (const entry of Deno.readDir(dirPath)) {
+            const filePath = path.join(dirPath, entry.name);
+
+            if (entry.isDirectory) {
+                // If the entry is a directory, recursively clean it
+                deletePromises.push(
+                    (async () => {
+                        await cleanDirectory(filePath); // Recursively clean subdirectories
+                        await Deno.remove(filePath); // Remove the now-empty directory
+                        console.log(`Removed directory: ${filePath}`);
+                    })(),
+                );
+            } else {
+                // If the entry is a file or a symlink, remove it directly
+                deletePromises.push(
+                    (async () => {
+                        await Deno.remove(filePath);
+                        console.log(`Removed file: ${filePath}`);
+                    })(),
+                );
             }
-            await Deno.remove(filePath);
-        });
+        }
 
+        // Wait for all deletions to complete
         await Promise.all(deletePromises);
     } catch (err) {
         console.error(`Failed to clean directory "${dirPath}": ${(err as Error).message}`);

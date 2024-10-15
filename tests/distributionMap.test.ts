@@ -3,16 +3,13 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { expect } from 'jsr:@std/expect';
 
-import { IDistributionMapEntry, SupportedCompressionStrategies } from '../src/@types/index.ts';
-import { createDistributionMap } from '../src/core/lib/distributionMap/mapUtils.ts';
-import { deserializeDistributionMap } from '../src/core/lib/distributionMap/mapHelpers.ts';
-import type { Buffer } from 'node:buffer';
+import { IDistributionMapEntry } from '../src/@types/index.ts';
+import { createDistributionMap } from '../src/utils/distributionMap/mapUtils.ts';
+import { deserializeDistributionMap } from '../src/utils/distributionMap/mapHelpers.ts';
+
+import { SupportedCompressionStrategies } from '../src/utils/compression/compressionStrategies.ts';
 
 Deno.env.set('ENVIRONMENT', 'test');
-
-const checksum = 'abcdef1234567890';
-const encryptionLength = 1024; // Example encrypted data length
-const compressionStrategy = SupportedCompressionStrategies.Brotli;
 
 describe('Distribution Map Serialization', () => {
     it('should serialize and deserialize distribution map correctly', () => {
@@ -35,6 +32,9 @@ describe('Distribution Map Serialization', () => {
                 channelSequence: ['R', 'G', 'B'],
             },
         ];
+        const checksum = 'abcdef1234567890';
+        const encryptionLength = 1024; // Example encrypted data length
+        const compressionStrategy = SupportedCompressionStrategies.Brotli;
 
         const serialized = createDistributionMap(
             entries,
@@ -43,7 +43,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized as Buffer);
+        const deserialized = deserializeDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -66,7 +66,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized as Buffer);
+        const deserialized = deserializeDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -102,7 +102,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized as Buffer);
+        const deserialized = deserializeDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -134,7 +134,7 @@ describe('Distribution Map Serialization', () => {
             checksum,
             encryptionLength,
         );
-        const deserialized = deserializeDistributionMap(serialized as Buffer);
+        const deserialized = deserializeDistributionMap(serialized);
 
         expect(deserialized.entries).toStrictEqual(entries);
         expect(deserialized.checksum).toEqual(checksum);
@@ -173,7 +173,7 @@ describe('Distribution Map Serialization', () => {
         serialized[2] = 0x00;
         serialized[3] = 0x00;
 
-        expect(() => deserializeDistributionMap(serialized as Buffer)).toThrow(
+        expect(() => deserializeDistributionMap(serialized)).toThrow(
             'Magic bytes not found at the start of the distribution map.',
         );
     });

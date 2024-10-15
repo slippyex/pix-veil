@@ -1,31 +1,23 @@
 // src/core/encoder/index.ts
 
-import { type IEncodeOptions, type ILogger, SupportedCompressionStrategies } from '../../@types/index.ts';
+import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
 
 import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
-import {
-    createHumanReadableDistributionMap,
-    prepareDistributionMapForInjection,
-} from '../lib/distributionMap/mapUtils.ts';
-import {
-    ensureOutputDirectory,
-    isCompressed,
-    readBufferFromFile,
-    writeBufferToFile,
-} from '../../utils/storage/storageUtils.ts';
+import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
+import { ensureOutputDirectory, isCompressed, readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
-import { embedChunksInImageBuffer } from '../lib/injection.ts';
+import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
+import { createHumanReadableDistributionMap } from '../../utils/imageProcessing/debugHelper.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
+import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
+import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 import { decode } from '../decoder/index.ts';
 
-import * as path from 'jsr:@std/path';
-import { config } from '../../config/index.ts';
-import { injectDistributionMapIntoCarrierPng } from '../lib/distributionMap/distributionMap.ts';
-import { createChunkDistributionInformation } from '../lib/chunking/distrbuteChunks.ts';
+import { basename, join } from 'jsr:@std/path';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -42,8 +34,9 @@ const compressionOrder: SupportedCompressionStrategies[] = [
  */
 export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verify, verbose, debugVisual, logger } = options;
-    const fileData = await readBufferFromFile(options.inputFile);
-    const originalFilename = path.basename(inputFile);
+    const fileData = readBufferFromFile(options.inputFile);
+    // Capture only the filename (no path) using path.basename
+    const originalFilename = basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
     await processImageTones(inputPngFolder, logger);
 
@@ -72,7 +65,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             const { pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
 
             // Step 5: Distribute chunks across PNG images and obtain chunk map
-            const { distributionMapEntries, chunkMap } = await createChunkDistributionInformation(
+            const { distributionMapEntries, chunkMap } = createChunkDistributionInformation(
                 chunks,
                 pngCapacities,
                 inputPngFolder,
@@ -80,7 +73,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 6: Inject chunks into PNG images
-            await embedChunksInImageBuffer(
+            await injectChunksIntoPngs(
                 distributionMapEntries,
                 chunkMap,
                 inputPngFolder,
@@ -110,23 +103,21 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 9: Generate human-readable distribution map text file
-            const distributionMapText = createHumanReadableDistributionMap(
+            createHumanReadableDistributionMap(
                 distributionMapEntries,
                 distributionCarrier.file,
                 originalFilename,
                 checksum,
+                outputFolder,
                 compressionStrategy,
                 logger,
             );
-            const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
-            await writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
-            if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 
             // Step 10: Verification Step (if enabled)
             if (verify) {
                 logger.info('Starting verification step...');
-                const tempDecodedFolder = path.join(outputFolder, 'temp_decoded');
-                await ensureOutputDirectory(tempDecodedFolder);
+                const tempDecodedFolder = join(outputFolder, 'temp_decoded');
+                ensureOutputDirectory(tempDecodedFolder);
                 if (
                     await verificationStep(
                         fileData,
@@ -144,6 +135,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             }
         } catch (error) {
             logger.error(`Encoding failed: ${error}`);
+            throw error;
         }
     }
 }
@@ -170,7 +162,9 @@ async function verificationStep(
     logger: ILogger,
 ): Promise<boolean> {
     logger.info('Starting verification step...');
-    const tempDecodedFolder = await Deno.makeTempDir();
+    const tempDecodedFolder = join(inputFolder, 'temp_decoded');
+    ensureOutputDirectory(tempDecodedFolder);
+
     try {
         await decode({
             inputFolder,
@@ -181,14 +175,14 @@ async function verificationStep(
         });
 
         // Compare the original file and the decoded file
-        const decodedFilePath = path.join(tempDecodedFolder, path.basename(inputFile));
-        const decodedBuffer = await readBufferFromFile(decodedFilePath);
+        const decodedFilePath = join(tempDecodedFolder, basename(inputFile));
+        const decodedBuffer = readBufferFromFile(decodedFilePath);
 
         if (decodedBuffer.subarray(0, originalFileData.length).equals(originalFileData)) {
             logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);
             // Clean up temporary folder
 
-            await Deno.remove(tempDecodedFolder, { recursive: true });
+            //    Deno.removeSync(tempDecodedFolder, { recursive: true });
 
             logger.info('Encoding completed successfully.');
         } else {
