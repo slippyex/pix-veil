@@ -55,7 +55,7 @@ describe('Codec tests', () => {
             inputPngFolder,
             outputFolder: encodedFolder,
             password,
-            verbose: false,
+            verbose: true,
             debugVisual: false,
             verify: true,
             logger,

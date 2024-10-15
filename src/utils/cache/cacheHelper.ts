@@ -1,3 +1,7 @@
+// src/utils/cache/cacheHelper.ts
+
+/// <reference lib="deno.unstable" />
+
 import { findProjectRoot } from '../storage/storageUtils.ts';
 import openKv = Deno.openKv;
 import * as path from 'jsr:@std/path';
@@ -20,7 +24,9 @@ async function initializeKvStore(): Promise<Deno.Kv> {
 }
 
 export function closeKv() {
-    kv.close();
+    if (kv) {
+        kv.close();
+    }
 }
 
 export async function getEntryFromCache<T>(namespace: string, key: string) {

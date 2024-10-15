@@ -10,7 +10,7 @@ import { config, MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
-import { addDebugBlock } from '../../../utils/imageProcessing/debugHelper.ts';
+import { addDebugBlock } from '../../../utils/debug/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
 import { getChannelOffset, loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';

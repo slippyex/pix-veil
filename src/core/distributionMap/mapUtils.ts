@@ -1,13 +1,13 @@
-// src/utils/distributionMap/mapUtils.ts
+// src/core/distributionMap/mapUtils.ts
 
 import type { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
 import { Buffer } from 'node:buffer';
-import { compressBuffer, decompressBuffer } from '../compression/compression.ts';
-import { decryptData, encryptData } from '../cryptography/crypto.ts';
-import { scanForDistributionMap } from '../../core/decoder/lib/extraction.ts';
-import { SupportedCompressionStrategies } from '../compression/compressionStrategies.ts';
+import { compressBuffer, decompressBuffer } from '../../utils/compression/compression.ts';
+import { decryptData, encryptData } from '../../utils/cryptography/crypto.ts';
+import { scanForDistributionMap } from '../decoder/lib/extraction.ts';
+import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.

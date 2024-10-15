@@ -29,7 +29,7 @@ export function analyzePngCapacities(
         logger.info('Analyzing PNG images for capacity based on tones...');
     }
 
-    const pngFiles = readDirectory(inputPngFolder).filter((file) => file.endsWith('.png'));
+    const pngFiles = readDirectory(inputPngFolder).filter((file) => file.endsWith('.png')) as string[];
 
     if (pngFiles.length === 0) {
         throw new Error('No PNG files found in the input folder.');

@@ -1,4 +1,5 @@
 // src/core/encoder/lib/splitChunks.ts
+
 import type { IChunk, ILogger } from '../../../@types/index.ts';
 import { Buffer } from 'node:buffer';
 import { config } from '../../../config/index.ts';

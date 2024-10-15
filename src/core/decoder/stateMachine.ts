@@ -6,7 +6,7 @@ import * as path from 'jsr:@std/path';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
-import { readAndProcessDistributionMap } from '../../utils/distributionMap/mapUtils.ts';
+import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
 import { assembleChunks, extractChunks } from './lib/extraction.ts';
 
 type StateHandler = () => Promise<void> | void;
@@ -128,7 +128,7 @@ export class DecodeStateMachine {
      */
     private async verifyAndDecryptData(): Promise<void> {
         const { password, logger } = this.options;
-        verifyDataIntegrity(this.encryptedData!, this.distributionMap!.checksum, logger);
+        await verifyDataIntegrity(this.encryptedData!, this.distributionMap!.checksum, logger);
         this.decryptedData = await decryptData(this.encryptedData!, password, logger);
     }
 

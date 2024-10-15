@@ -1,4 +1,4 @@
-// src/utils/imageProcessing/debugHelper.ts
+// src/utils/debug/debugHelper.ts
 
 import type { IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 

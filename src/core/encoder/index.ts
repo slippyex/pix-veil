@@ -3,11 +3,11 @@
 import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
 
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
-import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
+import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
 import { ensureOutputDirectory, isCompressed, readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
-import { createHumanReadableDistributionMap } from '../../utils/imageProcessing/debugHelper.ts';
+import { createHumanReadableDistributionMap } from '../../utils/debug/debugHelper.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
 import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
 import { splitDataIntoChunks } from './lib/splitChunks.ts';
@@ -18,6 +18,7 @@ import { SupportedCompressionStrategies } from '../../utils/compression/compress
 import { decode } from '../decoder/index.ts';
 
 import { basename, join } from 'jsr:@std/path';
+import { EncodeStateMachine } from './stateMachine.ts';
 
 // Define the order of compression strategies to try
 const compressionOrder: SupportedCompressionStrategies[] = [
@@ -25,6 +26,17 @@ const compressionOrder: SupportedCompressionStrategies[] = [
     SupportedCompressionStrategies.GZip,
     SupportedCompressionStrategies.None,
 ];
+
+/**
+ * Encodes data using a state machine based on provided options.
+ *
+ * @param {IEncodeOptions} options - The options to configure the encoding process.
+ * @return {Promise<void>} A promise that resolves when the encoding is complete.
+ */
+export async function _encodeWithStateMachine(options: IEncodeOptions): Promise<void> {
+    const stateMachine = new EncodeStateMachine(options);
+    await stateMachine.run();
+}
 
 /**
  * Encodes the input file and embeds the data across multiple PNG images using steganography.

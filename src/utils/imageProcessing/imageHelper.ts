@@ -1,7 +1,5 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-/// <reference lib="deno.unstable" />
-
 import sharp from 'sharp';
 import type {
     ChannelSequence,
