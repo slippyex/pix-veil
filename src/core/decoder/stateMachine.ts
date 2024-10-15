@@ -11,8 +11,20 @@ import { assembleChunks, extractChunks } from './lib/extraction.ts';
 
 type StateHandler = () => Promise<void> | void;
 
+export enum DecoderStates {
+    INIT = 'INIT',
+    READ_MAP = 'READ_MAP',
+    EXTRACT_CHUNKS = 'EXTRACT_CHUNKS',
+    ASSEMBLE_DATA = 'ASSEMBLE_DATA',
+    VERIFY_DECRYPT = 'VERIFY_DECRYPT',
+    DECOMPRESS = 'DECOMPRESS',
+    WRITE_OUTPUT = 'WRITE_OUTPUT',
+    COMPLETED = 'COMPLETED',
+    ERROR = 'ERROR',
+}
+
 interface StateTransition {
-    state: string;
+    state: DecoderStates;
     handler: StateHandler;
 }
 
@@ -22,7 +34,7 @@ interface StateTransition {
  * assembling the data, verifying and decrypting the data, decompressing, and ultimately writing the output.
  */
 export class DecodeStateMachine {
-    private state: string = 'INIT';
+    private state: DecoderStates = DecoderStates.INIT;
     private readonly options: IDecodeOptions;
     private distributionMap: IDistributionMap | null = null;
     private encryptedDataChunks: { chunkId: number; data: Buffer }[] = [];
@@ -37,13 +49,13 @@ export class DecodeStateMachine {
     ) {
         this.options = options;
         this.stateTransitions = [
-            { state: 'INIT', handler: this.init },
-            { state: 'READ_MAP', handler: this.readMap },
-            { state: 'EXTRACT_CHUNKS', handler: this.extractChunks },
-            { state: 'ASSEMBLE_DATA', handler: this.assembleData },
-            { state: 'VERIFY_DECRYPT', handler: this.verifyAndDecryptData },
-            { state: 'DECOMPRESS', handler: this.decompressData },
-            { state: 'WRITE_OUTPUT', handler: this.writeOutput },
+            { state: DecoderStates.INIT, handler: this.init },
+            { state: DecoderStates.READ_MAP, handler: this.readMap },
+            { state: DecoderStates.EXTRACT_CHUNKS, handler: this.extractChunks },
+            { state: DecoderStates.ASSEMBLE_DATA, handler: this.assembleData },
+            { state: DecoderStates.VERIFY_DECRYPT, handler: this.verifyAndDecryptData },
+            { state: DecoderStates.DECOMPRESS, handler: this.decompressData },
+            { state: DecoderStates.WRITE_OUTPUT, handler: this.writeOutput },
         ];
     }
 
@@ -61,9 +73,9 @@ export class DecodeStateMachine {
                 this.transitionTo(transition.state);
                 await transition.handler.bind(this)();
             }
-            this.transitionTo('COMPLETED');
+            this.transitionTo(DecoderStates.COMPLETED);
         } catch (error) {
-            this.transitionTo('ERROR', error as Error);
+            this.transitionTo(DecoderStates.ERROR, error as Error);
             this.handleError(error as Error);
         }
     }
@@ -169,11 +181,11 @@ export class DecodeStateMachine {
      * @param {Error} [error] - An optional error that triggers transition to the 'ERROR' state.
      * @return {void}
      */
-    private transitionTo(nextState: string, error?: Error): void {
+    private transitionTo(nextState: DecoderStates, error?: Error): void {
         const { logger } = this.options;
         if (error) {
             logger.error(`Error occurred during "${this.state}": ${error.message}`);
-            this.state = 'ERROR';
+            this.state = DecoderStates.ERROR;
         } else {
             logger.debug(`Transitioning from "${this.state}" to "${nextState}"`);
             this.state = nextState;

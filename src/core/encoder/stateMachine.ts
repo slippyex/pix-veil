@@ -43,7 +43,7 @@ interface StateTransition {
  * EncodeStateMachine manages the encoding process through state transitions.
  */
 export class EncodeStateMachine {
-    private state: EncoderStates = EncoderStates.INIT;
+    private state: string = EncoderStates.INIT;
     private readonly options: IEncodeOptions;
     private readonly compressionStrategies: SupportedCompressionStrategies[];
     private currentCompressionIndex: number = 0;
@@ -141,11 +141,11 @@ export class EncodeStateMachine {
     /**
      * Reads the input file into a buffer.
      */
-    private readInputFile(): void {
+    private async readInputFile(): Promise<void> {
         const { inputFile, logger } = this.options;
         logger.debug(`Reading input file: ${inputFile}`);
         try {
-            this.originalFileData = readBufferFromFile(inputFile);
+            this.originalFileData = await readBufferFromFile(inputFile);
             this.originalFilename = path.basename(inputFile);
             logger.debug(`Input file "${inputFile}" read successfully.`);
         } catch (error) {
@@ -332,11 +332,11 @@ export class EncodeStateMachine {
     /**
      * Writes a human-readable distribution map file.
      */
-    private writeHumanReadableMap(): void {
+    private async writeHumanReadableMap(): Promise<void> {
         const { logger, outputFolder } = this.options;
         logger.info('Creating human-readable distribution map...');
         try {
-            createHumanReadableDistributionMap(
+            await createHumanReadableDistributionMap(
                 this.distributionMapEntries!,
                 this.pngCapacities.distributionCarrier!.file,
                 this.originalFilename!,
@@ -374,7 +374,7 @@ export class EncodeStateMachine {
                 logger,
             });
             const decodedFilePath = path.join(tempDecodedFolder, path.basename(this.options.inputFile));
-            const decodedBuffer = readBufferFromFile(decodedFilePath);
+            const decodedBuffer = await readBufferFromFile(decodedFilePath);
             if (decodedBuffer.subarray(0, this.originalFileData!.length).equals(this.originalFileData)) {
                 logger.success('Verification successful: Decoded data matches original data.');
             } else {

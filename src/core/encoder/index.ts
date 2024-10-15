@@ -46,7 +46,7 @@ export async function _encodeWithStateMachine(options: IEncodeOptions): Promise<
  */
 export async function encode(options: IEncodeOptions): Promise<void> {
     const { inputFile, inputPngFolder, outputFolder, password, verify, verbose, debugVisual, logger } = options;
-    const fileData = readBufferFromFile(options.inputFile);
+    const fileData = await readBufferFromFile(options.inputFile);
     // Capture only the filename (no path) using path.basename
     const originalFilename = basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
@@ -115,7 +115,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             );
 
             // Step 9: Generate human-readable distribution map text file
-            createHumanReadableDistributionMap(
+            await createHumanReadableDistributionMap(
                 distributionMapEntries,
                 distributionCarrier.file,
                 originalFilename,
@@ -188,7 +188,7 @@ async function verificationStep(
 
         // Compare the original file and the decoded file
         const decodedFilePath = join(tempDecodedFolder, basename(inputFile));
-        const decodedBuffer = readBufferFromFile(decodedFilePath);
+        const decodedBuffer = await readBufferFromFile(decodedFilePath);
 
         if (decodedBuffer.subarray(0, originalFileData.length).equals(originalFileData)) {
             logger.success(`Verification successful with compression strategy: ${compressionStrategy}`);

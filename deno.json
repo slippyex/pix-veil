@@ -1,7 +1,20 @@
 {
+    "license": "MIT",
+    "unstable": ["kv"],
+    "tasks": {
+        "lint": "deno lint",
+        "format": "deno fmt",
+        "test": "deno test -A",
+        "doc": "deno doc --html --name='Pix-Veil' --output=./doc ./src",
+        "coverage": "deno test --coverage -A && deno coverage --html",
+        "compile": "deno compile -A --reload --output ./.bin/pix-veil src/cli/index.ts",
+        "pix-veil:encode": "deno run -A src/cli/index.ts encode",
+        "pix-veil:decode": "deno run -A src/cli/index.ts decode"
+    },
     "compilerOptions": {
         "lib": ["deno.window"],
-        "strict": true
+        "strict": true,
+        "allowUnusedLabels": true
     },
     "imports": {
         "@std/assert": "jsr:@std/assert@^1.0.6",

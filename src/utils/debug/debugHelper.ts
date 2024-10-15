@@ -134,7 +134,7 @@ function generateDistributionMapText(
  * @param {ILogger} logger - The logger instance used for logging information.
  * @return {void}
  */
-export function createHumanReadableDistributionMap(
+export async function createHumanReadableDistributionMap(
     distributionMapEntries: IDistributionMapEntry[],
     distributionCarrier: string,
     originalFilename: string,
@@ -142,7 +142,7 @@ export function createHumanReadableDistributionMap(
     outputFolder: string,
     compressionStrategy: string,
     logger: ILogger,
-): void {
+): Promise<void> {
     if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
     const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
     const distributionMapText = generateDistributionMapText(
@@ -152,6 +152,6 @@ export function createHumanReadableDistributionMap(
         checksum,
         compressionStrategy,
     );
-    writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
+    await writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
     if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 }
