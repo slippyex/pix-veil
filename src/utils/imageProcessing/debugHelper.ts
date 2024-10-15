@@ -4,7 +4,6 @@ import type { IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import * as path from 'jsr:/@std/path';
 import { config } from '../../config/index.ts';
-import { generateDistributionMapText } from '../distributionMap/mapUtils.ts';
 import { writeBufferToFile } from '../storage/storageUtils.ts';
 
 import { Buffer } from 'node:buffer';
@@ -68,6 +67,59 @@ export function addDebugBlock(
         const bufferOffset = (row * width + x) * channels;
         rowBuffer.copy(imageData, bufferOffset, 0, blockSize * channels);
     });
+}
+
+/**
+ * Generates a detailed distribution map text, providing information about chunks embedded
+ * in various PNG files, checksum, original filename, and additional metadata.
+ *
+ * @param {IDistributionMapEntry[]} entries - Array of distribution map entries containing information
+ *                                            about the chunks embedded in each PNG file.
+ * @param {string} originalFilename - The original filename from which the distribution map is generated.
+ * @param {string} distributionCarrier - The PNG file used as a carrier for the distribution.
+ * @param {string} checksum - The checksum value used for verification.
+ * @param {string} compressionStrategy - The compression strategy employed during the distribution.
+ * @return {string} Text representation of the distribution map including detailed information about
+ *                  each PNG file, checksum, original filename, compression strategy, and distribution carrier.
+ */
+function generateDistributionMapText(
+    entries: IDistributionMapEntry[],
+    originalFilename: string,
+    distributionCarrier: string,
+    checksum: string,
+    compressionStrategy: string,
+): string {
+    let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
+
+    const pngMap: Record<string, IDistributionMapEntry[]> = {};
+
+    entries.forEach((entry) => {
+        if (!pngMap[entry.pngFile]) {
+            pngMap[entry.pngFile] = [];
+        }
+        pngMap[entry.pngFile].push(entry);
+    });
+
+    for (const png in pngMap) {
+        text += `PNG File: ${png}\n`;
+        text += `Chunks Embedded: ${pngMap[png].length}\n`;
+        text += `Details:\n`;
+        pngMap[png].forEach((entry) => {
+            const length = entry.endChannelPosition - entry.startChannelPosition;
+            text +=
+                `  - Chunk ID: ${entry.chunkId}, Position: ${entry.startChannelPosition}-${entry.endChannelPosition}, Length: ${length} bytes, Bits/Channel: ${entry.bitsPerChannel}, Channels: ${
+                    entry.channelSequence.join(', ')
+                }\n`;
+        });
+        text += `\n`;
+    }
+
+    text += `Checksum: ${checksum}\n`;
+    text += `Original Filename: ${originalFilename}\n`;
+    text += `Picked compression strategy: ${compressionStrategy}\n`;
+    text += `Distribution Carrier PNG: ${distributionCarrier}\n`;
+
+    return text;
 }
 
 /**

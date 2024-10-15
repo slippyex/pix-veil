@@ -12,7 +12,7 @@ import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 import { addDebugBlock } from '../../../utils/imageProcessing/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
-import { getChannelOffset, getImageData } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getChannelOffset, loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 
 const cpuCount = os.cpus().length;
@@ -35,7 +35,7 @@ async function processImage(
     logger: ILogger,
 ): Promise<void> {
     try {
-        const { data: imageData, info } = await getImageData(inputPngPath);
+        const { data: imageData, info } = await loadImageData(inputPngPath);
 
         injectorFn(imageData, info, logger);
 

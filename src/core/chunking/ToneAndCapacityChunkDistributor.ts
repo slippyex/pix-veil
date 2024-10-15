@@ -8,6 +8,7 @@ import {
     IDistributionMapEntry,
     IFileCapacityInfo,
     ILogger,
+    ImageCapacity,
     IUsedPng,
 } from '../../@types/index.ts';
 import { getCachedImageTones, getRandomPosition } from '../../utils/imageProcessing/imageHelper.ts';
@@ -48,16 +49,12 @@ export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrate
 
         // Initialize usedPositions to track channel usage per PNG using Uint8Array
         const usedPositions: Record<string, Uint8Array> = {};
-        const pngToneChannels: Record<string, { low: number; mid: number; high: number }> = {};
+        const pngToneChannels: Record<string, ImageCapacity> = {};
 
         for (const png of pngCapacities) {
             const pngPath = path.join(inputPngFolder, png.file);
             const capacity = getCachedImageTones(pngPath, logger);
-            pngToneChannels[png.file] = {
-                low: capacity.low,
-                mid: capacity.mid,
-                high: capacity.high,
-            };
+            pngToneChannels[png.file] = { ...capacity };
             const totalChannels = capacity.low + capacity.mid + capacity.high;
             const byteLength = Math.ceil(totalChannels / 8);
             usedPositions[png.file] = new Uint8Array(byteLength);

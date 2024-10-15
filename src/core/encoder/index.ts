@@ -2,7 +2,7 @@
 
 import type { IEncodeOptions, ILogger } from '../../@types/index.ts';
 
-import { processImageTones } from '../../utils/imageProcessing/imageHelper.ts';
+import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { prepareDistributionMapForInjection } from '../../utils/distributionMap/mapUtils.ts';
 import { ensureOutputDirectory, isCompressed, readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
@@ -38,7 +38,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
     // Capture only the filename (no path) using path.basename
     const originalFilename = basename(inputFile);
     const isCompressedFlag = isCompressed(originalFilename);
-    await processImageTones(inputPngFolder, logger);
+    await cacheImageTones(inputPngFolder, logger);
 
     const compressionStrategyOrder = isCompressedFlag ? [SupportedCompressionStrategies.None] : compressionOrder;
     for (const compressionStrategy of compressionStrategyOrder) {

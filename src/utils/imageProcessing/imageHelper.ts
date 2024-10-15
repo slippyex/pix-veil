@@ -11,11 +11,10 @@ import type {
     ImageToneCache,
 } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
-import { findProjectRoot, readDirectory } from '../storage/storageUtils.ts';
+import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 import { Buffer } from 'node:buffer';
-
-import openKv = Deno.openKv;
+import { getEntryFromCache, setCacheEntry } from '../cache/cacheHelper.ts';
 
 /**
  * In-memory cache for image tones.
@@ -23,27 +22,6 @@ import openKv = Deno.openKv;
 const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
 
-// Initialize Deno KV
-let kv: Deno.Kv; // = await initializeKvStore();
-
-/**
- * Initializes and returns a Deno KV store instance.
- *
- * @return {Promise<Deno.Kv>} The initialized KV store.
- */
-async function initializeKvStore(): Promise<Deno.Kv> {
-    const rootDirectory = findProjectRoot(Deno.cwd());
-    // if (Deno.env.get('ENVIRONMENT') === 'test') {
-    //     return await openKv(':memory:');
-    // } else {
-    //     return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
-    // }
-    return await openKv(path.join(rootDirectory as string, 'deno-kv', 'pix-veil.db'));
-}
-
-export function closeKv() {
-    kv.close();
-}
 /**
  * Retrieves an image from the specified path, processing it and caching the result.
  *
@@ -52,7 +30,7 @@ export function closeKv() {
  */
 export async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
     if (!imageMap.has(pngPath)) {
-        const data = await getImageData(pngPath);
+        const data = await loadImageData(pngPath);
         imageMap.set(pngPath, data);
     }
     return imageMap.get(pngPath);
@@ -65,7 +43,7 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
  * @returns {Promise<{ data: Buffer; info: sharp.OutputInfo }>}
  *          A promise that resolves to an object containing the image data buffer and output information.
  */
-export async function getImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
+export async function loadImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     return await image.raw().toBuffer({ resolveWithObject: true });
 }
@@ -175,11 +153,7 @@ export function getRandomPosition(
 async function retrieveImageCapacity(imagePath: string, fileSize: number): Promise<ImageCapacity | null> {
     const key = getToneCacheKey(imagePath, fileSize);
     try {
-        if (!kv) {
-            kv = await initializeKvStore();
-        }
-        const { value } = await kv.get<ImageCapacity>(['pix-veil', key]);
-        return value;
+        return await getEntryFromCache<ImageCapacity>('pix-veil', key);
     } catch (error) {
         // Log the error and return null to indicate a cache miss
         console.error(`Failed to retrieve cache for "${imagePath}": ${(error as Error).message}`);
@@ -209,10 +183,7 @@ function getToneCacheKey(imagePath: string, fileSize: number): string {
 async function storeImageCapacity(imagePath: string, fileSize: number, capacity: ImageCapacity): Promise<void> {
     const key = getToneCacheKey(imagePath, fileSize);
     try {
-        if (!kv) {
-            await initializeKvStore();
-        }
-        await kv.set(['pix-veil', key], capacity);
+        await setCacheEntry('pix-veil', key, capacity);
     } catch (error) {
         console.error(`Failed to store cache for "${imagePath}": ${(error as Error).message}`);
     }
@@ -227,7 +198,7 @@ async function storeImageCapacity(imagePath: string, fileSize: number, capacity:
  * @param {ILogger} logger - Logger instance for debugging information.
  * @return {Promise<void>} - Resolves when all images have been processed.
  */
-export async function processImageTones(inputPngPath: string, logger: ILogger): Promise<void> {
+export async function cacheImageTones(inputPngPath: string, logger: ILogger): Promise<void> {
     const pngsInDirectory = readDirectory(inputPngPath).filter((input) => input.toLowerCase().endsWith('.png'));
     for (const png of pngsInDirectory) {
         const imagePath = path.join(inputPngPath, png);
@@ -259,7 +230,7 @@ export async function processImageTones(inputPngPath: string, logger: ILogger): 
         let info: sharp.OutputInfo;
 
         try {
-            const imageData = await getImageData(imagePath);
+            const imageData = await loadImageData(imagePath);
             data = imageData.data;
             info = imageData.info;
         } catch (error) {
