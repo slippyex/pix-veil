@@ -22,7 +22,7 @@ export function splitDataIntoChunks(encryptedData: Buffer, logger: ILogger): ICh
         const size = calculateChunkSize(remaining);
         const chunkData = encryptedData.subarray(offset, offset + size);
 
-        chunks.push({ id: chunkId++, data: Buffer.from(chunkData) });
+        chunks.push({ chunkId: chunkId++, data: Buffer.from(chunkData) });
         offset += size;
     }
 

@@ -65,7 +65,7 @@ export async function encode(options: IEncodeOptions): Promise<void> {
             const { pngCapacities, distributionCarrier } = analyzePngCapacities(inputPngFolder, logger);
 
             // Step 5: Distribute chunks across PNG images and obtain chunk map
-            const { distributionMapEntries, chunkMap } = createChunkDistributionInformation(
+            const { distributionMapEntries, chunkMap } = await createChunkDistributionInformation(
                 chunks,
                 pngCapacities,
                 inputPngFolder,

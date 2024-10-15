@@ -1,6 +1,6 @@
 // src/core/encoder/lib/analyzeCapacities.ts
 
-import type { ILogger } from '../../../@types/index.ts';
+import type { IFileCapacityInfo, ILogger } from '../../../@types/index.ts';
 
 import * as path from 'jsr:/@std/path';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
@@ -22,8 +22,8 @@ export function analyzePngCapacities(
     inputPngFolder: string,
     logger: ILogger,
 ): {
-    pngCapacities: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' }[];
-    distributionCarrier: { file: string; capacity: number; tone: 'low' | 'mid' | 'high' };
+    pngCapacities: IFileCapacityInfo[];
+    distributionCarrier: IFileCapacityInfo;
 } {
     if (logger.verbose) {
         logger.info('Analyzing PNG images for capacity based on tones...');

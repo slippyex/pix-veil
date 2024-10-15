@@ -1,6 +1,6 @@
 // src/utils/compression/strategies/BrotliCompressor.ts
 
-import type { CompressionStrategy } from '../../../@types/compressionStrategy.ts';
+import type { CompressionStrategy } from '../../../@types/index.ts';
 
 import type { Buffer } from 'node:buffer';
 import zlib from 'node:zlib';

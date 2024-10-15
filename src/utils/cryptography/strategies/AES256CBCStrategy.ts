@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-
 import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 import { crypto } from 'jsr:@std/crypto';
 import { EncryptionStrategy } from '../../../@types/encryptionStrategy.ts';

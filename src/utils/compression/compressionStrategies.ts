@@ -2,8 +2,8 @@
 
 import { BrotliCompressor } from './strategies/BrotliCompressor.ts';
 import { GZipCompressor } from './strategies/GZipCompressor.ts';
-import { CompressionStrategy } from '../../@types/compressionStrategy.ts';
-import { NoneCompressor } from './strategies/NoneCompressor.ts';
+import { CompressionStrategy } from '../../@types/index.ts';
+import { NoopCompressor } from './strategies/NoopCompressor.ts';
 
 /**
  * Enumeration of supported compression strategies in the order of preference.
@@ -20,5 +20,5 @@ export enum SupportedCompressionStrategies {
 export const CompressionStrategyMap: Record<SupportedCompressionStrategies, CompressionStrategy> = {
     [SupportedCompressionStrategies.Brotli]: new BrotliCompressor(),
     [SupportedCompressionStrategies.GZip]: new GZipCompressor(),
-    [SupportedCompressionStrategies.None]: new NoneCompressor(), // No compression
+    [SupportedCompressionStrategies.None]: new NoopCompressor(), // No compression
 };

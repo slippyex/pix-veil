@@ -1,11 +1,11 @@
 // src/utils/cryptography/crypto.ts
 
 import type { ILogger } from '../../@types/index.ts';
-import type { EncryptionStrategy } from '../../@types/encryptionStrategy.ts';
 
 import type { Buffer } from 'node:buffer';
-import crypto from 'node:crypto';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
+import { crypto } from '@std/crypto';
+import { EncryptionStrategy } from '../../@types/index.ts';
 
 /**
  * Encrypts the given compressed data using the provided encryption strategy.
@@ -25,7 +25,7 @@ export async function encryptData(
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
     const encryptedData = await encryptionStrategy.encrypt(data, password);
-    const checksum = generateChecksum(encryptedData);
+    const checksum = await generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
     return encryptedData;
 }
@@ -39,23 +39,23 @@ export async function encryptData(
  * @param {EncryptionStrategy} [encryptionStrategy=new AES256CBCStrategy()] - The encryption strategy to use for decryption. Defaults to AES256CBCStrategy.
  * @returns {Buffer} - The decrypted buffer.
  */
-export function decryptData(
+export async function decryptData(
     encryptedBuffer: Buffer,
     password: string,
     logger: ILogger,
     encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Decrypting the compressed data...');
-    return encryptionStrategy.decrypt(encryptedBuffer, password);
+    return await encryptionStrategy.decrypt(encryptedBuffer, password);
 }
 /**
  * Verifies the integrity of the encrypted data using checksum.
  */
-export function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): void {
+export async function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): Promise<void> {
     if (logger.verbose) logger.info('Verifying data integrity...');
     const isChecksumValid = verifyChecksum(encryptedData, checksum);
     logger.debug(`Expected Checksum: ${checksum}`);
-    logger.debug(`Computed Checksum: ${generateChecksum(encryptedData)}`);
+    logger.debug(`Computed Checksum: ${await generateChecksum(encryptedData)}`);
     if (!isChecksumValid) {
         throw new Error('Data integrity check failed. The data may be corrupted or tampered with.');
     }
@@ -73,7 +73,6 @@ export async function generateChecksum(buffer: Buffer): Promise<string> {
         .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
 }
-
 /**
  * Verifies whether the provided checksum matches the checksum computed from the given buffer.
  *

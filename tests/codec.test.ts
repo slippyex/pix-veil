@@ -68,8 +68,8 @@ describe('Codec tests', () => {
 
     it('should correctly map chunkId to chunk data', () => {
         const chunks: IChunk[] = [
-            { id: 0, data: Buffer.from('Chunk0') },
-            { id: 1, data: Buffer.from('Chunk1') },
+            { chunkId: 0, data: Buffer.from('Chunk0') },
+            { chunkId: 1, data: Buffer.from('Chunk1') },
         ];
 
         // Simulate distributionMapEntries
@@ -94,12 +94,12 @@ describe('Codec tests', () => {
 
         // Create a chunkMap
         const chunkMap = new Map<number, Buffer>();
-        chunks.forEach((chunk) => chunkMap.set(chunk.id, chunk.data));
+        chunks.forEach((chunk) => chunkMap.set(chunk.chunkId, chunk.data));
 
         // Assert that chunkMap contains all necessary entries
         distributionMapEntries.forEach((entry) => {
             expect(chunkMap.has(entry.chunkId)).toBe(true);
-            expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find((c) => c.id === entry.chunkId)?.data);
+            expect(chunkMap.get(entry.chunkId)).toEqual(chunks.find((c) => c.chunkId === entry.chunkId)?.data);
         });
     });
 });
