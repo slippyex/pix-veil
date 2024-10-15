@@ -1,13 +1,17 @@
 // src/core/distributionMap/mapUtils.ts
 
-import type { IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
+import type { IAssembledImageData, IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
 import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../../utils/compression/compression.ts';
 import { decryptData, encryptData } from '../../utils/cryptography/crypto.ts';
-import { scanForDistributionMap } from '../decoder/lib/extraction.ts';
+import { extractDataFromBuffer } from '../decoder/lib/extraction.ts';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
+import { MAGIC_BYTE } from '../../config/index.ts';
+import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
+import { readDirectory } from '../../utils/storage/storageUtils.ts';
+import * as path from 'jsr:@std/path';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -57,7 +61,7 @@ export async function readAndProcessDistributionMap(
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
-    const distributionMapFromCarrier = await scanForDistributionMap(inputFolder, logger);
+    const distributionMapFromCarrier = await scanForAndExtractDistributionMap(inputFolder, logger);
     if (distributionMapFromCarrier) {
         return processDistributionMap(distributionMapFromCarrier, password, logger);
     }
@@ -110,4 +114,71 @@ export function createDistributionMap(
         encryptedDataLength,
     };
     return serializeDistributionMap(distributionMap);
+}
+
+/**
+ * Scans the given folder for PNG images and attempts to extract a distribution map from each image.
+ *
+ * @param {string} inputFolder - The path to the folder containing PNG images to scan.
+ * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
+ * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
+ */
+async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
+    const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
+    for (const png of carrierPngs) {
+        const pngPath = path.join(inputFolder, png);
+
+        logger.debug(`Scanning for distributionMap in file "${png}".`);
+
+        const { data: imageData, info } = (await getImage(pngPath)) as IAssembledImageData;
+
+        // Step 1: Extract [MAGIC_BYTE][SIZE]
+        const magicSizeBits = (MAGIC_BYTE.length + 4) * 8; // MAGIC_BYTE + SIZE (4 bytes)
+        const magicSizeBuffer = extractDataFromBuffer(
+            png,
+            imageData,
+            2,
+            ['R', 'G', 'B'], // channelSequence
+            0,
+            magicSizeBits,
+            logger,
+            info.channels,
+        );
+
+        // Validate MAGIC_BYTE
+        if (!magicSizeBuffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {
+            logger.debug(`MAGIC_BYTE not found at the beginning of "${png}".`);
+            continue;
+        }
+
+        // Extract SIZE
+        const sizeBuffer = magicSizeBuffer.subarray(MAGIC_BYTE.length, MAGIC_BYTE.length + 4);
+        const shiftExtraction = MAGIC_BYTE.length + sizeBuffer.length;
+        const size = sizeBuffer.readUInt32BE(0);
+        logger.debug(`Found distributionMap size: ${size} bytes in "${png}".`);
+
+        // Step 2: Extract [DISTRIBUTION_MAP] based on SIZE
+        const distributionMapBits = size * 8;
+        const distributionMapBuffer = extractDataFromBuffer(
+            png,
+            imageData,
+            2,
+            ['R', 'G', 'B'],
+            0,
+            distributionMapBits + magicSizeBits,
+            logger,
+            info.channels,
+        );
+
+        const extractedDistributionMapBuffer = distributionMapBuffer.subarray(shiftExtraction, size + shiftExtraction);
+        if (extractedDistributionMapBuffer.length === size) {
+            logger.info(`Distribution map successfully extracted from "${png}".`);
+            return extractedDistributionMapBuffer;
+        } else {
+            logger.warn(
+                `Incomplete distribution map extracted from "${png}". Expected ${size} bytes, got ${extractedDistributionMapBuffer.length} bytes.`,
+            );
+        }
+    }
+    return null;
 }

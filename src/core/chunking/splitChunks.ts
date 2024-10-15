@@ -1,8 +1,8 @@
-// src/core/encoder/lib/splitChunks.ts
+// src/core/chunking/splitChunks.ts
 
-import type { IChunk, ILogger } from '../../../@types/index.ts';
+import type { IChunk, ILogger } from '../../@types/index.ts';
 import { Buffer } from 'node:buffer';
-import { config } from '../../../config/index.ts';
+import { config } from '../../config/index.ts';
 
 /**
  * Splits encrypted data into chunks based on a random size within specified min and max chunk sizes.

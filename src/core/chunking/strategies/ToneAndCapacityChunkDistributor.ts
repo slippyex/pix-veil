@@ -1,4 +1,4 @@
-// src/core/chunking/ToneAndCapacityChunkDistributor.ts
+// src/core/chunking/strategies/ToneAndCapacityChunkDistributor.ts
 
 import {
     ChannelSequence,
@@ -10,13 +10,13 @@ import {
     ILogger,
     ImageCapacity,
     IUsedPng,
-} from '../../@types/index.ts';
-import { getCachedImageTones, getRandomPosition } from '../../utils/imageProcessing/imageHelper.ts';
+} from '../../../@types/index.ts';
+import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
 import _ from 'lodash';
-import { config } from '../../config/index.ts';
+import { config } from '../../../config/index.ts';
 import * as path from 'jsr:@std/path';
 import seedrandom from 'seedrandom';
-import { generateChecksum } from '../../utils/cryptography/crypto.ts';
+import { generateChecksum } from '../../../utils/cryptography/crypto.ts';
 import { Buffer } from 'node:buffer';
 
 export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrategy {

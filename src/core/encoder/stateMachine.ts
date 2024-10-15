@@ -3,9 +3,9 @@
 import type { IChunk, IDistributionMapEntry, IEncodeOptions, IFileCapacityInfo } from '../../@types/index.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
-import { splitDataIntoChunks } from './lib/splitChunks.ts';
+import { splitDataIntoChunks } from '../chunking/splitChunks.ts';
 import { analyzePngCapacities } from './lib/analyzeCapacities.ts';
-import { createChunkDistributionInformation } from './lib/distributeChunks.ts';
+import { createChunkDistributionInformation } from '../chunking/distributeChunks.ts';
 import { injectChunksIntoPngs, injectDistributionMapIntoCarrierPng } from './lib/injection.ts';
 import { createHumanReadableDistributionMap } from '../../utils/debug/debugHelper.ts';
 import { decode } from '../decoder/index.ts';

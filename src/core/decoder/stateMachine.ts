@@ -7,7 +7,8 @@ import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
 import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
-import { assembleChunks, extractChunks } from './lib/extraction.ts';
+import { extractChunks } from './lib/extraction.ts';
+import { assembleChunks } from '../chunking/assembleChunks.ts';
 
 type StateHandler = () => Promise<void> | void;
 
