@@ -1,6 +1,6 @@
 // src/core/encoder/lib/injection.ts
 
-import type {ChannelSequence, IDistributionMapEntry, ILogger, PngToChunksMap} from '../../../@types/index.ts';
+import type { ChannelSequence, IDistributionMapEntry, ILogger, PngToChunksMap } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';

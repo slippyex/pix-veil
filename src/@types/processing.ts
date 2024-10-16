@@ -1,7 +1,7 @@
 // src/@types/processing.ts
 
 import type { Buffer } from 'node:buffer';
-import type {IDistributionMapEntry} from "./distribution.ts";
+import type { IDistributionMapEntry } from './distribution.ts';
 
 export interface IFileCapacityInfo {
     file: string;

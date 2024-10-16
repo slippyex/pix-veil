@@ -12,7 +12,6 @@ import { Buffer } from 'node:buffer';
 import * as path from 'jsr:@std/path';
 import { ensureOutputDirectory, findProjectRoot, readDirectory } from '../src/utils/storage/storageUtils.ts';
 
-
 import { getLogger, NoopLogFacility } from '../src/utils/logging/logUtils.ts';
 import { closeKv } from '../src/utils/cache/cacheHelper.ts';
 Deno.env.set('ENVIRONMENT', 'test');
