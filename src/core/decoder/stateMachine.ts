@@ -1,6 +1,6 @@
 // src/core/decoder/stateMachine.ts
 
-import type { IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
+import type { IChunk, IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
 import type { Buffer } from 'node:buffer';
 import * as path from 'jsr:/@std/path';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
@@ -14,7 +14,7 @@ import { DecoderStates } from '../../stateMachine/definedStates.ts';
 
 export class DecodeStateMachine extends AbstractStateMachine<DecoderStates, IDecodeOptions> {
     private distributionMap: IDistributionMap | null = null;
-    private encryptedDataChunks: { chunkId: number; data: Buffer }[] = [];
+    private encryptedDataChunks: IChunk[] = [];
     private encryptedData: Buffer | null = null;
     private decryptedData: Buffer | null = null;
     private decompressedData: Buffer | null = null;

@@ -1,6 +1,6 @@
 // src/core/decoder/lib/extraction.ts
 
-import type { ChannelSequence, IAssembledImageData, IDistributionMap, ILogger } from '../../../@types/index.ts';
+import type { ChannelSequence, IAssembledImageData, IChunk, IDistributionMap, ILogger } from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
 import { filePathExists } from '../../../utils/storage/storageUtils.ts';
@@ -15,14 +15,14 @@ import { extractBits } from '../../../utils/bitManipulation/bitUtils.ts';
  * @param {IDistributionMap} distributionMap - An object defining how data is distributed across multiple PNG files.
  * @param {string} inputFolder - The path to the folder containing the PNG files.
  * @param {ILogger} logger - An object used to log debug information during the extraction process.
- * @return {Promise<{ chunkId: number, data: Buffer }[]>} - A promise that resolves to an array of objects, each containing a chunkId and its associated data buffer.
+ * @return {Promise<IChunk[]>} - A promise that resolves to an array of objects, each containing a chunkId and its associated data buffer.
  */
 export async function extractChunks(
     distributionMap: IDistributionMap,
     inputFolder: string,
     logger: ILogger,
-): Promise<{ chunkId: number; data: Buffer }[]> {
-    const encryptedDataArray: { chunkId: number; data: Buffer }[] = [];
+): Promise<IChunk[]> {
+    const encryptedDataArray: IChunk[] = [];
 
     for (const entry of distributionMap.entries) {
         const pngPath = path.join(inputFolder, entry.pngFile);

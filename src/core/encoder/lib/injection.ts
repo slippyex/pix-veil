@@ -1,6 +1,6 @@
 // src/core/encoder/lib/injection.ts
 
-import type { ChannelSequence, IDistributionMapEntry, ILogger } from '../../../@types/index.ts';
+import type {ChannelSequence, IDistributionMapEntry, ILogger, PngToChunksMap} from '../../../@types/index.ts';
 
 import { Buffer } from 'node:buffer';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
@@ -59,8 +59,6 @@ async function processImage(
         throw error;
     }
 }
-
-type PngToChunksMap = Record<string, IDistributionMapEntry[]>;
 
 /**
  * Injects specified chunks of data into PNG images.
