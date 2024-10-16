@@ -17,7 +17,7 @@ import { getEntryFromCache, setCacheEntry } from '../cache/cacheHelper.ts';
 /**
  * In-memory cache for image tones.
  */
-const toneCache: ImageToneCache = {};
+export const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
 
 /**

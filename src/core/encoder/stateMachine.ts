@@ -17,6 +17,7 @@ import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 import { EncoderStates } from '../../stateMachine/definedStates.ts';
+import { checkPngCapacity } from './lib/capacityChecker.ts';
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
     private originalFileData: Buffer | null = null;
@@ -29,10 +30,9 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
     private distributionCarrier: IFileCapacityInfo | null = null;
     private distributionMapEntries: IDistributionMapEntry[] = [];
     private chunkMap: Map<number, Buffer> = new Map();
-    private compressionStrategy: SupportedCompressionStrategies = SupportedCompressionStrategies.Brotli;
     private encryptedMapContent: Buffer | null = null;
     private currentCompressionIndex: number = 0;
-    private readonly compressionStrategies: SupportedCompressionStrategies[];
+    private compressionStrategies: SupportedCompressionStrategies[];
 
     constructor(options: IEncodeOptions) {
         super(EncoderStates.INIT, options);
@@ -44,10 +44,12 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
 
         this.stateTransitions = [
             { state: EncoderStates.INIT, handler: this.init },
+            { state: EncoderStates.OPTIMIZE_COMPRESSION_STRATEGY, handler: this.optimizeCompressionStrategy },
             { state: EncoderStates.READ_INPUT_FILE, handler: this.readInputFile },
             { state: EncoderStates.COMPRESS_DATA, handler: this.compressData },
             { state: EncoderStates.ENCRYPT_DATA, handler: this.encryptData },
             { state: EncoderStates.GENERATE_CHECKSUM, handler: this.generateChecksum },
+            { state: EncoderStates.CHECK_INPUT_PNG_CAPACITY, handler: this.checkInputPngCapacity },
             { state: EncoderStates.SPLIT_DATA, handler: this.splitData },
             { state: EncoderStates.ANALYZE_PNG_CAPACITIES, handler: this.analyzePngCapacities },
             { state: EncoderStates.DISTRIBUTE_CHUNKS, handler: this.distributeChunks },
@@ -78,6 +80,29 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         await cacheImageTones(inputPngFolder, logger);
     }
 
+    /**
+     * Optimizes the compression strategy based on the input file type.
+     *
+     * For audio and video files (.mp3, .ogg, .mp4, .avi), it sets the compression strategies
+     * to include GZip, Brotli, and None. For files that are already compressed, it limits
+     * the compression strategy to None.
+     *
+     * @return {void}
+     */
+    private optimizeCompressionStrategy(): void {
+        const { inputFile } = this.options;
+        if (['.mp3', '.ogg', '.mp4', '.avi'].includes(path.extname(inputFile))) {
+            this.compressionStrategies = [
+                SupportedCompressionStrategies.GZip,
+                SupportedCompressionStrategies.Brotli,
+                SupportedCompressionStrategies.None,
+            ];
+        } else if (isCompressed(inputFile)) {
+            this.compressionStrategies = [
+                SupportedCompressionStrategies.None,
+            ];
+        }
+    }
     /**
      * Reads the specified input file and stores its data and filename.
      * Logs debug messages regarding the process of reading the file.
@@ -151,6 +176,28 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         }
     }
 
+    /**
+     * Asynchronously checks the capacity of input PNG files to see if they can hold the encrypted data.
+     *
+     * This method uses the `checkPngCapacity` function with the encrypted data, input PNG folder,
+     * and the logger from the provided options. If the capacity is insufficient, it throws an error,
+     * specifying the number of additional PNG files needed.
+     *
+     * @return {Promise<void>} A promise that resolves if the capacity is sufficient; otherwise, it throws an error.
+     */
+    private async checkInputPngCapacity(): Promise<void> {
+        const { logger } = this.options;
+        const capacityInfo = await checkPngCapacity(
+            this.encryptedData!,
+            this.options.inputPngFolder,
+            logger,
+        );
+        if (!capacityInfo.isSufficient) {
+            throw new Error(
+                `capacity for given input file is not sufficient (${capacityInfo.additionalPngsNeeded} additional input pngs required)`,
+            );
+        }
+    }
     /**
      * Asynchronously generates a checksum for encrypted data and stores it.
      * Logs the progress of checksum generation.
@@ -274,7 +321,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         try {
             this.encryptedMapContent = await prepareDistributionMapForInjection(
                 this.distributionMapEntries,
-                this.compressionStrategy,
+                this.compressionStrategies[this.currentCompressionIndex],
                 this.originalFilename!,
                 this.checksum!,
                 password,
@@ -328,7 +375,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
                 this.originalFilename!,
                 this.checksum!,
                 outputFolder,
-                this.compressionStrategy,
+                this.compressionStrategies[this.currentCompressionIndex],
                 logger,
             );
             logger.debug(`Human-readable distribution map created.`);
