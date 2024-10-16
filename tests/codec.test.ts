@@ -11,7 +11,7 @@ import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
 import { ensureOutputDirectory, findProjectRoot, readDirectory } from '../src/utils/storage/storageUtils.ts';
-import fs from 'node:fs';
+
 
 import { getLogger, NoopLogFacility } from '../src/utils/logging/logUtils.ts';
 import { closeKv } from '../src/utils/cache/cacheHelper.ts';
@@ -34,10 +34,10 @@ describe('Codec tests', () => {
     const decodedFolder = path.join(rootFolder, 'tests', 'test_output', 'decoded');
 
     const password = 'test';
-    beforeAll(() => {
+    beforeAll(async () => {
         // Ensure clean test environment
-        fs.rmSync(encodedFolder, { recursive: true, force: true });
-        fs.rmSync(decodedFolder, { recursive: true, force: true });
+        await Deno.remove(encodedFolder, { recursive: true });
+        await Deno.remove(decodedFolder, { recursive: true });
         ensureOutputDirectory(encodedFolder);
         ensureOutputDirectory(decodedFolder);
     });

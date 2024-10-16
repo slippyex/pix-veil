@@ -1,18 +1,15 @@
 // src/cli/index.ts
-
 import { Command } from 'commander';
 import * as path from 'jsr:/@std/path';
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
 import { getLogger } from '../utils/logging/logUtils.ts';
-
 import figlet from 'figlet';
 import inquirer from 'inquirer';
 import { config } from '../config/index.ts';
 import { rainbow } from 'gradient-string';
 
 const program = new Command();
-
 program
     .name('pix-veil')
     .description('A CLI tool for steganography in PNG images')
@@ -29,11 +26,11 @@ program
     .option('--max-chunks-per-png <number>', 'Maximum number of chunks per PNG (Default: 16)', parseInt)
     .option('--max-chunk-size <number>', 'Maximum size of each chunk in bytes (Default: 4096)', parseInt)
     .option('--min-chunk-size <number>', 'Minimum size of each chunk in bytes (minimum 16, Default: 16)', parseInt)
-    .option('--no-verify', 'Skip verification step during encoding') // Added flag
+    .option('--no-verify', 'Skip verification step during encoding')
     .showHelpAfterError()
     .action(async (options) => {
-        const debugVisual = program.opts().debugVisual || false;
-        const verbose = program.opts().verbose || false;
+        const debugVisual = options.parent?.debugVisual || false;
+        const verbose = options.parent?.verbose || false;
 
         const inputFile = path.resolve(options.input);
         const inputPngFolder = path.resolve(options.pngFolder);
@@ -65,7 +62,6 @@ program
                 },
             },
         ]);
-
         if (answers.password !== answers.confirmPassword) {
             console.error('Passwords do not match. Please try again.');
             Deno.exit(1);
@@ -124,8 +120,7 @@ program
     .requiredOption('-o, --output <folder>', 'Output file path')
     .showHelpAfterError()
     .action(async (options) => {
-        const verbose = program.opts().verbose || false;
-
+        const verbose = options.parent?.verbose || false;
         const inputFolder = path.resolve(options.input);
         const outputFolder = path.resolve(options.output);
 
@@ -145,7 +140,6 @@ program
         ]);
 
         const password = answers.password;
-
         const logger = getLogger('decoder', console, verbose);
 
         try {
@@ -174,7 +168,6 @@ if (import.meta.main) {
             whitespaceBreak: true,
         }),
     ));
-
     console.log(rainbow(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`));
-    program.parse(Deno.args);
+    await program.parseAsync(['deno', 'src/cli/index.ts', ...Deno.args]);
 }
