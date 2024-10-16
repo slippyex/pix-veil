@@ -1,8 +1,13 @@
 // src/stateMachine/AbstractStateMachine.ts
 
-import { IDecodeOptions, IEncodeOptions } from '../@types/index.ts';
+import type { ILogger } from '../@types/index.ts';
 
-export abstract class AbstractStateMachine<S, O> {
+interface IStateMachineOptions {
+    logger: ILogger;
+    verbose: boolean;
+}
+
+export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
     protected state: S;
     protected readonly options: O;
     protected stateTransitions: Array<{ state: S; handler: () => Promise<void> | void }>;
@@ -13,13 +18,6 @@ export abstract class AbstractStateMachine<S, O> {
         this.stateTransitions = [];
     }
 
-    /**
-     * Executes a series of state transitions defined in `this.stateTransitions`.
-     * Each transition has an associated handler that is invoked asynchronously.
-     * The method transitions to the appropriate completion or error state based on execution outcome.
-     *
-     * @return {Promise<void>} A promise that resolves when all state transitions and associated handlers have been executed.
-     */
     async run(): Promise<void> {
         try {
             for (const transition of this.stateTransitions) {
@@ -33,53 +31,25 @@ export abstract class AbstractStateMachine<S, O> {
         }
     }
 
-    /**
-     * Transitions the current state to the specified next state. If the next state
-     * is an error state and an error object is provided, logs the error and sets
-     * the current state to the error state. Otherwise, logs the state transition
-     * and sets the current state to the next state.
-     *
-     * @param {S} nextState - The state to transition to.
-     * @param {Error} [error] - Optional error object to log if transitioning to an error state.
-     * @return {void}
-     */
     protected transitionTo(nextState: S, error?: Error): void {
-        const { logger } = this.options as IEncodeOptions | IDecodeOptions;
+        const { logger } = this.options;
         if (nextState === this.getErrorState() && error) {
             logger.error(`Error occurred during "${this.state}": ${error.message}`);
             this.state = this.getErrorState();
         } else {
-            logger.debug(`Transitioning from "${this.state}" to "${nextState}"`);
+            if (this.options.verbose) {
+                logger.debug(`Transitioning from state "${this.state}" -> "${nextState}"`);
+            }
             this.state = nextState;
         }
     }
 
-    /**
-     * Handles error reporting and logs the error message.
-     * This function extracts the logger from the options and logs
-     * the error message with a specific error state.
-     * It then rethrows the error.
-     *
-     * @param error The error object that needs to be handled.
-     * @return void This method does not return any value.
-     */
     protected handleError(error: Error): void {
-        const { logger } = this.options as IEncodeOptions | IDecodeOptions;
+        const { logger } = this.options;
         logger.error(`${this.getErrorState()} failed: ${error.message}`);
         throw error;
     }
 
-    /**
-     * Method to retrieve the current completion state.
-     *
-     * @return {S} The current completion state.
-     */
     protected abstract getCompletionState(): S;
-
-    /**
-     * Retrieves the current error state.
-     *
-     * @return {S} The current error state.
-     */
     protected abstract getErrorState(): S;
 }

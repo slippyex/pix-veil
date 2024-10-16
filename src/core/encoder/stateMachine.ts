@@ -1,3 +1,5 @@
+// src/core/encoder/stateMachine.ts
+
 import type { IChunk, IDistributionMapEntry, IEncodeOptions, IFileCapacityInfo } from '../../@types/index.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
@@ -14,24 +16,7 @@ import { Buffer } from 'node:buffer';
 import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
-
-enum EncoderStates {
-    INIT = 'INIT',
-    READ_INPUT_FILE = 'READ_INPUT_FILE',
-    COMPRESS_DATA = 'COMPRESS_DATA',
-    ENCRYPT_DATA = 'ENCRYPT_DATA',
-    GENERATE_CHECKSUM = 'GENERATE_CHECKSUM',
-    SPLIT_DATA = 'SPLIT_DATA',
-    ANALYZE_PNG_CAPACITIES = 'ANALYZE_PNG_CAPACITIES',
-    DISTRIBUTE_CHUNKS = 'DISTRIBUTE_CHUNKS',
-    INJECT_CHUNKS = 'INJECT_CHUNKS',
-    CREATE_DISTRIBUTION_MAP = 'CREATE_DISTRIBUTION_MAP',
-    INJECT_DISTRIBUTION_MAP = 'INJECT_DISTRIBUTION_MAP',
-    WRITE_HUMAN_READABLE_MAP = 'WRITE_HUMAN_READABLE_MAP',
-    VERIFY_ENCODING = 'VERIFY_ENCODING',
-    COMPLETED = 'COMPLETED',
-    ERROR = 'ERROR',
-}
+import { EncoderStates } from '../../stateMachine/definedStates.ts';
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
     private originalFileData: Buffer | null = null;
@@ -56,6 +41,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             SupportedCompressionStrategies.GZip,
             SupportedCompressionStrategies.None,
         ];
+
         this.stateTransitions = [
             { state: EncoderStates.INIT, handler: this.init },
             { state: EncoderStates.READ_INPUT_FILE, handler: this.readInputFile },

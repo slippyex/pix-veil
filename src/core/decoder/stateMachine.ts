@@ -1,3 +1,5 @@
+// src/core/decoder/stateMachine.ts
+
 import type { IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
 import type { Buffer } from 'node:buffer';
 import * as path from 'jsr:/@std/path';
@@ -8,18 +10,7 @@ import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
 import { extractChunks } from './lib/extraction.ts';
 import { assembleChunks } from '../chunking/assembleChunks.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
-
-export enum DecoderStates {
-    INIT = 'INIT',
-    READ_MAP = 'READ_MAP',
-    EXTRACT_CHUNKS = 'EXTRACT_CHUNKS',
-    ASSEMBLE_DATA = 'ASSEMBLE_DATA',
-    VERIFY_DECRYPT = 'VERIFY_DECRYPT',
-    DECOMPRESS = 'DECOMPRESS',
-    WRITE_OUTPUT = 'WRITE_OUTPUT',
-    COMPLETED = 'COMPLETED',
-    ERROR = 'ERROR',
-}
+import { DecoderStates } from '../../stateMachine/definedStates.ts';
 
 export class DecodeStateMachine extends AbstractStateMachine<DecoderStates, IDecodeOptions> {
     private distributionMap: IDistributionMap | null = null;
