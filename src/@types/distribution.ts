@@ -1,3 +1,5 @@
+// src/@types/distribution.ts
+
 import { SupportedCompressionStrategies } from '../utils/compression/compressionStrategies.ts';
 import type { Buffer } from 'node:buffer';
 import { IChunk } from './processing.ts';

@@ -1,3 +1,5 @@
+// src/@types/image.ts
+
 import type { Buffer } from 'node:buffer';
 import sharp from 'sharp';
 

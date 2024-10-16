@@ -1,3 +1,5 @@
+// src/stateMachine/definedStates.ts
+
 export enum EncoderStates {
     INIT = 'INIT',
     READ_INPUT_FILE = 'READ_INPUT_FILE',

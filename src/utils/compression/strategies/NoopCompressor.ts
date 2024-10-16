@@ -1,3 +1,5 @@
+// src/utils/compression/strategies/NoopCompressor.ts
+
 import type { CompressionStrategy } from '../../../@types/index.ts';
 import type { Buffer } from 'node:buffer';
 

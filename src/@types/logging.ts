@@ -1,3 +1,5 @@
+// src/@types/logging.ts
+
 export interface ILogger {
     debugMessages: string[];
     errorMessages: string[];

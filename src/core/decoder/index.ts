@@ -1,3 +1,5 @@
+// src/core/decoder/index.ts
+
 import type { IDecodeOptions } from '../../@types/index.ts';
 import { DecodeStateMachine } from './stateMachine.ts';
 

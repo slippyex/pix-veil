@@ -1,7 +1,9 @@
+// src/utils/cryptography/strategies/AES256CBCStrategy.ts
+
 import { Buffer } from 'node:buffer';
 import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 import { crypto } from 'jsr:@std/crypto';
-import { EncryptionStrategy } from '../../../@types/encryptionStrategy.ts';
+import { EncryptionStrategy } from '../../../@types/index.ts';
 /**
  * AES256CBCStrategy class provides methods for encrypting and decrypting data
  * using the AES-256-CBC encryption algorithm.
