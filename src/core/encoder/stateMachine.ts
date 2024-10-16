@@ -15,7 +15,7 @@ import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 
-export enum EncoderStates {
+enum EncoderStates {
     INIT = 'INIT',
     READ_INPUT_FILE = 'READ_INPUT_FILE',
     COMPRESS_DATA = 'COMPRESS_DATA',
@@ -34,18 +34,18 @@ export enum EncoderStates {
 }
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
-    private originalFileData: Buffer = Buffer.alloc(0);
-    private originalFilename: string = '';
-    private compressedData: Buffer = Buffer.alloc(0);
-    private encryptedData: Buffer = Buffer.alloc(0);
-    private checksum: string = '';
+    private originalFileData: Buffer | null = null;
+    private originalFilename: string | null = null;
+    private compressedData: Buffer | null = null;
+    private encryptedData: Buffer | null = null;
+    private checksum: string | null = null;
     private chunks: IChunk[] = [];
     private pngCapacities: IFileCapacityInfo[] = [];
     private distributionCarrier: IFileCapacityInfo | null = null;
     private distributionMapEntries: IDistributionMapEntry[] = [];
     private chunkMap: Map<number, Buffer> = new Map();
     private compressionStrategy: SupportedCompressionStrategies = SupportedCompressionStrategies.Brotli;
-    private encryptedMapContent: Buffer = Buffer.alloc(0);
+    private encryptedMapContent: Buffer | null = null;
     private currentCompressionIndex: number = 0;
     private readonly compressionStrategies: SupportedCompressionStrategies[];
 
@@ -123,8 +123,8 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         logger.info(`Compressing data using ${strategy}...`);
 
         try {
-            if (!isCompressed(this.originalFilename)) {
-                this.compressedData = compressBuffer(this.originalFileData, strategy);
+            if (!isCompressed(this.originalFilename!)) {
+                this.compressedData = compressBuffer(this.originalFileData!, strategy);
                 logger.debug(`Data compressed using ${strategy}.`);
             } else {
                 this.compressedData = this.originalFileData;
@@ -158,7 +158,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         const { logger, password } = this.options;
         logger.info('Encrypting data...');
         try {
-            this.encryptedData = await encryptData(this.compressedData, password, logger);
+            this.encryptedData = await encryptData(this.compressedData!, password, logger);
             logger.debug('Data encrypted successfully.');
         } catch (error) {
             throw new Error(`Encryption failed: ${(error as Error).message}`);
@@ -175,7 +175,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         const { logger } = this.options;
         logger.info('Generating checksum...');
         try {
-            const checksum = await generateChecksum(this.encryptedData);
+            const checksum = await generateChecksum(this.encryptedData!);
             this.checksum = checksum;
             logger.debug(`Checksum generated: ${checksum}`);
         } catch (error) {
@@ -194,7 +194,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         const { logger } = this.options;
         logger.info('Splitting data into chunks...');
         try {
-            const chunks = splitDataIntoChunks(this.encryptedData, logger);
+            const chunks = splitDataIntoChunks(this.encryptedData!, logger);
             this.chunks = chunks;
             logger.debug(`Data split into ${chunks.length} chunks.`);
         } catch (error) {
@@ -289,10 +289,10 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             this.encryptedMapContent = await prepareDistributionMapForInjection(
                 this.distributionMapEntries,
                 this.compressionStrategy,
-                this.originalFilename,
-                this.checksum,
+                this.originalFilename!,
+                this.checksum!,
                 password,
-                this.encryptedData.length,
+                this.encryptedData!.length,
                 logger,
             );
             logger.debug(`Distribution map created.`);
@@ -377,7 +377,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             });
             const decodedFilePath = path.join(tempDecodedFolder, path.basename(this.options.inputFile));
             const decodedBuffer = await readBufferFromFile(decodedFilePath);
-            if (decodedBuffer.subarray(0, this.originalFileData!.length).equals(this.originalFileData)) {
+            if (decodedBuffer.subarray(0, this.originalFileData!.length).equals(this.originalFileData!)) {
                 logger.success('Verification successful: Decoded data matches original data.');
             } else {
                 throw new Error('Verification failed: Decoded data does not match original data.');
