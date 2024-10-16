@@ -167,7 +167,7 @@ if (import.meta.main) {
     console.clear();
     console.log(rainbow.multiline(
         figlet.textSync('Pix-Veil', {
-            font: 'DOS Rebel',
+            font: 'Roman',
             horizontalLayout: 'default',
             verticalLayout: 'default',
             width: 80,
