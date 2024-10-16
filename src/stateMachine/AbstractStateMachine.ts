@@ -38,7 +38,7 @@ export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
             this.state = this.getErrorState();
         } else {
             if (this.options.verbose) {
-                logger.debug(`Transitioning from state "${this.state}" -> "${nextState}"`);
+                logger.debug(`STATE :: Transitioning from state "${this.state}" -> "${nextState}"`);
             }
             this.state = nextState;
         }

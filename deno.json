@@ -9,7 +9,8 @@
         "coverage": "deno test --coverage -A && deno coverage --html",
         "compile": "deno compile -A --reload --output ./.bin/pix-veil src/cli/index.ts",
         "pix-veil:encode": "deno run -A src/cli/index.ts encode",
-        "pix-veil:decode": "deno run -A src/cli/index.ts decode"
+        "pix-veil:decode": "deno run -A src/cli/index.ts decode",
+        "mass-test": "deno run -A src/cli/batchProcess.demo.ts"
     },
     "compilerOptions": {
         "lib": ["deno.window"],
