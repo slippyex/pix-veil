@@ -1,5 +1,3 @@
-// src/core/encoder/stateMachine.ts
-
 import type { IChunk, IDistributionMapEntry, IEncodeOptions, IFileCapacityInfo } from '../../@types/index.ts';
 import { compressBuffer } from '../../utils/compression/compression.ts';
 import { encryptData, generateChecksum } from '../../utils/cryptography/crypto.ts';
@@ -15,6 +13,7 @@ import * as path from 'jsr:/@std/path';
 import { Buffer } from 'node:buffer';
 import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
+import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 
 export enum EncoderStates {
     INIT = 'INIT',
@@ -34,39 +33,24 @@ export enum EncoderStates {
     ERROR = 'ERROR',
 }
 
-interface StateTransition {
-    state: EncoderStates;
-    handler: () => Promise<void> | void;
-}
-
-/**
- * EncodeStateMachine is responsible for managing the state transitions
- * during the encoding process of a file. It compresses, encrypts, splits,
- * and distributes data chunks across PNG images.
- */
-export class EncodeStateMachine {
-    private state: string = EncoderStates.INIT;
-    private readonly options: IEncodeOptions;
-    private readonly compressionStrategies: SupportedCompressionStrategies[];
-    private currentCompressionIndex: number = 0;
+export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
     private originalFileData: Buffer = Buffer.alloc(0);
     private originalFilename: string = '';
     private compressedData: Buffer = Buffer.alloc(0);
     private encryptedData: Buffer = Buffer.alloc(0);
     private checksum: string = '';
     private chunks: IChunk[] = [];
-    private pngCapacities: { pngCapacities: IFileCapacityInfo[]; distributionCarrier: IFileCapacityInfo } = {
-        pngCapacities: [],
-        distributionCarrier: { file: '', capacity: 0, tone: 'low' },
-    };
+    private pngCapacities: IFileCapacityInfo[] = [];
+    private distributionCarrier: IFileCapacityInfo | null = null;
     private distributionMapEntries: IDistributionMapEntry[] = [];
     private chunkMap: Map<number, Buffer> = new Map();
     private compressionStrategy: SupportedCompressionStrategies = SupportedCompressionStrategies.Brotli;
-    private readonly stateTransitions: StateTransition[];
     private encryptedMapContent: Buffer = Buffer.alloc(0);
+    private currentCompressionIndex: number = 0;
+    private readonly compressionStrategies: SupportedCompressionStrategies[];
 
     constructor(options: IEncodeOptions) {
-        this.options = options;
+        super(EncoderStates.INIT, options);
         this.compressionStrategies = [
             SupportedCompressionStrategies.Brotli,
             SupportedCompressionStrategies.GZip,
@@ -86,59 +70,21 @@ export class EncodeStateMachine {
             { state: EncoderStates.INJECT_DISTRIBUTION_MAP, handler: this.injectDistributionMap },
             { state: EncoderStates.WRITE_HUMAN_READABLE_MAP, handler: this.writeHumanReadableMap },
             { state: EncoderStates.VERIFY_ENCODING, handler: this.verifyEncoding },
-            { state: EncoderStates.COMPLETED, handler: this.complete },
         ];
     }
 
-    /**
-     * Executes state transitions for the current instance sequentially.
-     * Transitions the state at each step using provided handlers.
-     * If an error occurs during the process, switches to the error state and handles the error.
-     *
-     * @return {Promise<void>} A promise that resolves when all state transitions are completed or an error is handled.
-     */
-    async run(): Promise<void> {
-        try {
-            for (const transition of this.stateTransitions) {
-                this.transitionTo(transition.state);
-                await transition.handler.bind(this)();
-            }
-            this.transitionTo(EncoderStates.COMPLETED);
-        } catch (error) {
-            this.transitionTo(EncoderStates.ERROR, error as Error);
-            this.handleError(error as Error);
-        }
+    protected getCompletionState(): EncoderStates {
+        return EncoderStates.COMPLETED;
     }
 
-    /**
-     * Transitions the state machine to a new state.
-     * @param nextState The state to transition to.
-     * @param error Optional error triggering an error transition.
-     */
-    private transitionTo(nextState: EncoderStates, error?: Error): void {
-        const { logger } = this.options;
-        if (nextState === EncoderStates.ERROR && error) {
-            logger.error(`Error occurred during "${this.state}": ${error.message}`);
-            this.state = EncoderStates.ERROR;
-        } else {
-            logger.debug(`Transitioning from "${this.state}" to "${nextState}"`);
-            this.state = nextState;
-        }
-    }
-
-    /**
-     * Handles errors by logging and throwing them.
-     * @param error The error that occurred.
-     */
-    private handleError(error: Error): void {
-        this.options.logger.error(`Encoding failed: ${error.message}`);
-        throw error;
+    protected getErrorState(): EncoderStates {
+        return EncoderStates.ERROR;
     }
 
     /**
      * Initializes the encoding process by setting up necessary configurations and caching image tones.
      *
-     * @return {Promise<void>} A promise that resolves once the initialization is complete.
+     * @return {Promise<void>} A promise that resolves when the initialization is complete.
      */
     private async init(): Promise<void> {
         const { logger, verbose, inputPngFolder } = this.options;
@@ -147,10 +93,10 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Reads the input file specified in the options and logs the process.
-     * It sets the original file data and filename.
+     * Reads the specified input file and stores its data and filename.
+     * Logs debug messages regarding the process of reading the file.
      *
-     * @return {Promise<void>} A promise that resolves when the input file has been read and processed.
+     * @return {Promise<void>} A promise that resolves when the file has been successfully read.
      */
     private async readInputFile(): Promise<void> {
         const { inputFile, logger } = this.options;
@@ -165,11 +111,11 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Compresses the data using the current compression strategy. If the data is already compressed, it skips the compression step.
-     * In case the compression fails, it tries the next available strategy until successful or all strategies are exhausted.
+     * Compresses data using the specified compression strategies. If the data is already compressed,
+     * it skips the compression step. Logs the progress and retries with alternative strategies
+     * upon failure.
      *
-     * @return {Promise<void>} A promise that resolves when the data has been successfully compressed or skips the task.
-     * @throws {Error} Throws an error if all available compression strategies fail.
+     * @return {Promise<void>} A promise that resolves when the compression process is complete.
      */
     private async compressData(): Promise<void> {
         const { logger } = this.options;
@@ -184,7 +130,6 @@ export class EncodeStateMachine {
                 this.compressedData = this.originalFileData;
                 logger.debug(`Data compression skipped.`);
             }
-            this.transitionTo(EncoderStates.ENCRYPT_DATA);
         } catch (error) {
             logger.warn(`Compression with ${strategy} failed: ${(error as Error).message}`);
             this.currentCompressionIndex += 1;
@@ -200,9 +145,14 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Encrypts the compressed data using the provided password and logs the process.
+     * Encrypts the compressed data using the provided password and logger.
      *
-     * @return {Promise<void>} A promise that resolves when the encryption is complete or rejects if an error occurs.
+     * This method attempts to encrypt the compressed data stored in the instance
+     * using the provided password. It logs the progress of the operation and any
+     * errors encountered.
+     *
+     * @return {Promise<void>} A promise that resolves when the data encryption is complete.
+     * @throws {Error} If the encryption process fails.
      */
     private async encryptData(): Promise<void> {
         const { logger, password } = this.options;
@@ -216,7 +166,10 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Generates a checksum for the encrypted data.
+     * Asynchronously generates a checksum for encrypted data and stores it.
+     * Logs the progress of checksum generation.
+     *
+     * @return {Promise<void>} A promise that resolves when the checksum generation is complete.
      */
     private async generateChecksum(): Promise<void> {
         const { logger } = this.options;
@@ -231,7 +184,11 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Splits the encrypted data into chunks.
+     * Splits the encrypted data into chunks and assigns the resulting chunks
+     * to the `chunks` property. This method logs the progress and any errors
+     * encountered during the data splitting process.
+     *
+     * @return {void} This method does not return a value.
      */
     private splitData(): void {
         const { logger } = this.options;
@@ -246,13 +203,20 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Analyzes PNG capacities for data embedding.
+     * Analyzes the capacities of PNG files in the specified input folder.
+     * This method logs the start and end of the analysis process,
+     * updates the pngCapacities and distributionCarrier properties,
+     * and throws an error if the analysis fails.
+     *
+     * @return {void} No return value.
      */
     private analyzePngCapacities(): void {
         const { logger, inputPngFolder } = this.options;
         logger.info('Analyzing PNG capacities...');
         try {
-            this.pngCapacities = analyzePngCapacities(inputPngFolder, logger);
+            const capacities = analyzePngCapacities(inputPngFolder, logger);
+            this.pngCapacities = capacities.pngCapacities;
+            this.distributionCarrier = capacities.distributionCarrier;
             logger.debug(`PNG capacities analyzed.`);
         } catch (error) {
             throw new Error(`PNG capacity analysis failed: ${(error as Error).message}`);
@@ -260,7 +224,14 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Distributes chunks across PNG images.
+     * Distributes chunks across PNG images based on the provided capacities and input folder.
+     *
+     * This method utilizes the `createChunkDistributionInformation` function to distribute
+     * the chunks and updates the instance properties `distributionMapEntries` and `chunkMap`
+     * accordingly.
+     *
+     * @return {Promise<void>} A promise that resolves when the chunks have been successfully distributed
+     *                         or rejects with an error message if the distribution fails.
      */
     private async distributeChunks(): Promise<void> {
         const { logger, inputPngFolder } = this.options;
@@ -268,7 +239,7 @@ export class EncodeStateMachine {
         try {
             const { distributionMapEntries, chunkMap } = await createChunkDistributionInformation(
                 this.chunks,
-                this.pngCapacities.pngCapacities,
+                this.pngCapacities,
                 inputPngFolder,
                 logger,
             );
@@ -281,7 +252,12 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Injects chunks into PNG images.
+     * Injects predefined chunks into PNG images located in the specified input folder.
+     * The method processes the images asynchronously and stores the output images in the given output folder.
+     * Logs information and debug messages during the injection process.
+     *
+     * @return {Promise<void>} A promise that resolves when the chunk injection process completes.
+     * @throws {Error} If the chunk injection process fails, an error is thrown with a descriptive message.
      */
     private async injectChunks(): Promise<void> {
         const { logger, inputPngFolder, outputFolder, debugVisual } = this.options;
@@ -301,6 +277,12 @@ export class EncodeStateMachine {
         }
     }
 
+    /**
+     * Creates an encrypted distribution map by preparing it for injection
+     * with the given compression strategy, checksum, and original filename.
+     *
+     * @return {Promise<void>} A promise that resolves when the distribution map has been successfully created.
+     */
     private async createDistributionMap(): Promise<void> {
         const { logger, password } = this.options;
         try {
@@ -318,8 +300,14 @@ export class EncodeStateMachine {
             throw new Error(`Distribution map creation failed: ${(error as Error).message}`);
         }
     }
+
     /**
-     * Injects the distribution map into a carrier PNG image.
+     * Injects the distribution map into the carrier PNG file.
+     * This method uses the provided configuration options to locate the input PNG folder and the output folder.
+     * It then calls the helper function `injectDistributionMapIntoCarrierPng` to perform the injection process.
+     * It logs the progress and any potential errors encountered during the execution.
+     *
+     * @return {Promise<void>} A promise that resolves when the injection process is complete.
      */
     private async injectDistributionMap(): Promise<void> {
         const { logger, inputPngFolder, outputFolder } = this.options;
@@ -328,7 +316,7 @@ export class EncodeStateMachine {
             await injectDistributionMapIntoCarrierPng(
                 inputPngFolder,
                 outputFolder,
-                this.pngCapacities.distributionCarrier!,
+                this.distributionCarrier!,
                 this.encryptedMapContent!,
                 logger,
             );
@@ -339,7 +327,10 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Writes a human-readable distribution map file.
+     * Creates a human-readable distribution map with the provided distribution entries and metadata.
+     * This method logs the process and handles potential errors by throwing an error with a detailed message.
+     *
+     * @return {Promise<void>} A promise that resolves when the human-readable distribution map is successfully created.
      */
     private async writeHumanReadableMap(): Promise<void> {
         const { logger, outputFolder } = this.options;
@@ -347,7 +338,7 @@ export class EncodeStateMachine {
         try {
             await createHumanReadableDistributionMap(
                 this.distributionMapEntries!,
-                this.pngCapacities.distributionCarrier!.file,
+                this.distributionCarrier!.file,
                 this.originalFilename!,
                 this.checksum!,
                 outputFolder,
@@ -361,7 +352,11 @@ export class EncodeStateMachine {
     }
 
     /**
-     * Verifies the encoding by decoding and comparing data.
+     * Verifies the encoding process by decoding the output and comparing it to the original data.
+     * If the verification option is disabled, it skips the verification step.
+     *
+     * @return {Promise<void>} A promise that resolves when the verification is complete.
+     * @throws Will throw an error if the verification process fails or if the decoded data does not match the original data.
      */
     private async verifyEncoding(): Promise<void> {
         const { logger, verify, password, outputFolder, verbose } = this.options;
@@ -389,17 +384,6 @@ export class EncodeStateMachine {
             }
         } catch (error) {
             throw new Error(`Verification step failed: ${(error as Error).message}`);
-        } finally {
-            // Optional: Clean up temporary folder
-            // fs.rmSync(tempDecodedFolder, { recursive: true, force: true });
         }
-    }
-
-    /**
-     * Finalizes the encoding process.
-     */
-    private complete(): void {
-        const { logger } = this.options;
-        logger.info('Encoding process completed successfully.');
     }
 }

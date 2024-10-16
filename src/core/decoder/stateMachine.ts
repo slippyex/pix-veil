@@ -1,16 +1,13 @@
-// src/core/decoder/stateMachine.ts
-
 import type { IDecodeOptions, IDistributionMap } from '../../@types/index.ts';
 import type { Buffer } from 'node:buffer';
-import * as path from 'jsr:@std/path';
+import * as path from 'jsr:/@std/path';
 import { writeBufferToFile } from '../../utils/storage/storageUtils.ts';
 import { decryptData, verifyDataIntegrity } from '../../utils/cryptography/crypto.ts';
 import { decompressBuffer } from '../../utils/compression/compression.ts';
 import { readAndProcessDistributionMap } from '../distributionMap/mapUtils.ts';
 import { extractChunks } from './lib/extraction.ts';
 import { assembleChunks } from '../chunking/assembleChunks.ts';
-
-type StateHandler = () => Promise<void> | void;
+import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 
 export enum DecoderStates {
     INIT = 'INIT',
@@ -24,31 +21,15 @@ export enum DecoderStates {
     ERROR = 'ERROR',
 }
 
-interface StateTransition {
-    state: DecoderStates;
-    handler: StateHandler;
-}
-
-/**
- * DecodeStateMachine is responsible for managing the decoding process through a series of state transitions.
- * It sequentially performs tasks such as reading a distribution map, extracting encrypted data chunks,
- * assembling the data, verifying and decrypting the data, decompressing, and ultimately writing the output.
- */
-export class DecodeStateMachine {
-    private state: DecoderStates = DecoderStates.INIT;
-    private readonly options: IDecodeOptions;
+export class DecodeStateMachine extends AbstractStateMachine<DecoderStates, IDecodeOptions> {
     private distributionMap: IDistributionMap | null = null;
     private encryptedDataChunks: { chunkId: number; data: Buffer }[] = [];
     private encryptedData: Buffer | null = null;
     private decryptedData: Buffer | null = null;
     private decompressedData: Buffer | null = null;
 
-    private readonly stateTransitions: StateTransition[];
-
-    constructor(
-        options: IDecodeOptions,
-    ) {
-        this.options = options;
+    constructor(options: IDecodeOptions) {
+        super(DecoderStates.INIT, options);
         this.stateTransitions = [
             { state: DecoderStates.INIT, handler: this.init },
             { state: DecoderStates.READ_MAP, handler: this.readMap },
@@ -60,31 +41,16 @@ export class DecodeStateMachine {
         ];
     }
 
-    /**
-     * Executes a series of state transitions by iterating through the stateTransitions array.
-     * Each transition consists of changing the state and awaiting the associated handler.
-     * If any handler throws an error, the state transitions to 'ERROR' and the error is handled.
-     * If all transitions complete successfully, the state transitions to 'COMPLETED'.
-     *
-     * @return A promise that resolves when all state transitions and their handlers have completed.
-     */
-    async run(): Promise<void> {
-        try {
-            for (const transition of this.stateTransitions) {
-                this.transitionTo(transition.state);
-                await transition.handler.bind(this)();
-            }
-            this.transitionTo(DecoderStates.COMPLETED);
-        } catch (error) {
-            this.transitionTo(DecoderStates.ERROR, error as Error);
-            this.handleError(error as Error);
-        }
+    protected getCompletionState(): DecoderStates {
+        return DecoderStates.COMPLETED;
+    }
+
+    protected getErrorState(): DecoderStates {
+        return DecoderStates.ERROR;
     }
 
     /**
-     * Initializes the decoding process.
-     * This method retrieves the logger and verbosity settings from the options object.
-     * If verbosity is enabled, it logs an informational message indicating the start of the initialization.
+     * Initializes the decoding process by accessing the logger and verbose options from this.options.
      *
      * @return {void}
      */
@@ -94,25 +60,20 @@ export class DecodeStateMachine {
     }
 
     /**
-     * Asynchronously reads and processes a distribution map using the provided input folder,
-     * password, and logger from the options object. The processed distribution map is then
-     * stored in the instance variable `distributionMap`.
+     * Reads and processes the distribution map from the specified input folder.
+     * The distribution map is then stored in the `distributionMap` property of the instance.
      *
-     * @return {Promise<void>} A promise that resolves when the distribution map has been successfully read and processed.
+     * @return {Promise<void>} A promise that resolves once the map has been read and processed.
      */
     private async readMap(): Promise<void> {
         const { inputFolder, password, logger } = this.options;
-        this.distributionMap = await readAndProcessDistributionMap(
-            inputFolder,
-            password,
-            logger,
-        );
+        this.distributionMap = await readAndProcessDistributionMap(inputFolder, password, logger);
     }
 
     /**
-     * Extracts chunks of data asynchronously and assigns the encrypted data chunks.
+     * Extracts encrypted data chunks from the input folder using the distribution map and logger.
      *
-     * @return {Promise<void>} A promise that resolves to void when the chunk extraction is complete.
+     * @return {Promise<void>} A promise that resolves when the extraction process is complete.
      */
     private async extractChunks(): Promise<void> {
         const { inputFolder, logger } = this.options;
@@ -120,8 +81,9 @@ export class DecodeStateMachine {
     }
 
     /**
-     * Assembles encrypted data chunks into a single encrypted data array.
-     * Utilizes the `assembleChunks` function and a logger obtained from options.
+     * Assembles encrypted data chunks into a single Uint8Array.
+     * Utilizes the provided logger for logging operations if necessary.
+     * Sets the assembled encrypted data to `this.encryptedData` property.
      *
      * @return {void}
      */
@@ -134,10 +96,10 @@ export class DecodeStateMachine {
     }
 
     /**
-     * Verifies the integrity of the encrypted data using a checksum and decrypts it.
-     * Utilizes the provided logger for logging the process and the password for decryption.
+     * Verifies the data integrity and decrypts the encrypted data.
+     * It uses the provided password and logger to perform the operations.
      *
-     * @return A promise that resolves when the data has been successfully verified and decrypted.
+     * @return {Promise<void>} A promise that resolves when the data has been verified and decrypted.
      */
     private async verifyAndDecryptData(): Promise<void> {
         const { password, logger } = this.options;
@@ -146,11 +108,10 @@ export class DecodeStateMachine {
     }
 
     /**
-     * Decompresses the data stored in the decryptedData property using the specified compression strategy.
-     * Updates the decompressedData property with the decompressed result.
-     * Logs a message indicating successful decompression.
-     *
-     * @return {void} No value is returned.
+     * Decompresses the encrypted data using the specified compression strategy.
+     * Updates the decompressedData field with the resulting data.
+     * Logs a message indicating the completion of the decompression process.
+     * @return {void}
      */
     private decompressData(): void {
         const { logger } = this.options;
@@ -162,45 +123,14 @@ export class DecodeStateMachine {
     }
 
     /**
-     * Writes the decompressed data to a file specified by the output folder and filename.
-     * It combines the output folder path with the original filename of the distribution map.
-     * Upon successful write, it logs a message indicating the completion and the path to the output file.
+     * Writes the decompressed data to a specified output file.
      *
-     * @return {Promise<void>} A promise that resolves when the write operation is complete.
+     * @return {Promise<void>} A promise that resolves when the file has been successfully written.
      */
     private async writeOutput(): Promise<void> {
         const { outputFolder, logger } = this.options;
         const outputFile = path.join(outputFolder, this.distributionMap!.originalFilename);
         await writeBufferToFile(outputFile, this.decompressedData!);
         logger.info(`Decoding completed successfully. Output file saved at "${outputFile}".`);
-    }
-
-    /**
-     * Handles the transition from the current state to the next state.
-     *
-     * @param {string} nextState - The state to transition to.
-     * @param {Error} [error] - An optional error that triggers transition to the 'ERROR' state.
-     * @return {void}
-     */
-    private transitionTo(nextState: DecoderStates, error?: Error): void {
-        const { logger } = this.options;
-        if (error) {
-            logger.error(`Error occurred during "${this.state}": ${error.message}`);
-            this.state = DecoderStates.ERROR;
-        } else {
-            logger.debug(`Transitioning from "${this.state}" to "${nextState}"`);
-            this.state = nextState;
-        }
-    }
-
-    /**
-     * Handles errors that occur during the decoding process.
-     *
-     * @param {Error} error - The error object that contains information about the error.
-     * @return {void}
-     */
-    private handleError(error: Error): void {
-        this.options.logger.error(`Decoding failed: ${error.message}`);
-        throw error;
     }
 }

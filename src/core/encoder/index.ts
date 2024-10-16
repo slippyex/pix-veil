@@ -4,7 +4,6 @@ import type { IEncodeOptions } from '../../@types/index.ts';
 
 import { EncodeStateMachine } from './stateMachine.ts';
 
-
 /**
  * Encodes data using a state machine based on provided options.
  *
