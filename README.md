@@ -55,10 +55,8 @@ git clone https://github.com/slippyex/pix-veil.git
 cd pix-veil
 
 # Install dependencies
-yarn install
+deno install --allow-scripts=npm:sharp@0.33.5
 
-# Build the project
-yarn compile
 
 ~~~
 
@@ -73,7 +71,7 @@ Pix-Veil provides a command-line interface with two primary commands: `encode` a
 To hide a file within PNG images:
 
 ~~~bash
-pix-veil encode \
+deno task pix-veil:encode \
   -i path/to/secret.file \
   -p path/to/png/folder \
   -o path/to/output/folder \
@@ -97,7 +95,7 @@ pix-veil encode \
 To extract the hidden file from PNG images:
 
 ~~~bash
-pix-veil decode \
+deno task pix-veil:decode \
   -i path/to/encoded/png/folder \
   -o path/to/output/folder \
   --verbose

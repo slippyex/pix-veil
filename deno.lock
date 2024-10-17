@@ -15,9 +15,9 @@
     "jsr:@std/testing@^1.0.3": "1.0.3",
     "npm:@types/figlet@^1.5.8": "1.5.8",
     "npm:@types/lodash@^4.17.9": "4.17.9",
+    "npm:@types/node@*": "22.5.4",
     "npm:@types/node@^22.5.5": "22.7.3",
     "npm:@types/seedrandom@^3.0.8": "3.0.8",
-    "npm:buffer@^6.0.3": "6.0.3",
     "npm:chalk@4": "4.1.2",
     "npm:cli-progress@^3.12.0": "3.12.0",
     "npm:commander@^12.1.0": "12.1.0",
@@ -334,16 +334,6 @@
         "color-convert"
       ]
     },
-    "base64-js@1.5.1": {
-      "integrity": "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA=="
-    },
-    "buffer@6.0.3": {
-      "integrity": "sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==",
-      "dependencies": [
-        "base64-js",
-        "ieee754"
-      ]
-    },
     "chalk@4.1.2": {
       "integrity": "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==",
       "dependencies": [
@@ -424,9 +414,6 @@
       "dependencies": [
         "safer-buffer"
       ]
-    },
-    "ieee754@1.2.1": {
-      "integrity": "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA=="
     },
     "inquirer@11.1.0": {
       "integrity": "sha512-CmLAZT65GG/v30c+D2Fk8+ceP6pxD6RL+hIUOWAltCmeyEqWYwqu9v76q03OvjyZ3AB0C1Ala2stn1z/rMqGEw==",
@@ -692,26 +679,21 @@
       "jsr:@std/crypto@^1.0.3",
       "jsr:@std/expect@^1.0.4",
       "jsr:@std/path@^1.0.6",
-      "jsr:@std/testing@^1.0.3"
-    ],
-    "packageJson": {
-      "dependencies": [
-        "npm:@types/figlet@^1.5.8",
-        "npm:@types/lodash@^4.17.9",
-        "npm:@types/node@^22.5.5",
-        "npm:@types/seedrandom@^3.0.8",
-        "npm:buffer@^6.0.3",
-        "npm:chalk@4",
-        "npm:cli-progress@^3.12.0",
-        "npm:commander@^12.1.0",
-        "npm:figlet@^1.7.0",
-        "npm:gradient-string@3",
-        "npm:inquirer@^11.1.0",
-        "npm:lodash@^4.17.21",
-        "npm:p-limit@^6.1.0",
-        "npm:seedrandom@^3.0.5",
-        "npm:sharp@~0.33.5"
-      ]
-    }
+      "jsr:@std/testing@^1.0.3",
+      "npm:@types/figlet@^1.5.8",
+      "npm:@types/lodash@^4.17.9",
+      "npm:@types/node@^22.5.5",
+      "npm:@types/seedrandom@^3.0.8",
+      "npm:chalk@4",
+      "npm:cli-progress@^3.12.0",
+      "npm:commander@^12.1.0",
+      "npm:figlet@^1.7.0",
+      "npm:gradient-string@3",
+      "npm:inquirer@^11.1.0",
+      "npm:lodash@^4.17.21",
+      "npm:p-limit@^6.1.0",
+      "npm:seedrandom@^3.0.5",
+      "npm:sharp@~0.33.5"
+    ]
   }
 }
