@@ -21,10 +21,11 @@ export const toneCache: ImageToneCache = {};
 const imageMap = new Map<string, IAssembledImageData>();
 
 /**
- * Retrieves an image from the specified path, processing it and caching the result.
+ * Retrieves or loads an image from a specified PNG path.
+ * If the image is not already cached, it loads the image data and caches it.
  *
  * @param {string} pngPath - The file path to the PNG image.
- * @return {Promise<{ data: Buffer, info: sharp.OutputInfo } | undefined>} A promise that resolves to an object containing the image data and information, or undefined if the image cannot be processed.
+ * @return {Promise<IAssembledImageData | undefined>} - A promise that resolves to the image data if successful, or undefined if not.
  */
 export async function getImage(pngPath: string): Promise<IAssembledImageData | undefined> {
     if (!imageMap.has(pngPath)) {
@@ -35,13 +36,13 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
 }
 
 /**
- * Asynchronously retrieves image data and associated information from a PNG file.
+ * Loads and processes image data from a given PNG file path. The method removes the alpha channel,
+ * converts the image to the sRGB color space, and returns the raw image data buffer.
  *
- * @param {string} pngPath - The file path to the PNG image.
- * @returns {Promise<{ data: Buffer; info: sharp.OutputInfo }>}
- *          A promise that resolves to an object containing the image data buffer and output information.
+ * @param {string} pngPath - The path to the PNG file to be loaded.
+ * @return {Promise<IAssembledImageData>} A promise that resolves to the processed image data buffer.
  */
-export async function loadImageData(pngPath: string): Promise<{ data: Buffer; info: sharp.OutputInfo }> {
+export async function loadImageData(pngPath: string): Promise<IAssembledImageData> {
     const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
     return await image.raw().toBuffer({ resolveWithObject: true });
 }

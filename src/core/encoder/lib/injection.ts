@@ -313,9 +313,8 @@ export function injectDataIntoBuffer(
 
         // Inject the bits into the channel's LSBs using bitUtils
         const originalByte = imageData[channelIndex];
-        const modifiedByte = insertBits(originalByte, bits, 0, bitsPerChannel);
         // logger.debug(`changed byte ${originalByte} to ${modifiedByte}`);
-        imageData[channelIndex] = modifiedByte;
+        imageData[channelIndex] = insertBits(originalByte, bits, 0, bitsPerChannel);
     }
 
     // Calculate bits used, accounting for any padding bits
