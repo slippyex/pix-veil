@@ -2,11 +2,13 @@
   "version": "4",
   "specifiers": {
     "jsr:@std/assert@^1.0.6": "1.0.6",
+    "jsr:@std/crypto@*": "1.0.3",
     "jsr:@std/crypto@^1.0.3": "1.0.3",
     "jsr:@std/data-structures@^1.0.4": "1.0.4",
     "jsr:@std/expect@^1.0.4": "1.0.4",
     "jsr:@std/fs@^1.0.4": "1.0.4",
     "jsr:@std/internal@^1.0.4": "1.0.4",
+    "jsr:@std/path@*": "1.0.6",
     "jsr:@std/path@^1.0.6": "1.0.6",
     "jsr:@std/testing@^1.0.3": "1.0.3",
     "npm:@types/figlet@^1.5.8": "1.7.0",
@@ -46,7 +48,7 @@
     "@std/fs@1.0.4": {
       "integrity": "2907d32d8d1d9e540588fd5fe0ec21ee638134bd51df327ad4e443aaef07123c",
       "dependencies": [
-        "jsr:@std/path"
+        "jsr:@std/path@^1.0.6"
       ]
     },
     "@std/internal@1.0.4": {
@@ -62,7 +64,7 @@
         "jsr:@std/data-structures",
         "jsr:@std/fs",
         "jsr:@std/internal",
-        "jsr:@std/path"
+        "jsr:@std/path@^1.0.6"
       ]
     }
   },
