@@ -104,7 +104,7 @@ export function createDistributionMap(
     compressionStrategy: SupportedCompressionStrategies,
     originalFilename: string,
     checksum: string,
-    encryptedDataLength: number, // New parameter
+    encryptedDataLength: number,
 ): Buffer {
     const distributionMap: IDistributionMap = {
         entries,

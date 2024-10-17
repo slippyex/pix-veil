@@ -14,25 +14,44 @@ export class AES256CBCStrategy implements EncryptionStrategy {
     private readonly algorithm = 'AES-CBC';
     private readonly ivLength = 16;
 
+    /**
+     * Encrypts provided data buffer using a specified password.
+     * Combines salt, IV (initialization vector), and the encrypted data.
+     *
+     * @param {Buffer} data - The data buffer to encrypt.
+     * @param {string} password - The password used to derive the encryption key.
+     * @return {Promise<Buffer>} - A promise that resolves to a buffer containing the encrypted data.
+     */
     async encrypt(data: Buffer, password: string): Promise<Buffer> {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(this.ivLength));
-        const key = await this.generateKeyFromPassword(password);
+        const key = await this.generateKeyFromPassword(password, salt);
         const encrypted = await crypto.subtle.encrypt(
             { name: this.algorithm, iv },
             key,
             data,
         );
         const encryptedData = new Uint8Array(encrypted);
-        const combined = new Uint8Array(iv.length + encryptedData.length);
-        combined.set(iv);
-        combined.set(encryptedData, iv.length);
+        // Combine salt, iv, and encrypted data
+        const combined = new Uint8Array(salt.length + iv.length + encryptedData.length);
+        combined.set(salt);
+        combined.set(iv, salt.length);
+        combined.set(encryptedData, salt.length + iv.length);
         return uint8ArrayToBuffer(combined);
     }
 
+    /**
+     * Decrypts the given data using the provided password.
+     *
+     * @param {Buffer} data - The encrypted data buffer containing salt, IV, and the encrypted content.
+     * @param {string} password - The password to derive the decryption key.
+     * @return {Promise<Buffer>} - The decrypted data as a buffer.
+     */
     async decrypt(data: Buffer, password: string): Promise<Buffer> {
-        const iv = data.subarray(0, this.ivLength);
-        const encrypted = data.subarray(this.ivLength);
-        const key = await this.generateKeyFromPassword(password);
+        const salt = data.subarray(0, 16);
+        const iv = data.subarray(16, 32);
+        const encrypted = data.subarray(32);
+        const key = await this.generateKeyFromPassword(password, salt);
         const decrypted = await crypto.subtle.decrypt(
             { name: this.algorithm, iv },
             key,
@@ -41,7 +60,14 @@ export class AES256CBCStrategy implements EncryptionStrategy {
         return Buffer.from(decrypted);
     }
 
-    private async generateKeyFromPassword(password: string): Promise<CryptoKey> {
+    /**
+     * Generates a cryptographic key from a password using PBKDF2.
+     *
+     * @param {string} password - The password to generate the key from.
+     * @param {Uint8Array} salt - The salt to use for the key derivation.
+     * @return {Promise<CryptoKey>} A promise that resolves to the generated cryptographic key.
+     */
+    private async generateKeyFromPassword(password: string, salt: Uint8Array): Promise<CryptoKey> {
         const encoder = new TextEncoder();
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
@@ -53,7 +79,7 @@ export class AES256CBCStrategy implements EncryptionStrategy {
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
-                salt: new Uint8Array(16), // You may want to replace this with a proper salt
+                salt: salt,
                 iterations: 100000,
                 hash: 'SHA-256',
             },

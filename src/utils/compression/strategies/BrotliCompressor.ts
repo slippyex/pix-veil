@@ -1,7 +1,7 @@
 // src/utils/compression/strategies/BrotliCompressor.ts
 
 import type { CompressionStrategy } from '../../../@types/index.ts';
-import { compress as brotliCompress, decompress as brotliDecompress } from "https://deno.land/x/brotli@0.1.7/mod.ts";
+import { compress as brotliCompress, decompress as brotliDecompress } from 'https://deno.land/x/brotli@0.1.7/mod.ts';
 import type { Buffer } from 'node:buffer';
 import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 
