@@ -1,10 +1,11 @@
 // src/stateMachine/AbstractStateMachine.ts
 
-import type { ILogger } from '../@types/index.ts';
+import type { ILogger, IProgressBar } from '../@types/index.ts';
 
 interface IStateMachineOptions {
     logger: ILogger;
     verbose: boolean;
+    progressBar?: IProgressBar;
 }
 
 export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
@@ -22,6 +23,9 @@ export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
         try {
             for (const transition of this.stateTransitions) {
                 this.transitionTo(transition.state);
+                if (this.options.progressBar) {
+                    this.options.progressBar.increment({ state: transition.state });
+                }
                 await transition.handler.bind(this)();
             }
             this.transitionTo(this.getCompletionState());

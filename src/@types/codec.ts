@@ -11,6 +11,7 @@ export interface IEncodeOptions {
     debugVisual: boolean;
     logger: ILogger;
     verify?: boolean;
+    progressBar?: IProgressBar;
 }
 
 export interface IDecodeOptions {
@@ -19,4 +20,11 @@ export interface IDecodeOptions {
     password: string;
     verbose: boolean;
     logger: ILogger;
+    progressBar?: IProgressBar;
+}
+
+export interface IProgressBar {
+    start(steps: number, start: number): void;
+    stop(): void;
+    increment(payload?: Record<string, unknown>): void;
 }

@@ -8,6 +8,7 @@ import * as path from 'jsr:@std/path';
 
 import cliProgress from 'cli-progress';
 import { ILogger } from '../@types/index.ts';
+import { closeKv } from '../utils/cache/cacheHelper.ts';
 
 /**
  * Interface representing a report entry for each file processed.
@@ -102,6 +103,8 @@ async function batchProcess(): Promise<void> {
                 verbose: false,
                 logger,
             });
+            const destination = path.join(successFolder, file);
+            await Deno.rename(filePath, destination);
         } catch (error) {
             const reason = (error as Error).message;
             await handleFailure(filePath, failedFolder);
@@ -126,6 +129,8 @@ async function batchProcess(): Promise<void> {
     progressBar.stop();
 
     await writeReport(reportPath, report, logger);
+    closeKv();
+    Deno.exit(0);
 }
 
 /**
@@ -173,7 +178,6 @@ async function handleFailure(filePath: string, failedDir: string): Promise<void>
         const fileName = path.basename(filePath);
         const destination = path.join(failedDir, fileName);
         await Deno.rename(filePath, destination);
-        //await fs.copyFile(filePath, destination);
     } catch (_err) {
         console.error(`Failed to move file "${filePath}" to failed directory: ${(_err as Error).message}`);
     }

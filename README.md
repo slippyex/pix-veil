@@ -83,11 +83,12 @@ deno task pix-veil:encode \
 - `-i, --input <file>`: Input file to hide.
 - `-p, --png-folder <folder>`: Folder containing PNG images to use.
 - `-o, --output <folder>`: Output folder to store the modified images.
+- `-l, --log`: If set, instead of a progress bar, the process provides a log output.
+- `-v, --verbose`: Enable verbose logging.
 - `--max-chunks-per-png <number>  Maximum number of chunks per PNG (Default: 16)`
 - `--max-chunk-size <number>      Maximum size of each chunk in bytes (Default: 4096)`
 - `--min-chunk-size <number>      Minimum size of each chunk in bytes (minimum 16, Default: 16)`
 - `--no-verify                    Skip verification step during encoding`
-- `--verbose`: Enable verbose logging.
 - `--debug-visual`: Enable debug visual blocks in images.
 
 ### Decoding
@@ -105,7 +106,8 @@ deno task pix-veil:decode \
 
 - `-i, --input <folder>`: Input folder containing the modified PNG images.
 - `-o, --output <folder>`: Output folder to save the extracted file.
-- `--verbose`: Enable verbose logging.
+- `-l, --log`: If set, instead of a progress bar, the process provides a log output.
+- `-v, --verbose`: Enable verbose logging.
 
 ---
 

@@ -3,19 +3,22 @@ import { Command } from 'commander';
 import * as path from 'jsr:/@std/path';
 import { encode } from '../core/encoder/index.ts';
 import { decode } from '../core/decoder/index.ts';
-import { getLogger } from '../utils/logging/logUtils.ts';
+import { getLogger, NoopLogFacility } from '../utils/logging/logUtils.ts';
 import figlet from 'figlet';
 import inquirer from 'inquirer';
 import { config } from '../config/index.ts';
 import { rainbow } from 'gradient-string';
+import cliProgress from 'cli-progress';
+import { DecoderStates, EncoderStates } from '../stateMachine/definedStates.ts';
+import type {IProgressBar} from "../@types/index.ts";
+
+let progressBar: IProgressBar;
 
 const program = new Command();
 program
     .name('pix-veil')
     .description('A CLI tool for steganography in PNG images')
-    .version('1.3.0')
-    .option('-v, --verbose', 'Enable verbose logging')
-    .option('-dv, --debug-visual', 'Enable debug visual blocks');
+    .version('1.3.0');
 
 program
     .command('encode')
@@ -23,14 +26,18 @@ program
     .requiredOption('-i, --input <file>', 'Input file to hide')
     .requiredOption('-p, --png-folder <folder>', 'Folder with input PNG files')
     .requiredOption('-o, --output <folder>', 'Output folder to store PNG files')
+    .option('-l, --log', 'Enable logging')
+    .option('-v, --verbose', 'Enable verbose logging')
+    .option('-dv, --debug-visual', 'Enable debug visual blocks')
     .option('--max-chunks-per-png <number>', 'Maximum number of chunks per PNG (Default: 16)', parseInt)
     .option('--max-chunk-size <number>', 'Maximum size of each chunk in bytes (Default: 4096)', parseInt)
     .option('--min-chunk-size <number>', 'Minimum size of each chunk in bytes (minimum 16, Default: 16)', parseInt)
     .option('--no-verify', 'Skip verification step during encoding')
     .showHelpAfterError()
     .action(async (options) => {
-        const debugVisual = options.parent?.debugVisual || false;
-        const verbose = options.parent?.verbose || false;
+        const debugVisual = options.debugVisual || false;
+        const verbose = options.verbose || false;
+        const isLogging = options.log || false;
 
         const inputFile = path.resolve(options.input);
         const inputPngFolder = path.resolve(options.pngFolder);
@@ -93,8 +100,19 @@ program
             minChunkSize,
         };
 
-        const logger = getLogger('encoder', console, verbose);
-
+        const logger = getLogger('encoder', isLogging ? console : NoopLogFacility, verbose);
+        if (!isLogging) {
+            // Initialize Progress Bar
+            progressBar = new cliProgress.SingleBar({
+                format: 'Processing |{bar}| {percentage}% || {value}/{total} state: {state}',
+                barCompleteChar: '\u2588',
+                barIncompleteChar: '\u2591',
+                hideCursor: true,
+            }, cliProgress.Presets.shades_grey);
+            const steps = (Object.keys(EncoderStates).length - 2) +
+                (options.verify ? Object.keys(DecoderStates).length - 2 : 0);
+            progressBar.start(steps, 0);
+        }
         try {
             await encode({
                 inputFile,
@@ -104,8 +122,10 @@ program
                 verbose,
                 debugVisual,
                 logger,
-                verify: options.verify !== false, // Pass the verify flag
+                verify: options.verify !== false,
+                progressBar,
             });
+            progressBar.stop();
             Deno.exit(0);
         } catch (error) {
             logger.error(`Encoding failed: ${error}`);
@@ -118,9 +138,12 @@ program
     .description('Decode a file from PNG images')
     .requiredOption('-i, --input <folder>', 'Input folder with PNG files')
     .requiredOption('-o, --output <folder>', 'Output file path')
+    .option('-l, --log', 'Enable logging')
+    .option('-v, --verbose', 'Enable verbose logging')
     .showHelpAfterError()
     .action(async (options) => {
         const verbose = options.parent?.verbose || false;
+        const isLogging = options.log || false;
         const inputFolder = path.resolve(options.input);
         const outputFolder = path.resolve(options.output);
 
@@ -141,7 +164,16 @@ program
 
         const password = answers.password;
         const logger = getLogger('decoder', console, verbose);
-
+        if (!isLogging) {
+            progressBar = new cliProgress.SingleBar({
+                format: 'Processing |{bar}| {percentage}% || {value}/{total} state: {state}',
+                barCompleteChar: '\u2588',
+                barIncompleteChar: '\u2591',
+                hideCursor: true,
+            }, cliProgress.Presets.shades_grey);
+            const steps = (Object.keys(DecoderStates).length - 2);
+            progressBar.start(steps, 0);
+        }
         try {
             await decode({
                 inputFolder,
@@ -149,6 +181,7 @@ program
                 password,
                 verbose,
                 logger,
+                progressBar
             });
             Deno.exit(0);
         } catch (error) {

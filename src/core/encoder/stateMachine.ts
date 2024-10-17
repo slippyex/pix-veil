@@ -392,7 +392,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
      * @throws Will throw an error if the verification process fails or if the decoded data does not match the original data.
      */
     private async verifyEncoding(): Promise<void> {
-        const { logger, verify, password, outputFolder, verbose } = this.options;
+        const { logger, verify, password, outputFolder, verbose, progressBar } = this.options;
         if (!verify) {
             logger.info('Verification step skipped.');
             return;
@@ -407,6 +407,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
                 password,
                 verbose,
                 logger,
+                progressBar,
             });
             const decodedFilePath = path.join(tempDecodedFolder, path.basename(this.options.inputFile));
             const decodedBuffer = await readBufferFromFile(decodedFilePath);
