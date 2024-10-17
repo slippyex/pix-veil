@@ -24,7 +24,7 @@ export interface IDecodeOptions {
 }
 
 export interface IProgressBar {
-    start(steps: number, start: number): void;
+    start(steps: number, start: number, payload?: Record<string, unknown>): void;
     stop(): void;
     increment(payload?: Record<string, unknown>): void;
 }

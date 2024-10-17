@@ -28,6 +28,9 @@ export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
                 }
                 await transition.handler.bind(this)();
             }
+            if (this.options.progressBar) {
+                this.options.progressBar.increment({ state: 'COMPLETE' });
+            }
             this.transitionTo(this.getCompletionState());
         } catch (error) {
             this.transitionTo(this.getErrorState(), error as Error);
@@ -50,7 +53,11 @@ export abstract class AbstractStateMachine<S, O extends IStateMachineOptions> {
 
     protected handleError(error: Error): void {
         const { logger } = this.options;
-        logger.error(`${this.getErrorState()} failed: ${error.message}`);
+        if (this.options.progressBar) {
+            console.error(`\n\nFailed reason :: ${this.getErrorState()} failed: ${error.message}`);
+        } else {
+            logger.error(`${this.getErrorState()} failed: ${error.message}`);
+        }
         throw error;
     }
 

@@ -1,5 +1,7 @@
 {
+    "author": "slippyex",
     "license": "MIT",
+    "version": "1.4.0",
     "unstable": ["kv"],
     "nodeModulesDir": "auto",
     "tasks": {

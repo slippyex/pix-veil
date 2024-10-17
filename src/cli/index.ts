@@ -10,15 +10,18 @@ import { config } from '../config/index.ts';
 import { rainbow } from 'gradient-string';
 import cliProgress from 'cli-progress';
 import { DecoderStates, EncoderStates } from '../stateMachine/definedStates.ts';
-import type {IProgressBar} from "../@types/index.ts";
+import type { IProgressBar } from '../@types/index.ts';
+import { findProjectRoot } from '../utils/storage/storageUtils.ts';
 
 let progressBar: IProgressBar;
+
+const { version, author } = getProjectDetails();
 
 const program = new Command();
 program
     .name('pix-veil')
     .description('A CLI tool for steganography in PNG images')
-    .version('1.3.0');
+    .version(version);
 
 program
     .command('encode')
@@ -102,16 +105,9 @@ program
 
         const logger = getLogger('encoder', isLogging ? console : NoopLogFacility, verbose);
         if (!isLogging) {
-            // Initialize Progress Bar
-            progressBar = new cliProgress.SingleBar({
-                format: 'Processing |{bar}| {percentage}% || {value}/{total} state: {state}',
-                barCompleteChar: '\u2588',
-                barIncompleteChar: '\u2591',
-                hideCursor: true,
-            }, cliProgress.Presets.shades_grey);
-            const steps = (Object.keys(EncoderStates).length - 2) +
-                (options.verify ? Object.keys(DecoderStates).length - 2 : 0);
-            progressBar.start(steps, 0);
+            const steps = (Object.keys(EncoderStates).length - 1) +
+                (options.verify ? Object.keys(DecoderStates).length - 1 : 0);
+            progressBar = initializeProgressBar(steps);
         }
         try {
             await encode({
@@ -165,14 +161,7 @@ program
         const password = answers.password;
         const logger = getLogger('decoder', console, verbose);
         if (!isLogging) {
-            progressBar = new cliProgress.SingleBar({
-                format: 'Processing |{bar}| {percentage}% || {value}/{total} state: {state}',
-                barCompleteChar: '\u2588',
-                barIncompleteChar: '\u2591',
-                hideCursor: true,
-            }, cliProgress.Presets.shades_grey);
-            const steps = (Object.keys(DecoderStates).length - 2);
-            progressBar.start(steps, 0);
+            progressBar = initializeProgressBar(Object.keys(DecoderStates).length - 1);
         }
         try {
             await decode({
@@ -181,7 +170,7 @@ program
                 password,
                 verbose,
                 logger,
-                progressBar
+                progressBar,
             });
             Deno.exit(0);
         } catch (error) {
@@ -201,6 +190,36 @@ if (import.meta.main) {
             whitespaceBreak: true,
         }),
     ));
-    console.log(rainbow(`A tiny steganography tool to hide secret data into existing png files. (c) 2024, slippyex\n`));
+    console.log(
+        rainbow(`A steganography tool to hide secret data into existing png files. v${version} (c) 2024, ${author}\n`),
+    );
     await program.parseAsync(['deno', 'src/cli/index.ts', ...Deno.args]);
+}
+
+/**
+ * Initializes a CLI progress bar with a specified number of steps.
+ * The progress bar displays the percentage completed, the current
+ * step of the total steps, and a custom state message.
+ *
+ * @param {number} steps - The total number of steps for the progress bar.
+ *
+ * @return {Object} The initialized progress bar instance.
+ */
+function initializeProgressBar(steps: number): IProgressBar {
+    const progressBar = new cliProgress.Bar({
+        format: 'Processing |{bar}| {percentage}% || {value}/{total} state: {state}',
+        hideCursor: true,
+    }, cliProgress.Presets.shades_grey);
+    progressBar.start(steps, 0, { state: 'START' });
+    return progressBar;
+}
+
+/**
+ * Retrieves the version of the project from the deno.json file.
+ *
+ * @return {string} The version of the project specified in the deno.json file.
+ */
+function getProjectDetails(): { version: string; author: string } {
+    const root = findProjectRoot('./') as string;
+    return JSON.parse(Deno.readTextFileSync(path.join(root, 'deno.json'))) as { version: string; author: string };
 }
