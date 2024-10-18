@@ -18,6 +18,7 @@ import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 import { EncoderStates } from '../../stateMachine/definedStates.ts';
 import { checkPngCapacity } from './lib/capacityChecker.ts';
+import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
     private originalFileData: Buffer | null = null;
@@ -169,7 +170,12 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
         const { logger, password } = this.options;
         logger.info('Encrypting data...');
         try {
-            this.encryptedData = await encryptData(this.compressedData!, password, logger);
+            this.encryptedData = await encryptData(
+                this.compressedData!,
+                password,
+                logger,
+                SupportedCryptoStrategies.AES256CBC,
+            );
             logger.debug('Data encrypted successfully.');
         } catch (error) {
             throw new Error(`Encryption failed: ${(error as Error).message}`);

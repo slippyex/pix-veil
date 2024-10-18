@@ -3,9 +3,8 @@
 import type { ILogger } from '../../@types/index.ts';
 
 import type { Buffer } from 'node:buffer';
-import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
 import { crypto } from '@std/crypto';
-import { EncryptionStrategy } from '../../@types/index.ts';
+import { CryptoStrategies, SupportedCryptoStrategies } from './cryptoStrategies.ts';
 
 /**
  * Encrypts the given compressed data using the provided encryption strategy.
@@ -21,10 +20,10 @@ export async function encryptData(
     data: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: SupportedCryptoStrategies,
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Encrypting the compressed data...');
-    const encryptedData = await encryptionStrategy.encrypt(data, password);
+    const encryptedData = await CryptoStrategies[encryptionStrategy].encrypt(data, password);
     const checksum = await generateChecksum(encryptedData);
     if (logger.verbose) logger.info('Checksum generated for data integrity: ' + checksum);
     return encryptedData;
@@ -43,10 +42,10 @@ export async function decryptData(
     encryptedBuffer: Buffer,
     password: string,
     logger: ILogger,
-    encryptionStrategy: EncryptionStrategy = new AES256CBCStrategy(),
+    encryptionStrategy: SupportedCryptoStrategies,
 ): Promise<Buffer> {
     if (logger.verbose) logger.info('Decrypting the compressed data...');
-    return await encryptionStrategy.decrypt(encryptedBuffer, password);
+    return await CryptoStrategies[encryptionStrategy].decrypt(encryptedBuffer, password);
 }
 /**
  * Verifies the integrity of the encrypted data using checksum.

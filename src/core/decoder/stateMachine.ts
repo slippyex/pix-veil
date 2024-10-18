@@ -11,6 +11,7 @@ import { extractChunks } from './lib/extraction.ts';
 import { assembleChunks } from '../chunking/assembleChunks.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
 import { DecoderStates } from '../../stateMachine/definedStates.ts';
+import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
 
 export class DecodeStateMachine extends AbstractStateMachine<DecoderStates, IDecodeOptions> {
     private distributionMap: IDistributionMap | null = null;
@@ -95,7 +96,12 @@ export class DecodeStateMachine extends AbstractStateMachine<DecoderStates, IDec
     private async verifyAndDecryptData(): Promise<void> {
         const { password, logger } = this.options;
         await verifyDataIntegrity(this.encryptedData!, this.distributionMap!.checksum, logger);
-        this.decryptedData = await decryptData(this.encryptedData!, password, logger);
+        this.decryptedData = await decryptData(
+            this.encryptedData!,
+            password,
+            logger,
+            SupportedCryptoStrategies.AES256CBC,
+        );
     }
 
     /**

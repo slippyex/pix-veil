@@ -12,6 +12,7 @@ import { MAGIC_BYTE } from '../../config/index.ts';
 import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
 import { readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
+import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -43,7 +44,12 @@ export async function prepareDistributionMapForInjection(
         encryptedDataLength,
     );
     const distributionMapCompressed = compressBuffer(serializedMap, SupportedCompressionStrategies.Brotli);
-    const encrypted = await encryptData(distributionMapCompressed, password, logger);
+    const encrypted = await encryptData(
+        distributionMapCompressed,
+        password,
+        logger,
+        SupportedCryptoStrategies.AES256CBC,
+    );
     if (logger.verbose) logger.info(`Distribution map compressed and encrypted for injection.`);
     return encrypted;
 }
@@ -81,7 +87,12 @@ async function processDistributionMap(
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
-    const rawDistributionMapDecrypted = await decryptData(rawDistributionMapEncrypted, password, logger);
+    const rawDistributionMapDecrypted = await decryptData(
+        rawDistributionMapEncrypted,
+        password,
+        logger,
+        SupportedCryptoStrategies.AES256CBC,
+    );
     const rawDistributionMapDecompressed = decompressBuffer(
         rawDistributionMapDecrypted,
         SupportedCompressionStrategies.Brotli,
