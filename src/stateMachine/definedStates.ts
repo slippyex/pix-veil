@@ -31,4 +31,3 @@ export enum DecoderStates {
     COMPLETED = 'COMPLETED',
     ERROR = 'ERROR',
 }
-
