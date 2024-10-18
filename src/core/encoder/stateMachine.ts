@@ -398,7 +398,7 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             return;
         }
         logger.info('Starting verification step...');
-        const tempDecodedFolder = path.join(outputFolder, 'temp_decoded');
+        const tempDecodedFolder = await Deno.makeTempDir();
         try {
             ensureOutputDirectory(tempDecodedFolder);
             await decode({
@@ -418,6 +418,8 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             }
         } catch (error) {
             throw new Error(`Verification step failed: ${(error as Error).message}`);
+        } finally {
+            await Deno.remove(tempDecodedFolder, { recursive: true });
         }
     }
 }

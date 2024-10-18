@@ -26,25 +26,22 @@ beforeAll(() => {
 describe('Codec tests', () => {
     const fileUnderSubject = 'secret.pdf';
     const rootFolder = findProjectRoot(Deno.cwd()) as string;
-    const inputFile = path.join(rootFolder, 'tests', 'test_input', 'files', fileUnderSubject);
-    const inputPngFolder = path.join(rootFolder, 'tests', 'test_input', 'images');
+    const inputFile = path.join(rootFolder, 'tests', 'test_input_files', 'files', fileUnderSubject);
+    const inputPngFolder = path.join(rootFolder, 'tests', 'test_input_files', 'images');
 
     const encodedFolder = path.join(rootFolder, 'tests', 'test_output', 'encoded');
     const decodedFolder = path.join(rootFolder, 'tests', 'test_output', 'decoded');
 
     const password = 'test';
-    beforeAll(async () => {
+    beforeAll(() => {
         // Ensure clean test environment
-        await Deno.remove(encodedFolder, { recursive: true });
-        await Deno.remove(decodedFolder, { recursive: true });
         ensureOutputDirectory(encodedFolder);
         ensureOutputDirectory(decodedFolder);
     });
 
-    afterAll(() => {
+    afterAll(async () => {
         // Cleanup: Remove encoded and decoded folders
-        //      fs.rmSync(encodedFolder, { recursive: true, force: true });
-        //      fs.rmSync(decodedFolder, { recursive: true, force: true });
+        await Deno.remove(decodedFolder, { recursive: true });
         closeKv();
     });
 
