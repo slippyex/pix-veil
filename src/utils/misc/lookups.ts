@@ -1,3 +1,5 @@
+// src/utils/misc/lookups.ts
+
 import { ChannelSequence } from '../../@types/index.ts';
 
 /**

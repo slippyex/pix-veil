@@ -6,8 +6,9 @@ import { Buffer } from 'node:buffer';
 import { filePathExists } from '../../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 
-import { getChannelOffset, getImage } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getImage } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractBits } from '../../../utils/bitManipulation/bitUtils.ts';
+import { getChannelOffset } from '../../../utils/misc/lookups.ts';
 
 /**
  * Extracts chunks of data from given PNG files as specified in the distribution map.

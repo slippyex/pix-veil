@@ -52,7 +52,7 @@ export async function decryptData(
  */
 export async function verifyDataIntegrity(encryptedData: Buffer, checksum: string, logger: ILogger): Promise<void> {
     if (logger.verbose) logger.info('Verifying data integrity...');
-    const isChecksumValid = verifyChecksum(encryptedData, checksum);
+    const isChecksumValid = await verifyChecksum(encryptedData, checksum);
     logger.debug(`Expected Checksum: ${checksum}`);
     logger.debug(`Computed Checksum: ${await generateChecksum(encryptedData)}`);
     if (!isChecksumValid) {

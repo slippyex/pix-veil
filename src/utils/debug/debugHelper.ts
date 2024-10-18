@@ -70,30 +70,34 @@ export function addDebugBlock(
 }
 
 /**
- * Generates a detailed distribution map text, providing information about chunks embedded
- * in various PNG files, checksum, original filename, and additional metadata.
+ * Generates a human-readable distribution map text file based on the provided distribution map entries.
  *
- * @param {IDistributionMapEntry[]} entries - Array of distribution map entries containing information
- *                                            about the chunks embedded in each PNG file.
- * @param {string} originalFilename - The original filename from which the distribution map is generated.
- * @param {string} distributionCarrier - The PNG file used as a carrier for the distribution.
- * @param {string} checksum - The checksum value used for verification.
- * @param {string} compressionStrategy - The compression strategy employed during the distribution.
- * @return {string} Text representation of the distribution map including detailed information about
- *                  each PNG file, checksum, original filename, compression strategy, and distribution carrier.
+ * @param {IDistributionMapEntry[]} distributionMapEntries - Array of distribution map entry objects.
+ * @param {string} distributionCarrier - The distribution carrier PNG file name.
+ * @param {string} originalFilename - The original filename from which the distribution originated.
+ * @param {string} checksum - The checksum of the original file.
+ * @param {string} outputFolder - The directory path where output files should be saved.
+ * @param {string} compressionStrategy - The compression strategy used.
+ * @param {ILogger} logger - Logger instance for logging information.
+ *
+ * @return {Promise<void>} A promise that resolves when the human-readable distribution map text file is created.
  */
-function generateDistributionMapText(
-    entries: IDistributionMapEntry[],
-    originalFilename: string,
+export async function createHumanReadableDistributionMap(
+    distributionMapEntries: IDistributionMapEntry[],
     distributionCarrier: string,
+    originalFilename: string,
     checksum: string,
+    outputFolder: string,
     compressionStrategy: string,
-): string {
+    logger: ILogger,
+): Promise<void> {
+    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
+    const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
     let text = `Distribution Map - ${new Date().toISOString()}\n\n`;
 
     const pngMap: Record<string, IDistributionMapEntry[]> = {};
 
-    entries.forEach((entry) => {
+    distributionMapEntries.forEach((entry) => {
         if (!pngMap[entry.pngFile]) {
             pngMap[entry.pngFile] = [];
         }
@@ -118,40 +122,6 @@ function generateDistributionMapText(
     text += `Original Filename: ${originalFilename}\n`;
     text += `Picked compression strategy: ${compressionStrategy}\n`;
     text += `Distribution Carrier PNG: ${distributionCarrier}\n`;
-
-    return text;
-}
-
-/**
- * Creates a human-readable distribution map text file from the given distribution map entries and other metadata.
- *
- * @param {IDistributionMapEntry[]} distributionMapEntries - The entries to be included in the distribution map.
- * @param {string} distributionCarrier - The carrier responsible for distribution.
- * @param {string} originalFilename - The original filename of the content being distributed.
- * @param {string} checksum - The checksum of the original content file.
- * @param {string} outputFolder - The directory where the distribution map file will be created.
- * @param {string} compressionStrategy - The strategy used for compressing the data.
- * @param {ILogger} logger - The logger instance used for logging information.
- * @return {void}
- */
-export async function createHumanReadableDistributionMap(
-    distributionMapEntries: IDistributionMapEntry[],
-    distributionCarrier: string,
-    originalFilename: string,
-    checksum: string,
-    outputFolder: string,
-    compressionStrategy: string,
-    logger: ILogger,
-): Promise<void> {
-    if (logger.verbose) logger.info('Creating a human-readable distribution map text file...');
-    const distributionMapTextPath = path.join(outputFolder, config.distributionMapFile + '.txt');
-    const distributionMapText = generateDistributionMapText(
-        distributionMapEntries,
-        originalFilename,
-        distributionCarrier,
-        checksum,
-        compressionStrategy,
-    );
-    await writeBufferToFile(distributionMapTextPath, Buffer.from(distributionMapText, 'utf-8'));
+    await writeBufferToFile(distributionMapTextPath, Buffer.from(text, 'utf-8'));
     if (logger.verbose) logger.info(`Distribution map text file created at "${distributionMapTextPath}".`);
 }

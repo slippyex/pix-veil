@@ -1,13 +1,7 @@
 // src/utils/imageProcessing/imageHelper.ts
 
 import sharp from 'sharp';
-import type {
-    ChannelSequence,
-    IAssembledImageData,
-    ILogger,
-    ImageCapacity,
-    ImageToneCache,
-} from '../../@types/index.ts';
+import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
@@ -48,18 +42,19 @@ export async function loadImageData(pngPath: string): Promise<IAssembledImageDat
 }
 
 /**
- * Generates a random position within the provided image capacity that does not overlap with already used positions.
- * Prioritizes channels based on tone weights.
+ * Determines a random non-overlapping position in the channel range for the provided chunk size.
  *
- * @param {number} lowChannels - Number of low-tone channels.
- * @param {number} midChannels - Number of mid-tone channels.
- * @param {number} highChannels - Number of high-tone channels.
- * @param {number} chunkSize - The size of the chunk to hide within the image.
- * @param {number} bitsPerChannel - The number of bits used per channel in the image.
- * @param {Uint8Array} used - A Uint8Array indicating which channels have already been used.
- * @param {ILogger} logger - Logger instance for debugging information.
- * @return {{ start: number, end: number }} An object containing the start and end channel indices for the chunk within the image.
- * @throws {Error} If unable to find a non-overlapping position for the chunk.
+ * @param {number} lowChannels - The number of low tone channels.
+ * @param {number} midChannels - The number of mid tone channels.
+ * @param {number} highChannels - The number of high tone channels.
+ * @param {number} chunkSize - Size of the chunk to be positioned.
+ * @param {number} bitsPerChannel - Number of bits used per channel.
+ * @param {Uint8Array} used - Array representing used channels with bits set for used positions.
+ * @param {ILogger} logger - Logger instance for debug information.
+ *
+ * @return {{start: number, end: number}} An object containing the start and end positions of the selected channels.
+ *
+ * @throws Will throw an error if unable to find a non-overlapping position for the chunk.
  */
 export function getRandomPosition(
     lowChannels: number,
@@ -286,26 +281,6 @@ export function getCachedImageTones(imagePath: string, logger: ILogger): ImageCa
         return capacity;
     } else {
         throw new Error(`No cache entry found for "${imagePath}". Ensure that "processImageTones" has been run.`);
-    }
-}
-
-/**
- * Helper function to get the channel offset based on the channel name.
- * @param channel - The channel name ('R', 'G', 'B', 'A').
- * @returns The channel offset index.
- */
-export function getChannelOffset(channel: ChannelSequence): number {
-    switch (channel) {
-        case 'R':
-            return 0;
-        case 'G':
-            return 1;
-        case 'B':
-            return 2;
-        case 'A':
-            return 3;
-        default:
-            throw new Error(`Invalid channel specified: ${channel}`);
     }
 }
 

@@ -11,6 +11,7 @@ import {
     serializeUInt8,
 } from '../../utils/serialization/serializationHelpers.ts';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
+import { channelFromValue, getChannelOffset } from '../../utils/misc/lookups.ts';
 
 /**
  * Serializes a distribution map into a Buffer.
@@ -236,7 +237,7 @@ function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
     channelSequence.forEach((channel, index) => {
         const byteIndex = Math.floor(index / 4);
         const shift = (3 - (index % 4)) * 2;
-        buffer[byteIndex] |= channelValue(channel) << shift;
+        buffer[byteIndex] |= getChannelOffset(channel) << shift;
     });
 
     return buffer;
@@ -324,52 +325,6 @@ function deserializeString(buffer: Buffer, offset: number): { value: string; new
 
     const value = buffer.slice(offset, offset + length).toString('utf-8');
     return { value, newOffset: offset + length };
-}
-
-/**
- * Returns the numerical value associated with the specified channel.
- *
- * @param {ChannelSequence} channel - The channel for which the numerical value is needed.
- * Possible values are 'R', 'G', 'B', 'A'.
- *
- * @return {number} The numerical value corresponding to the specified channel.
- * @throws Will throw an error if the channel value is invalid.
- */
-function channelValue(channel: ChannelSequence): number {
-    switch (channel) {
-        case 'R':
-            return 0x0;
-        case 'G':
-            return 0x1;
-        case 'B':
-            return 0x2;
-        case 'A':
-            return 0x3;
-        default:
-            throw new Error(`Invalid channel value: ${channel}`);
-    }
-}
-
-/**
- * Determines the channel sequence based on the provided numerical value.
- *
- * @param {number} value - The numerical value representing a color channel (0 for 'R', 1 for 'G', 2 for 'B', 3 for 'A').
- * @return {ChannelSequence} The channel sequence corresponding to the provided value.
- * @throws {Error} If the provided value does not correspond to a valid channel sequence.
- */
-function channelFromValue(value: number): ChannelSequence {
-    switch (value) {
-        case 0x0:
-            return 'R';
-        case 0x1:
-            return 'G';
-        case 0x2:
-            return 'B';
-        case 0x3:
-            return 'A';
-        default:
-            throw new Error(`Invalid channel sequence value: ${value}`);
-    }
 }
 
 /**

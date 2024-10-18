@@ -12,8 +12,9 @@ import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 import { addDebugBlock } from '../../../utils/debug/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
-import { getChannelOffset, loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
+import { loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
+import { getChannelOffset } from '../../../utils/misc/lookups.ts';
 
 const cpuCount = os.cpus().length;
 
