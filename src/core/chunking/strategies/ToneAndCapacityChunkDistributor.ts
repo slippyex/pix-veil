@@ -43,9 +43,9 @@ export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrate
         const usedPngs: Record<string, IUsedPng> = {};
 
         // Initialize usedPngs with usedCapacity, chunkCount, and chunks array
-        for (const png of pngCapacities) {
+        pngCapacities.forEach((png) => {
             usedPngs[png.file] = { usedCapacity: 0, chunkCount: 0, chunks: [] };
-        }
+        });
 
         // Initialize usedPositions to track channel usage per PNG using Uint8Array
         const usedPositions: Record<string, Uint8Array> = {};
