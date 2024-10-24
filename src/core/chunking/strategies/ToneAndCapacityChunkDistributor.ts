@@ -12,12 +12,12 @@ import {
     IUsedPng,
 } from '../../../@types/index.ts';
 import { getCachedImageTones, getRandomPosition } from '../../../utils/imageProcessing/imageHelper.ts';
-import _ from 'lodash';
 import { config } from '../../../config/index.ts';
 import * as path from 'jsr:@std/path';
 import seedrandom from 'seedrandom';
 import { generateChecksum } from '../../../utils/cryptography/crypto.ts';
 import { Buffer } from 'node:buffer';
+import { sortBy } from 'jsr:@std/collections';
 
 export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrategy {
     /**
@@ -61,10 +61,10 @@ export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrate
         }
 
         // Sort PNGs by tone priority: low > mid > high
-        const sortedPngCapacities = _.orderBy(
+        const sortedPngCapacities = sortBy(
             pngCapacities,
-            ['tone'],
-            ['asc'], // 'low' < 'mid' < 'high'
+            (p) => p.tone,
+            { order: 'asc' }, // 'low' < 'mid' < 'high'
         );
 
         // Create a Map to store chunkId to chunk data
