@@ -23,23 +23,23 @@
     },
     "imports": {
         "@std/assert": "jsr:@std/assert@^1.0.6",
+        "@std/collections": "jsr:@std/collections@^1.0.9",
         "@std/crypto": "jsr:@std/crypto@^1.0.3",
         "@std/expect": "jsr:@std/expect@^1.0.4",
         "@std/path": "jsr:@std/path@^1.0.6",
         "@std/testing": "jsr:@std/testing@^1.0.3",
-        "sharp": "npm:sharp@^0.33.5",
+        "@types/figlet": "npm:@types/figlet@^1.5.8",
+        "@types/lodash": "npm:@types/lodash@^4.17.9",
+        "@types/seedrandom": "npm:@types/seedrandom@^3.0.8",
         "chalk": "npm:chalk@4",
         "cli-progress": "npm:cli-progress@^3.12.0",
         "commander": "npm:commander@^12.1.0",
         "figlet": "npm:figlet@^1.7.0",
-        "@types/figlet": "npm:@types/figlet@^1.5.8",
         "gradient-string": "npm:gradient-string@^3.0.0",
         "inquirer": "npm:inquirer@^11.1.0",
-        "lodash": "npm:lodash@^4.17.21",
-        "@types/lodash": "npm:@types/lodash@^4.17.9",
         "p-limit": "npm:p-limit@^6.1.0",
         "seedrandom": "npm:seedrandom@^3.0.5",
-        "@types/seedrandom": "npm:@types/seedrandom@^3.0.8"
+        "sharp": "npm:sharp@^0.33.5"
     },
     "fmt": {
         "useTabs": false,

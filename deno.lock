@@ -2,6 +2,8 @@
   "version": "4",
   "specifiers": {
     "jsr:@std/assert@^1.0.6": "1.0.6",
+    "jsr:@std/collections@*": "1.0.9",
+    "jsr:@std/collections@^1.0.9": "1.0.9",
     "jsr:@std/crypto@*": "1.0.3",
     "jsr:@std/crypto@^1.0.3": "1.0.3",
     "jsr:@std/data-structures@^1.0.4": "1.0.4",
@@ -23,7 +25,6 @@
     "npm:figlet@^1.7.0": "1.8.0",
     "npm:gradient-string@3": "3.0.0",
     "npm:inquirer@^11.1.0": "11.1.0",
-    "npm:lodash@^4.17.21": "4.17.21",
     "npm:p-limit@^6.1.0": "6.1.0",
     "npm:seedrandom@^3.0.5": "3.0.5",
     "npm:sharp@~0.33.5": "0.33.5"
@@ -34,6 +35,9 @@
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/collections@1.0.9": {
+      "integrity": "4f58104ead08a04a2199374247f07befe50ba01d9cca8cbb23ab9a0419921e71"
     },
     "@std/crypto@1.0.3": {
       "integrity": "a2a32f51ddef632d299e3879cd027c630dcd4d1d9a5285d6e6788072f4e51e7f"
@@ -433,9 +437,6 @@
     "is-fullwidth-code-point@3.0.0": {
       "integrity": "sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg=="
     },
-    "lodash@4.17.21": {
-      "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="
-    },
     "mute-stream@1.0.0": {
       "integrity": "sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA=="
     },
@@ -672,6 +673,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.6",
+      "jsr:@std/collections@^1.0.9",
       "jsr:@std/crypto@^1.0.3",
       "jsr:@std/expect@^1.0.4",
       "jsr:@std/path@^1.0.6",
@@ -685,7 +687,6 @@
       "npm:figlet@^1.7.0",
       "npm:gradient-string@3",
       "npm:inquirer@^11.1.0",
-      "npm:lodash@^4.17.21",
       "npm:p-limit@^6.1.0",
       "npm:seedrandom@^3.0.5",
       "npm:sharp@~0.33.5"
