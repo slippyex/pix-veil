@@ -1,8 +1,7 @@
 # 📷 Pix-Veil
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](#)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.4.0-green.svg)](#)
 
 **Pix-Veil** is a tiny, yet powerful, command-line tool for steganography in PNG images. 
 It allows you to hide files within PNG images securely using advanced Least Significant Bit (LSB) embedding, 
@@ -338,9 +337,9 @@ Made with ❤️ by [slippyex](https://github.com/slippyex)
 ## 📝 Additional Notes
 
 - **Dependencies**:
-    - Deno v2 RC and yarn.
-    - Sharp library for image processing.
-    - Commander for CLI interface.
+    - Deno v2
+    - Sharp library for image processing
+    - Commander for CLI interface
     - Inquirer for password prompt
     - Figlet for a fancy ASCII art logo
 - **Security Considerations**:
