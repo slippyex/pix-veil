@@ -9,6 +9,7 @@
     "jsr:@std/data-structures@^1.0.4": "1.0.4",
     "jsr:@std/expect@*": "1.0.4",
     "jsr:@std/expect@^1.0.4": "1.0.4",
+    "jsr:@std/fmt@^1.0.3": "1.0.3",
     "jsr:@std/fs@^1.0.4": "1.0.4",
     "jsr:@std/internal@^1.0.4": "1.0.4",
     "jsr:@std/path@*": "1.0.6",
@@ -19,7 +20,6 @@
     "npm:@types/lodash@^4.17.9": "4.17.10",
     "npm:@types/node@*": "22.5.4",
     "npm:@types/seedrandom@^3.0.8": "3.0.8",
-    "npm:chalk@4": "4.1.2",
     "npm:cli-progress@^3.12.0": "3.12.0",
     "npm:commander@^12.1.0": "12.1.0",
     "npm:figlet@^1.7.0": "1.8.0",
@@ -51,6 +51,9 @@
         "jsr:@std/assert",
         "jsr:@std/internal"
       ]
+    },
+    "@std/fmt@1.0.3": {
+      "integrity": "97765c16aa32245ff4e2204ecf7d8562496a3cb8592340a80e7e554e0bb9149f"
     },
     "@std/fs@1.0.4": {
       "integrity": "2907d32d8d1d9e540588fd5fe0ec21ee638134bd51df327ad4e443aaef07123c",
@@ -337,13 +340,6 @@
         "color-convert"
       ]
     },
-    "chalk@4.1.2": {
-      "integrity": "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==",
-      "dependencies": [
-        "ansi-styles",
-        "supports-color"
-      ]
-    },
     "chalk@5.3.0": {
       "integrity": "sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w=="
     },
@@ -405,12 +401,9 @@
     "gradient-string@3.0.0": {
       "integrity": "sha512-frdKI4Qi8Ihp4C6wZNB565de/THpIaw3DjP5ku87M+N9rNSGmPTjfkq61SdRXB7eCaL8O1hkKDvf6CDMtOzIAg==",
       "dependencies": [
-        "chalk@5.3.0",
+        "chalk",
         "tinygradient"
       ]
-    },
-    "has-flag@4.0.0": {
-      "integrity": "sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ=="
     },
     "iconv-lite@0.4.24": {
       "integrity": "sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==",
@@ -515,12 +508,6 @@
       "integrity": "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==",
       "dependencies": [
         "ansi-regex"
-      ]
-    },
-    "supports-color@7.2.0": {
-      "integrity": "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==",
-      "dependencies": [
-        "has-flag"
       ]
     },
     "tinycolor2@1.6.0": {
@@ -676,12 +663,12 @@
       "jsr:@std/collections@^1.0.9",
       "jsr:@std/crypto@^1.0.3",
       "jsr:@std/expect@^1.0.4",
+      "jsr:@std/fmt@^1.0.3",
       "jsr:@std/path@^1.0.6",
       "jsr:@std/testing@^1.0.3",
       "npm:@types/figlet@^1.5.8",
       "npm:@types/lodash@^4.17.9",
       "npm:@types/seedrandom@^3.0.8",
-      "npm:chalk@4",
       "npm:cli-progress@^3.12.0",
       "npm:commander@^12.1.0",
       "npm:figlet@^1.7.0",

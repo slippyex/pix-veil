@@ -2,7 +2,7 @@
 
 import type { ILogFacility, ILogger } from '../../@types/index.ts';
 
-import chalk from 'chalk';
+import { blue, green, magenta, red, yellow } from '@std/fmt/colors';
 
 const loggerMap: Record<string, ILogger> = {};
 
@@ -29,31 +29,31 @@ class Logger implements ILogger {
     ) {}
 
     info(message: string) {
-        const msg = chalk.blue(`[INFO] ${this.name} :: ${message}`);
+        const msg = blue(`[INFO] ${this.name} :: ${message}`);
         this.logger.log(msg);
         this.infoMessages.push(msg);
     }
 
     success(message: string) {
-        const msg = chalk.green(`[SUCCESS] ${this.name} :: ${message}`);
+        const msg = green(`[SUCCESS] ${this.name} :: ${message}`);
         this.logger.log(msg);
         this.successMessages.push(msg);
     }
 
     warn(message: string) {
-        const msg = chalk.yellow(`[WARNING] ${this.name} :: ${message}`);
+        const msg = yellow(`[WARNING] ${this.name} :: ${message}`);
         this.logger.warn(msg);
         this.warnMessages.push(msg);
     }
 
     error(message: string) {
-        const msg = chalk.red(`[ERROR] ${this.name} :: ${message}`);
+        const msg = red(`[ERROR] ${this.name} :: ${message}`);
         this.logger.error(msg);
         this.errorMessages.push(message);
     }
 
     debug(message: string) {
-        const msg = chalk.magenta(`[DEBUG] ${this.name} :: ${message}`);
+        const msg = magenta(`[DEBUG] ${this.name} :: ${message}`);
         if (this.verbose) {
             this.logger.log(msg);
         }
