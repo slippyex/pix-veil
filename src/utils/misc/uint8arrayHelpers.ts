@@ -1,4 +1,4 @@
-export const compareUint8ArraysLex = (arr1: Uint8Array, arr2: Uint8Array): number => {
+export const compareUint8ArraysLex = (arr1: Uint8Array, arr2: Uint8Array) => {
     const len = arr1.length < arr2.length ? arr1.length : arr2.length; // Minimum length
 
     for (let i = 0; i < len; i++) {

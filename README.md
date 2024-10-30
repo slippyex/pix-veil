@@ -1,7 +1,7 @@
 # 📷 Pix-Veil
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.0-green.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.5.0-green.svg)](#)
 
 **Pix-Veil** is a tiny, yet powerful, command-line tool for steganography in PNG images. 
 It allows you to hide files within PNG images securely using advanced Least Significant Bit (LSB) embedding, 
