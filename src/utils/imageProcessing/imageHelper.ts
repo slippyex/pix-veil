@@ -1,11 +1,11 @@
 // src/utils/imageProcessing/imageHelper.ts
 
-import sharp from 'sharp';
-import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache } from '../../@types/index.ts';
+import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache, OutputInfo } from '../../@types/index.ts';
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 import { getEntryFromCache, setCacheEntry } from '../cache/cacheHelper.ts';
+import { loadImageData } from './sharpSpecific.ts';
 
 /**
  * In-memory cache for image tones.
@@ -26,18 +26,6 @@ export async function getImage(pngPath: string): Promise<IAssembledImageData | u
         imageMap.set(pngPath, data);
     }
     return imageMap.get(pngPath);
-}
-
-/**
- * Loads and processes image data from a given PNG file path. The method removes the alpha channel,
- * converts the image to the sRGB color space, and returns the raw image data buffer.
- *
- * @param {string} pngPath - The path to the PNG file to be loaded.
- * @return {Promise<IAssembledImageData>} A promise that resolves to the processed image data buffer.
- */
-export async function loadImageData(pngPath: string): Promise<IAssembledImageData> {
-    const image = sharp(pngPath).removeAlpha().toColourspace('srgb');
-    return await image.raw().toBuffer({ resolveWithObject: true });
 }
 
 /**
@@ -220,7 +208,7 @@ export async function cacheImageTones(inputPngPath: string, logger: ILogger): Pr
         // Cache miss: Analyze the image
         logger.debug(`Cache miss for "${imagePath}". Analyzing image tones...`);
         let data: Uint8Array;
-        let info: sharp.OutputInfo;
+        let info: OutputInfo;
 
         try {
             const imageData = await loadImageData(imagePath);

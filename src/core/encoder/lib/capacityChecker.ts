@@ -1,11 +1,10 @@
 // src/core/encoder/lib/capacityChecker.ts
 
-import sharp from 'sharp';
 import * as path from 'jsr:/@std/path';
 import type { ILogger } from '../../../@types/index.ts';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
 import { config } from '../../../config/index.ts';
-import { toneCache } from '../../../utils/imageProcessing/imageHelper.ts';
+import { getImage, toneCache } from '../../../utils/imageProcessing/imageHelper.ts';
 
 /**
  * Interface representing the result of the capacity check.
@@ -93,11 +92,10 @@ export async function checkPngCapacity(
     for (const png of pngFiles) {
         const pngPath = path.join(inputPngFolder, png);
         try {
-            const image = sharp(pngPath).removeAlpha();
-            const metadata = await image.metadata();
-            const channels = metadata.channels || 3;
+            const image = await getImage(pngPath);
+            const channels = image!.meta.channels || 3;
 
-            const { width, height } = metadata;
+            const { width, height } = image!.meta;
             if (!width || !height) {
                 logger.warn(`Unable to determine dimensions for "${png}". Skipping.`);
                 continue;

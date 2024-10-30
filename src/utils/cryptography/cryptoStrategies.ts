@@ -1,6 +1,6 @@
 // src/utils/cryptography/cryptoStrategies.ts
 
-import { EncryptionStrategy } from '../../@types/index.ts';
+import type { EncryptionStrategy } from '../../@types/index.ts';
 import { AES256CBCStrategy } from './strategies/AES256CBCStrategy.ts';
 
 export enum SupportedCryptoStrategies {

@@ -1,10 +1,9 @@
 // src/@types/image.ts
 
-import sharp from 'sharp';
-
 export interface IAssembledImageData {
     data: Uint8Array;
-    info: sharp.OutputInfo;
+    info: OutputInfo;
+    meta: Metadata;
 }
 
 export interface ImageToneCache {
@@ -16,3 +15,11 @@ export interface ImageCapacity {
     mid: number;
     high: number;
 }
+
+export interface Metadata {
+    width?: number;
+    height?: number;
+    channels?: 1 | 2 | 4 | 3;
+}
+
+export type OutputInfo = Required<Metadata>;

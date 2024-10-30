@@ -1,20 +1,25 @@
 // src/core/encoder/lib/injection.ts
 
-import type { ChannelSequence, IDistributionMapEntry, ILogger, PngToChunksMap } from '../../../@types/index.ts';
+import type {
+    ChannelSequence,
+    IDistributionMapEntry,
+    ILogger,
+    OutputInfo,
+    PngToChunksMap,
+} from '../../../@types/index.ts';
 
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
-import sharp from 'sharp';
-import { config, MAGIC_BYTE } from '../../../config/index.ts';
+import { MAGIC_BYTE } from '../../../config/index.ts';
 import pLimit from 'p-limit';
 import * as os from 'node:os';
 import { serializeUInt32 } from '../../../utils/serialization/serializationHelpers.ts';
 import { addDebugBlock } from '../../../utils/debug/debugHelper.ts';
 import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils.ts';
-import { loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 import { getChannelOffset } from '../../../utils/misc/lookups.ts';
 import { compareUint8ArraysLex, concatUint8Arrays } from '../../../utils/misc/uint8arrayHelpers.ts';
+import { loadImageData, writeImageData } from '../../../utils/imageProcessing/sharpSpecific.ts';
 
 const cpuCount = os.cpus().length;
 
@@ -25,34 +30,20 @@ const cpuCount = os.cpus().length;
  * @param {string} inputPngPath - The input path of the PNG image to be processed.
  * @param {string} outputPngPath - The output path where the processed PNG image will be saved.
  * @param {function} injectorFn - A function that modifies the image data. This function takes
- *                                three arguments: imageData (Uint8Array), info (sharp.OutputInfo), and logger (ILogger).
+ *                                three arguments: imageData (Uint8Array), info (OutputInfo), and logger (ILogger).
  * @param {ILogger} logger - A logger instance used for logging messages.
  * @return {Promise<void>} - A promise that resolves when the image processing is completed.
  */
 async function processImage(
     inputPngPath: string,
     outputPngPath: string,
-    injectorFn: (imageData: Uint8Array, info: sharp.OutputInfo, logger: ILogger) => void,
+    injectorFn: (imageData: Uint8Array, info: OutputInfo, logger: ILogger) => void,
     logger: ILogger,
 ): Promise<void> {
     try {
-        const { data: imageData, info } = await loadImageData(inputPngPath);
-
-        injectorFn(imageData, info, logger);
-
-        await sharp(imageData, {
-            raw: {
-                width: info.width,
-                height: info.height,
-                channels: info.channels,
-            },
-        })
-            .png({
-                compressionLevel: config.imageCompression.compressionLevel,
-                adaptiveFiltering: config.imageCompression.adaptiveFiltering,
-                palette: false,
-            })
-            .toFile(outputPngPath);
+        const imageData = await loadImageData(inputPngPath);
+        injectorFn(imageData.data, imageData.info, logger);
+        await writeImageData(imageData.data, imageData.info, outputPngPath);
 
         logger.verbose && logger.info(`Processed image "${path.basename(outputPngPath)}" and saved to output folder.`);
     } catch (error) {
