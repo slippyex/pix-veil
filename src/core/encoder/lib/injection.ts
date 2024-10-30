@@ -2,7 +2,6 @@
 
 import type { ChannelSequence, IDistributionMapEntry, ILogger, PngToChunksMap } from '../../../@types/index.ts';
 
-import { Buffer } from 'node:buffer';
 import { ensureOutputDirectory } from '../../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 import sharp from 'sharp';
@@ -15,6 +14,7 @@ import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils
 import { loadImageData } from '../../../utils/imageProcessing/imageHelper.ts';
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 import { getChannelOffset } from '../../../utils/misc/lookups.ts';
+import { compareUint8ArraysLex, concatUint8Arrays } from '../../../utils/misc/uint8arrayHelpers.ts';
 
 const cpuCount = os.cpus().length;
 
@@ -25,14 +25,14 @@ const cpuCount = os.cpus().length;
  * @param {string} inputPngPath - The input path of the PNG image to be processed.
  * @param {string} outputPngPath - The output path where the processed PNG image will be saved.
  * @param {function} injectorFn - A function that modifies the image data. This function takes
- *                                three arguments: imageData (Buffer), info (sharp.OutputInfo), and logger (ILogger).
+ *                                three arguments: imageData (Uint8Array), info (sharp.OutputInfo), and logger (ILogger).
  * @param {ILogger} logger - A logger instance used for logging messages.
  * @return {Promise<void>} - A promise that resolves when the image processing is completed.
  */
 async function processImage(
     inputPngPath: string,
     outputPngPath: string,
-    injectorFn: (imageData: Buffer, info: sharp.OutputInfo, logger: ILogger) => void,
+    injectorFn: (imageData: Uint8Array, info: sharp.OutputInfo, logger: ILogger) => void,
     logger: ILogger,
 ): Promise<void> {
     try {
@@ -172,7 +172,7 @@ export async function injectChunksIntoPngs(
                                 logger,
                                 info.channels,
                             );
-                            if (!Buffer.compare(verifyChunkData, chunkData)) {
+                            if (!compareUint8ArraysLex(verifyChunkData, chunkData)) {
                                 throw new Error(`Injection error - verified chunk is not as expected`);
                             }
                         }
@@ -219,7 +219,7 @@ export async function injectDistributionMapIntoCarrierPng(
             (imageData, { channels }, logger) => {
                 injectDataIntoBuffer(
                     imageData,
-                    Buffer.concat([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
+                    concatUint8Arrays([MAGIC_BYTE, serializeUInt32(encryptedMapContent.length), encryptedMapContent]),
                     2, // bitsPerChannel
                     ['R', 'G', 'B'], // channelSequence
                     0, // startPosition
@@ -246,7 +246,7 @@ export async function injectDistributionMapIntoCarrierPng(
  * @param channels - Number of channels in the image.
  */
 export function injectDataIntoBuffer(
-    imageData: Buffer,
+    imageData: Uint8Array,
     data: Uint8Array,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],

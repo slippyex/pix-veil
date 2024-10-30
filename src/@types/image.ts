@@ -1,10 +1,9 @@
 // src/@types/image.ts
 
-import type { Buffer } from 'node:buffer';
 import sharp from 'sharp';
 
 export interface IAssembledImageData {
-    data: Buffer;
+    data: Uint8Array;
     info: sharp.OutputInfo;
 }
 

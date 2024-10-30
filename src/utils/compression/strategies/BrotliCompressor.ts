@@ -20,7 +20,7 @@ export class BrotliCompressor implements CompressionStrategy {
     }
 
     /**
-     * Decompresses a given Buffer object using Brotli decompression algorithm.
+     * Decompresses a given Uint8Array object using Brotli decompression algorithm.
      *
      * @param {Uint8Array} data - The compressed data as a Buffer object.
      * @returns {Uint8Array} - The decompressed data as a Buffer object.

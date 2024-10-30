@@ -5,7 +5,6 @@ import type { IAssembledImageData, ILogger, ImageCapacity, ImageToneCache } from
 import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
-import { Buffer } from 'node:buffer';
 import { getEntryFromCache, setCacheEntry } from '../cache/cacheHelper.ts';
 
 /**
@@ -220,7 +219,7 @@ export async function cacheImageTones(inputPngPath: string, logger: ILogger): Pr
 
         // Cache miss: Analyze the image
         logger.debug(`Cache miss for "${imagePath}". Analyzing image tones...`);
-        let data: Buffer;
+        let data: Uint8Array;
         let info: sharp.OutputInfo;
 
         try {

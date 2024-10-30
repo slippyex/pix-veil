@@ -63,7 +63,7 @@ export async function extractChunks(
  * @param bitCount - Total number of bits to extract.
  * @param logger - Logger instance for debugging.
  * @param channels - Number of channels in the image.
- * @returns Buffer containing the extracted data.
+ * @returns Uint8Array containing the extracted data.
  */
 export function extractDataFromBuffer(
     pngFile: string,

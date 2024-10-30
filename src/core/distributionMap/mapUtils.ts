@@ -12,7 +12,7 @@ import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
 import { readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
-import { compareUint8Arrays } from '../../utils/misc/uint8arrayHelpers.ts';
+import { compareUint8ArraysQuick } from '../../utils/misc/uint8arrayHelpers.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -157,7 +157,7 @@ async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILo
         );
 
         // Validate MAGIC_BYTE
-        if (!compareUint8Arrays(magicSizeBuffer.subarray(0, MAGIC_BYTE.length), MAGIC_BYTE)) {
+        if (!compareUint8ArraysQuick(magicSizeBuffer.subarray(0, MAGIC_BYTE.length), MAGIC_BYTE)) {
             logger.debug(`MAGIC_BYTE not found at the beginning of "${png}".`);
             continue;
         }
