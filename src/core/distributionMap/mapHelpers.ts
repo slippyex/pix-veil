@@ -4,8 +4,12 @@ import type { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '.
 
 import { MAGIC_BYTE } from '../../config/index.ts';
 import {
+    deserializeChecksum,
+    deserializeString,
     deserializeUInt32,
     deserializeUInt8,
+    serializeChecksum,
+    serializeString,
     serializeUInt32,
     serializeUInt8,
 } from '../../utils/serialization/serializationHelpers.ts';
@@ -273,103 +277,6 @@ function deserializeChannelSequence(buffer: Uint8Array, length: number): Channel
 
     return channelSequence;
 }
-
-/**
- * Serializes a hexadecimal checksum string into a buffer that includes
- * a 2-byte length prefix indicating the length of the checksum.
- *
- * @param {string} checksum - The hexadecimal checksum string to serialize.
- * @returns {Uint8Array} A buffer containing the length-prefixed checksum.
- */
-function serializeChecksum(checksum: string): Uint8Array {
-    // Convert the checksum string (in hex) to a Uint8Array
-    const checksumBuffer = new Uint8Array(checksum.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
-
-    // Create a 2-byte buffer for the length
-    const lengthBuffer = new Uint8Array(2);
-    const lengthView = new DataView(lengthBuffer.buffer);
-    lengthView.setUint16(0, checksumBuffer.length, false); // false for Big Endian
-
-    // Concatenate the length buffer and checksum buffer
-    const result = new Uint8Array(2 + checksumBuffer.length);
-    result.set(lengthBuffer, 0);
-    result.set(checksumBuffer, 2);
-
-    return result;
-}
-
-/**
- * Deserializes a checksum from a given buffer starting at a specified offset.
- *
- * @param {Uint8Array} buffer - The buffer containing the serialized checksum.
- * @param {number} offset - The position in the buffer to start reading from.
- * @return {Object} The deserialized checksum as a hex string and the new offset after reading.
- * @return {string} return.checksum - The deserialized checksum in hex format.
- * @return {number} return.newOffset - The new offset position after reading the checksum.
- */
-function deserializeChecksum(buffer: Uint8Array, offset: number): { checksum: string; newOffset: number } {
-    // Read the length as a 16-bit unsigned integer (Big Endian)
-    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const length = view.getUint16(offset, false); // false for Big Endian
-    offset += 2;
-
-    // Extract the checksum and convert it to a hex string
-    const checksumArray = buffer.subarray(offset, offset + length);
-    const checksum = Array.from(checksumArray).map((byte) => byte.toString(16).padStart(2, '0')).join('');
-
-    return { checksum, newOffset: offset + length };
-}
-
-/**
- * Serializes a given string into a Uint8Array.
- *
- * @param {string} str - The string to be serialized.
- * @returns {Uint8Array} The Uint8Array representing the serialized string.
- */
-function serializeString(str: string): Uint8Array {
-    // Encode the string into a Uint8Array
-    const stringBuffer = new TextEncoder().encode(str);
-
-    // Create a 2-byte buffer for the length
-    const lengthBuffer = new Uint8Array(2);
-    const lengthView = new DataView(lengthBuffer.buffer);
-    lengthView.setUint16(0, stringBuffer.length, false); // Big Endian
-
-    // Concatenate lengthBuffer and stringBuffer
-    const result = new Uint8Array(2 + stringBuffer.length);
-    result.set(lengthBuffer, 0);
-    result.set(stringBuffer, 2);
-
-    return result;
-}
-
-/**
- * Deserializes a string from the given Uint8Array starting at the specified offset.
- *
- * @param {Uint8Array} buffer - The buffer from which the string will be deserialized.
- * @param {number} offset - The offset within the buffer at which to start deserialization.
- * @return {{ value: string, newOffset: number }} An object containing the deserialized string and the new offset.
- */
-function deserializeString(buffer: Uint8Array, offset: number): { value: string; newOffset: number } {
-    // Read the length of the string (2 bytes, Big Endian)
-    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const length = view.getUint16(offset, false); // Big Endian
-    offset += 2;
-
-    // Ensure the offset + length is within bounds
-    if (offset + length > buffer.length) {
-        throw new RangeError(
-            `The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`,
-        );
-    }
-
-    // Extract the string part and decode it from UTF-8
-    const stringBuffer = buffer.subarray(offset, offset + length);
-    const value = new TextDecoder().decode(stringBuffer);
-
-    return { value, newOffset: offset + length };
-}
-
 /**
  * Validates the presence of specified magic bytes at the beginning of a buffer.
  *
