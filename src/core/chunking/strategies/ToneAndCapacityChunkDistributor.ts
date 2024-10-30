@@ -68,7 +68,7 @@ export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrate
         );
 
         // Create a Map to store chunkId to chunk data
-        const chunkMap = new Map<number, Buffer>();
+        const chunkMap = new Map<number, Uint8Array>();
 
         for (const chunk of chunks) {
             let assigned = false;

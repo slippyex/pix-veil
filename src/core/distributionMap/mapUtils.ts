@@ -13,6 +13,7 @@ import { getImage } from '../../utils/imageProcessing/imageHelper.ts';
 import { readDirectory } from '../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
+import { compareUint8Arrays } from '../../utils/misc/uint8arrayHelpers.ts';
 
 /**
  * Prepare the distribution map for injection by serializing, compressing, and encrypting it.
@@ -83,7 +84,7 @@ export async function readAndProcessDistributionMap(
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
  */
 async function processDistributionMap(
-    rawDistributionMapEncrypted: Buffer,
+    rawDistributionMapEncrypted: Uint8Array,
     password: string,
     logger: ILogger,
 ): Promise<IDistributionMap> {
@@ -134,7 +135,7 @@ export function createDistributionMap(
  * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
  * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
-async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Buffer | null> {
+async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));
     for (const png of carrierPngs) {
         const pngPath = path.join(inputFolder, png);
@@ -157,7 +158,7 @@ async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILo
         );
 
         // Validate MAGIC_BYTE
-        if (!magicSizeBuffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {
+        if (!compareUint8Arrays(magicSizeBuffer.subarray(0, MAGIC_BYTE.length), MAGIC_BYTE)) {
             logger.debug(`MAGIC_BYTE not found at the beginning of "${png}".`);
             continue;
         }
@@ -165,7 +166,9 @@ async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILo
         // Extract SIZE
         const sizeBuffer = magicSizeBuffer.subarray(MAGIC_BYTE.length, MAGIC_BYTE.length + 4);
         const shiftExtraction = MAGIC_BYTE.length + sizeBuffer.length;
-        const size = sizeBuffer.readUInt32BE(0);
+
+        const dataView = new DataView(sizeBuffer.buffer, sizeBuffer.byteOffset, sizeBuffer.byteLength);
+        const size = dataView.getUint32(0);
         logger.debug(`Found distributionMap size: ${size} bytes in "${png}".`);
 
         // Step 2: Extract [DISTRIBUTION_MAP] based on SIZE

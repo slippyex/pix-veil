@@ -1,8 +1,6 @@
 // src/config/index.ts
 
-import { Buffer } from 'node:buffer';
-
-export const MAGIC_BYTE = Buffer.from([0xde, 0xad, 0xfa, 0xce]);
+export const MAGIC_BYTE = new Uint8Array([0xde, 0xad, 0xfa, 0xce]);
 
 export const config = {
     imageCompression: {

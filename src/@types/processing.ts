@@ -1,6 +1,5 @@
 // src/@types/processing.ts
 
-import type { Buffer } from 'node:buffer';
 import type { IDistributionMapEntry } from './distribution.ts';
 
 export interface IFileCapacityInfo {
@@ -10,7 +9,7 @@ export interface IFileCapacityInfo {
 }
 export interface IChunk {
     chunkId: number;
-    data: Buffer;
+    data: Uint8Array;
 }
 
 export type PngToChunksMap = Record<string, IDistributionMapEntry[]>;

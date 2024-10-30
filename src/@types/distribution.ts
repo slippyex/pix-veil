@@ -1,7 +1,6 @@
 // src/@types/distribution.ts
 
 import { SupportedCompressionStrategies } from '../utils/compression/compressionStrategies.ts';
-import type { Buffer } from 'node:buffer';
 import { IChunk } from './processing.ts';
 
 export type ChannelSequence = 'R' | 'G' | 'B' | 'A';
@@ -24,7 +23,7 @@ export interface IDistributionMap {
 
 export interface IChunkDistributionInfo {
     distributionMapEntries: IDistributionMapEntry[];
-    chunkMap: Map<number, Buffer>;
+    chunkMap: Map<number, Uint8Array>;
 }
 
 export interface IUsedPng {

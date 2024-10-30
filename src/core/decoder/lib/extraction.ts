@@ -2,7 +2,6 @@
 
 import type { ChannelSequence, IAssembledImageData, IChunk, IDistributionMap, ILogger } from '../../../@types/index.ts';
 
-import { Buffer } from 'node:buffer';
 import { filePathExists } from '../../../utils/storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 
@@ -68,14 +67,14 @@ export async function extractChunks(
  */
 export function extractDataFromBuffer(
     pngFile: string,
-    imageData: Buffer,
+    imageData: Uint8Array,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
     startChannelPosition: number,
     bitCount: number,
     logger: ILogger,
     channels: number, // Number of channels in the image
-): Buffer {
+): Uint8Array {
     // Input Validation
     if (bitsPerChannel < 1 || bitsPerChannel > 8) {
         throw new Error('bitsPerChannel must be between 1 and 8.');
@@ -101,7 +100,7 @@ export function extractDataFromBuffer(
         `Extracting ${bitCount} bits from buffer starting at channel position ${startChannelPosition} with ${bitsPerChannel} bits per channel.`,
     );
 
-    const extractedData = Buffer.alloc(Math.ceil(bitCount / 8), 0);
+    const extractedData = new Uint8Array(Math.ceil(bitCount / 8));
     let extractedBitIndex = 0;
 
     for (let i = 0; i < bitCount; i += bitsPerChannel) {

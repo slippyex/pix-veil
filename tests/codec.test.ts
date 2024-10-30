@@ -7,7 +7,6 @@ import { encode } from '../src/core/encoder/index.ts';
 
 import seedrandom from 'seedrandom';
 import { IChunk, IDistributionMapEntry } from '../src/@types/index.ts';
-import { Buffer } from 'node:buffer';
 
 import * as path from 'jsr:@std/path';
 import { ensureOutputDirectory, findProjectRoot, readDirectory } from '../src/utils/storage/storageUtils.ts';
@@ -63,9 +62,10 @@ describe('Codec tests', () => {
     });
 
     it('should correctly map chunkId to chunk data', () => {
+        const te = new TextEncoder();
         const chunks: IChunk[] = [
-            { chunkId: 0, data: Buffer.from('Chunk0') },
-            { chunkId: 1, data: Buffer.from('Chunk1') },
+            { chunkId: 0, data: te.encode('Chunk0') },
+            { chunkId: 1, data: te.encode('Chunk1') },
         ];
 
         // Simulate distributionMapEntries
@@ -89,7 +89,7 @@ describe('Codec tests', () => {
         ];
 
         // Create a chunkMap
-        const chunkMap = new Map<number, Buffer>();
+        const chunkMap = new Map<number, Uint8Array>();
         chunks.forEach((chunk) => chunkMap.set(chunk.chunkId, chunk.data));
 
         // Assert that chunkMap contains all necessary entries
