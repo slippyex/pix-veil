@@ -12,7 +12,7 @@ import { decode } from '../decoder/index.ts';
 import { ensureOutputDirectory, isCompressed, readBufferFromFile } from '../../utils/storage/storageUtils.ts';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 import * as path from 'jsr:/@std/path';
-import { Buffer } from 'node:buffer';
+
 import { prepareDistributionMapForInjection } from '../distributionMap/mapUtils.ts';
 import { cacheImageTones } from '../../utils/imageProcessing/imageHelper.ts';
 import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts';
@@ -21,17 +21,17 @@ import { checkPngCapacity } from './lib/capacityChecker.ts';
 import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
-    private originalFileData: Buffer | null = null;
+    private originalFileData: Uint8Array | null = null;
     private originalFilename: string | null = null;
-    private compressedData: Buffer | null = null;
-    private encryptedData: Buffer | null = null;
+    private compressedData: Uint8Array | null = null;
+    private encryptedData: Uint8Array | null = null;
     private checksum: string | null = null;
     private chunks: IChunk[] = [];
     private pngCapacities: IFileCapacityInfo[] = [];
     private distributionCarrier: IFileCapacityInfo | null = null;
     private distributionMapEntries: IDistributionMapEntry[] = [];
-    private chunkMap: Map<number, Buffer> = new Map();
-    private encryptedMapContent: Buffer | null = null;
+    private chunkMap: Map<number, Uint8Array> = new Map();
+    private encryptedMapContent: Uint8Array | null = null;
     private currentCompressionIndex: number = 0;
     private compressionStrategies: SupportedCompressionStrategies[];
 

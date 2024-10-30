@@ -11,7 +11,7 @@ import { config } from '../../config/index.ts';
  * @param {ILogger} logger - The logger object to output verbose information about the splitting process.
  * @return {IChunk[]} An array of chunks with each chunk containing a portion of the encrypted data.
  */
-export function splitDataIntoChunks(encryptedData: Buffer, logger: ILogger): IChunk[] {
+export function splitDataIntoChunks(encryptedData: Uint8Array, logger: ILogger): IChunk[] {
     if (logger.verbose) logger.info('Splitting encrypted data into chunks...');
 
     const chunks: IChunk[] = [];

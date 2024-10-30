@@ -74,7 +74,7 @@ async function processImage(
  */
 export async function injectChunksIntoPngs(
     distributionMapEntries: IDistributionMapEntry[],
-    chunkMap: Map<number, Buffer>,
+    chunkMap: Map<number, Uint8Array>,
     inputPngFolder: string,
     outputFolder: string,
     debugVisual: boolean,
@@ -207,7 +207,7 @@ export async function injectDistributionMapIntoCarrierPng(
     inputPngFolder: string,
     outputFolder: string,
     distributionCarrier: { file: string; capacity: number },
-    encryptedMapContent: Buffer,
+    encryptedMapContent: Uint8Array,
     logger: ILogger,
 ): Promise<void> {
     try {
@@ -247,7 +247,7 @@ export async function injectDistributionMapIntoCarrierPng(
  */
 export function injectDataIntoBuffer(
     imageData: Buffer,
-    data: Buffer,
+    data: Uint8Array,
     bitsPerChannel: number,
     channelSequence: ChannelSequence[],
     startChannelPosition: number,

@@ -1,7 +1,5 @@
 // src/utils/cryptography/strategies/AES256CBCStrategy.ts
 
-import { Buffer } from 'node:buffer';
-import { uint8ArrayToBuffer } from '../../storage/storageUtils.ts';
 import { crypto } from 'jsr:@std/crypto';
 import { EncryptionStrategy } from '../../../@types/index.ts';
 /**
@@ -18,11 +16,11 @@ export class AES256CBCStrategy implements EncryptionStrategy {
      * Encrypts provided data buffer using a specified password.
      * Combines salt, IV (initialization vector), and the encrypted data.
      *
-     * @param {Buffer} data - The data buffer to encrypt.
+     * @param {Uint8Array} data - The data buffer to encrypt.
      * @param {string} password - The password used to derive the encryption key.
-     * @return {Promise<Buffer>} - A promise that resolves to a buffer containing the encrypted data.
+     * @return {Promise<Uint8Array>} - A promise that resolves to a buffer containing the encrypted data.
      */
-    async encrypt(data: Buffer, password: string): Promise<Buffer> {
+    async encrypt(data: Uint8Array, password: string): Promise<Uint8Array> {
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(this.ivLength));
         const key = await this.generateKeyFromPassword(password, salt);
@@ -37,17 +35,17 @@ export class AES256CBCStrategy implements EncryptionStrategy {
         combined.set(salt);
         combined.set(iv, salt.length);
         combined.set(encryptedData, salt.length + iv.length);
-        return uint8ArrayToBuffer(combined);
+        return combined;
     }
 
     /**
      * Decrypts the given data using the provided password.
      *
-     * @param {Buffer} data - The encrypted data buffer containing salt, IV, and the encrypted content.
+     * @param {Uint8Array} data - The encrypted data buffer containing salt, IV, and the encrypted content.
      * @param {string} password - The password to derive the decryption key.
-     * @return {Promise<Buffer>} - The decrypted data as a buffer.
+     * @return {Promise<Uint8Array>} - The decrypted data as a buffer.
      */
-    async decrypt(data: Buffer, password: string): Promise<Buffer> {
+    async decrypt(data: Uint8Array, password: string): Promise<Uint8Array> {
         const salt = data.subarray(0, 16);
         const iv = data.subarray(16, 32);
         const encrypted = data.subarray(32);
@@ -57,7 +55,7 @@ export class AES256CBCStrategy implements EncryptionStrategy {
             key,
             encrypted,
         );
-        return Buffer.from(decrypted);
+        return new Uint8Array(decrypted);
     }
 
     /**

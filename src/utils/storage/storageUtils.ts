@@ -41,8 +41,8 @@ export function ensureOutputDirectory(outputFolder: string): void {
  *
  * @return {void}
  */
-export async function writeBufferToFile(filePath: string, data: Buffer): Promise<void> {
-    await Deno.writeFile(filePath, bufferToUint8Array(data));
+export async function writeBufferToFile(filePath: string, data: Uint8Array): Promise<void> {
+    await Deno.writeFile(filePath, data);
 }
 
 /**

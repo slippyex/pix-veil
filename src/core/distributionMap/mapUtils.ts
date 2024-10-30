@@ -34,7 +34,7 @@ export async function prepareDistributionMapForInjection(
     password: string,
     encryptedDataLength: number,
     logger: ILogger,
-): Promise<Buffer> {
+): Promise<Uint8Array> {
     if (logger.verbose) logger.info('Creating and injecting the distribution map...');
     const serializedMap = createDistributionMap(
         distributionMapEntries,

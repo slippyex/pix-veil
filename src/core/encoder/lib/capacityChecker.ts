@@ -4,7 +4,6 @@ import sharp from 'sharp';
 import * as path from 'jsr:/@std/path';
 import type { ILogger } from '../../../@types/index.ts';
 import { readDirectory } from '../../../utils/storage/storageUtils.ts';
-import type { Buffer } from 'node:buffer';
 import { config } from '../../../config/index.ts';
 import { toneCache } from '../../../utils/imageProcessing/imageHelper.ts';
 
@@ -57,7 +56,7 @@ function calculateMinimumPngs(
  * whether the available capacity is sufficient, and the distribution of chunks among the PNG files.
  */
 export async function checkPngCapacity(
-    inputBuffer: Buffer,
+    inputBuffer: Uint8Array,
     inputPngFolder: string,
     logger: ILogger,
 ): Promise<CapacityCheckResult> {
