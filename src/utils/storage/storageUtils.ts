@@ -29,7 +29,7 @@ export async function writeBufferToFile(filePath: string, data: Uint8Array): Pro
  * Reads the entire contents of a file into a buffer.
  *
  * @param {string} filePath - The file path of the file to be read.
- * @returns {Uint8Array} - The contents of the file as a Buffer or Uint8Array.
+ * @returns {Uint8Array} - The contents of the file as an Uint8Array.
  */
 export async function readBufferFromFile(filePath: string): Promise<Uint8Array> {
     return await Deno.readFile(filePath);

@@ -77,7 +77,7 @@ export async function readAndProcessDistributionMap(
 /**
  * Processes an encrypted distribution map by decrypting, decompressing, and deserializing it.
  *
- * @param {Uint8Array} rawDistributionMapEncrypted - The encrypted distribution map data as a Buffer.
+ * @param {Uint8Array} rawDistributionMapEncrypted - The encrypted distribution map data as an Uint8Array.
  * @param {string} password - The password used to decrypt the distribution map.
  * @param {ILogger} logger - The logger instance used to log relevant information and errors.
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
@@ -132,7 +132,7 @@ export function createDistributionMap(
  *
  * @param {string} inputFolder - The path to the folder containing PNG images to scan.
  * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
- * @return {Promise<Uint8Array|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
+ * @return {Promise<Uint8Array|null>} - A promise that resolves to an Uint8Array containing the distribution map if found, or null otherwise.
  */
 async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));

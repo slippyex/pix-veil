@@ -3,7 +3,6 @@
 import type { ChannelSequence, IDistributionMap, IDistributionMapEntry } from '../../@types/index.ts';
 
 import { MAGIC_BYTE } from '../../config/index.ts';
-import { Buffer } from 'node:buffer';
 import {
     deserializeUInt32,
     deserializeUInt8,
@@ -12,18 +11,19 @@ import {
 } from '../../utils/serialization/serializationHelpers.ts';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 import { channelFromValue, getChannelOffset } from '../../utils/misc/lookups.ts';
+import { compareUint8ArraysQuick, concatUint8Arrays } from '../../utils/misc/uint8arrayHelpers.ts';
 
 /**
- * Serializes a distribution map into a Buffer.
+ * Serializes a distribution map into an Uint8Array.
  *
  * @param {IDistributionMap} distributionMap - The distribution map to serialize,
  *   containing information about entries, checksum, original filename, encrypted data length,
  *   and compression strategy.
- * @returns {Buffer} The serialized Buffer representation of the distribution map.
+ * @returns {Uint8Array} The serialized Uint8Array representation of the distribution map.
  */
-export function serializeDistributionMap(distributionMap: IDistributionMap): Buffer {
+export function serializeDistributionMap(distributionMap: IDistributionMap): Uint8Array {
     const entryBuffers = distributionMap.entries.map(serializeEntry);
-    const entriesBuffer = Buffer.concat(entryBuffers);
+    const entriesBuffer = concatUint8Arrays(entryBuffers);
 
     const checksumBuffer = serializeChecksum(distributionMap.checksum);
     const originalFilenameBuffer = serializeString(distributionMap.originalFilename);
@@ -32,14 +32,15 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
     const encryptedDataLengthBuffer = serializeUInt32(distributionMap.encryptedDataLength);
 
     // Serialize compressionStrategy (UInt8)
-    const compressionStrategyBuffer = Buffer.alloc(1);
-    compressionStrategyBuffer.writeUInt8(compressionStrategyToValue(distributionMap.compressionStrategy), 0);
+    const compressionStrategyBuffer = new Uint8Array(1);
+    compressionStrategyBuffer[0] = compressionStrategyToValue(distributionMap.compressionStrategy);
 
     // Serialize entryCount (4 bytes)
-    const entryCountBuffer = Buffer.alloc(4);
-    entryCountBuffer.writeUInt32BE(distributionMap.entries.length, 0);
+    const entryCountBuffer = new Uint8Array(4);
+    const entryCountView = new DataView(entryCountBuffer.buffer);
+    entryCountView.setUint32(0, distributionMap.entries.length, false); // false for Big Endian
 
-    const mapContent = Buffer.concat([
+    const mapContent = concatUint8Arrays([
         entryCountBuffer,
         entriesBuffer,
         checksumBuffer,
@@ -48,10 +49,12 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Buf
         compressionStrategyBuffer,
     ]);
 
-    const sizeBuffer = Buffer.alloc(4);
-    sizeBuffer.writeUInt32BE(mapContent.length, 0);
+    const sizeBuffer = new Uint8Array(4);
+    const sizeBufferView = new DataView(sizeBuffer.buffer);
+    sizeBufferView.setUint32(0, mapContent.length, false);
+    //    sizeBuffer.writeUInt32BE(mapContent.length, 0);
 
-    return Buffer.concat([MAGIC_BYTE, sizeBuffer, mapContent]);
+    return concatUint8Arrays([MAGIC_BYTE, sizeBuffer, mapContent]);
 }
 
 /**
@@ -76,20 +79,24 @@ function compressionStrategyToValue(strategy: SupportedCompressionStrategies): n
 /**
  * Deserializes a buffer into a distribution map object.
  *
- * @param {Uint8Array} bufferIn - The buffer containing the serialized distribution map data.
+ * @param {Uint8Array} buffer - The buffer containing the serialized distribution map data.
  * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, original filename, encrypted data length, and compression strategy.
  */
-export function deserializeDistributionMap(bufferIn: Uint8Array): IDistributionMap {
-    const buffer = Buffer.from(bufferIn);
+export function deserializeDistributionMap(buffer: Uint8Array): IDistributionMap {
     validateMagicBytes(buffer);
 
-    const size = buffer.readUInt32BE(MAGIC_BYTE.length);
+    // Read size as a 32-bit unsigned integer (Big Endian) after the magic bytes
+    const sizeView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const size = sizeView.getUint32(MAGIC_BYTE.length, false); // Big Endian
+
+    // Extract the map content based on the calculated size
     const mapContent = buffer.subarray(MAGIC_BYTE.length + 4, MAGIC_BYTE.length + 4 + size);
 
     let offset = 0;
 
     // 1. Deserialize Number of Entries (UInt32BE)
-    const entryCount = mapContent.readUInt32BE(offset);
+    const entryCountView = new DataView(mapContent.buffer, mapContent.byteOffset, mapContent.byteLength);
+    const entryCount = entryCountView.getUint32(offset, false); // Big Endian
     offset += 4;
 
     // 2. Deserialize Each DistributionMapEntry
@@ -114,9 +121,12 @@ export function deserializeDistributionMap(bufferIn: Uint8Array): IDistributionM
 
     // 6. Deserialize compressionStrategy (UInt8)
     if (offset + 1 > mapContent.length) {
-        throw new RangeError('Buffer too small to contain compressionStrategy.');
+        throw new RangeError('Uint8Array too small to contain compressionStrategy.');
     }
-    const compressionStrategyValue = mapContent.readUInt8(offset);
+
+    const view = new DataView(mapContent.buffer, mapContent.byteOffset, mapContent.byteLength);
+    const compressionStrategyValue = view.getUint8(offset);
+    //    const compressionStrategyValue = mapContent.readUInt8(offset);
     const compressionStrategy = valueToCompressionStrategy(compressionStrategyValue);
     offset += 1;
 
@@ -149,15 +159,15 @@ function valueToCompressionStrategy(value: number): SupportedCompressionStrategi
 }
 
 /**
- * Serializes a given distribution map entry into a Buffer.
+ * Serializes a given distribution map entry into an Uint8Array.
  *
  * @param {IDistributionMapEntry} entry - The entry to be serialized, which contains properties such as
  *                chunkId, pngFile, startPosition, endPosition, bitsPerChannel,
  *                and channelSequence.
- * @returns {Buffer} A Buffer containing the serialized data of the provided entry.
+ * @returns {Uint8Array} An Uint8Array containing the serialized data of the provided entry.
  */
-function serializeEntry(entry: IDistributionMapEntry): Buffer {
-    const buffers: Buffer[] = [];
+function serializeEntry(entry: IDistributionMapEntry): Uint8Array {
+    const buffers: Uint8Array[] = [];
 
     // Serialize chunkId (4 bytes)
     buffers.push(serializeUInt32(entry.chunkId));
@@ -178,17 +188,17 @@ function serializeEntry(entry: IDistributionMapEntry): Buffer {
     // Serialize channelSequence
     buffers.push(serializeChannelSequence(entry.channelSequence));
 
-    return Buffer.concat(buffers);
+    return concatUint8Arrays(buffers);
 }
 
 /**
  * Deserializes a single distribution map entry from the buffer starting at the given offset.
  *
- * @param {Buffer} buffer - The buffer containing serialized entry data.
+ * @param {Uint8Array} buffer - The buffer containing serialized entry data.
  * @param {number} offset - The initial offset in the buffer from where to start deserialization.
  * @return {{ entry: IDistributionMapEntry; newOffset: number }} - The deserialized entry and the new buffer offset.
  */
-function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributionMapEntry; newOffset: number } {
+function deserializeEntry(buffer: Uint8Array, offset: number): { entry: IDistributionMapEntry; newOffset: number } {
     // Deserialize chunkId
     const { value: chunkId, newOffset: offset1 } = deserializeUInt32(buffer, offset);
 
@@ -226,14 +236,14 @@ function deserializeEntry(buffer: Buffer, offset: number): { entry: IDistributio
 }
 
 /**
- * Serializes a sequence of channel objects into a Buffer, with a compact binary representation.
+ * Serializes a sequence of channel objects into an Uint8Array, with a compact binary representation.
  *
  * @param {ChannelSequence[]} channelSequence - An array of channel objects to be serialized. Each channel's value is extracted using the channelValue function.
- * @returns {Buffer} - A Buffer containing the serialized binary representation of the channel sequence.
+ * @returns {Uint8Array} - An Uint8Array containing the serialized binary representation of the channel sequence.
  */
-function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
+function serializeChannelSequence(channelSequence: ChannelSequence[]): Uint8Array {
     const byteLength = Math.ceil(channelSequence.length / 4);
-    const buffer = Buffer.alloc(byteLength);
+    const buffer = new Uint8Array(byteLength);
 
     channelSequence.forEach((channel, index) => {
         const byteIndex = Math.floor(index / 4);
@@ -247,11 +257,11 @@ function serializeChannelSequence(channelSequence: ChannelSequence[]): Buffer {
 /**
  * Deserializes a channel sequence from a buffer.
  *
- * @param {Buffer} buffer - The buffer containing serialized channel sequence data.
+ * @param {Uint8Array} buffer - The buffer containing serialized channel sequence data.
  * @param {number} length - The number of channels to deserialize.
  * @returns {ChannelSequence[]} An array of deserialized ChannelSequence objects.
  */
-function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequence[] {
+function deserializeChannelSequence(buffer: Uint8Array, length: number): ChannelSequence[] {
     const channelSequence: ChannelSequence[] = [];
 
     for (let i = 0; i < length; i++) {
@@ -269,73 +279,105 @@ function deserializeChannelSequence(buffer: Buffer, length: number): ChannelSequ
  * a 2-byte length prefix indicating the length of the checksum.
  *
  * @param {string} checksum - The hexadecimal checksum string to serialize.
- * @returns {Buffer} A buffer containing the length-prefixed checksum.
+ * @returns {Uint8Array} A buffer containing the length-prefixed checksum.
  */
-function serializeChecksum(checksum: string): Buffer {
-    const checksumBuffer = Buffer.from(checksum, 'hex');
-    const lengthBuffer = Buffer.alloc(2);
-    lengthBuffer.writeUInt16BE(checksumBuffer.length, 0);
-    return Buffer.concat([lengthBuffer, checksumBuffer]);
+function serializeChecksum(checksum: string): Uint8Array {
+    // Convert the checksum string (in hex) to a Uint8Array
+    const checksumBuffer = new Uint8Array(checksum.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
+
+    // Create a 2-byte buffer for the length
+    const lengthBuffer = new Uint8Array(2);
+    const lengthView = new DataView(lengthBuffer.buffer);
+    lengthView.setUint16(0, checksumBuffer.length, false); // false for Big Endian
+
+    // Concatenate the length buffer and checksum buffer
+    const result = new Uint8Array(2 + checksumBuffer.length);
+    result.set(lengthBuffer, 0);
+    result.set(checksumBuffer, 2);
+
+    return result;
 }
 
 /**
  * Deserializes a checksum from a given buffer starting at a specified offset.
  *
- * @param {Buffer} buffer - The buffer containing the serialized checksum.
+ * @param {Uint8Array} buffer - The buffer containing the serialized checksum.
  * @param {number} offset - The position in the buffer to start reading from.
  * @return {Object} The deserialized checksum as a hex string and the new offset after reading.
  * @return {string} return.checksum - The deserialized checksum in hex format.
  * @return {number} return.newOffset - The new offset position after reading the checksum.
  */
-function deserializeChecksum(buffer: Buffer, offset: number): { checksum: string; newOffset: number } {
-    const length = buffer.readUInt16BE(offset);
+function deserializeChecksum(buffer: Uint8Array, offset: number): { checksum: string; newOffset: number } {
+    // Read the length as a 16-bit unsigned integer (Big Endian)
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const length = view.getUint16(offset, false); // false for Big Endian
     offset += 2;
-    const checksum = buffer.subarray(offset, offset + length).toString('hex');
+
+    // Extract the checksum and convert it to a hex string
+    const checksumArray = buffer.subarray(offset, offset + length);
+    const checksum = Array.from(checksumArray).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
     return { checksum, newOffset: offset + length };
 }
 
 /**
- * Serializes a given string into a Buffer object.
+ * Serializes a given string into a Uint8Array.
  *
  * @param {string} str - The string to be serialized.
- * @returns {Buffer} The Buffer object representing the serialized string.
+ * @returns {Uint8Array} The Uint8Array representing the serialized string.
  */
-function serializeString(str: string): Buffer {
-    const stringBuffer = Buffer.from(str, 'utf-8');
-    const lengthBuffer = Buffer.alloc(2);
-    lengthBuffer.writeUInt16BE(stringBuffer.length, 0);
-    return Buffer.concat([lengthBuffer, stringBuffer]);
+function serializeString(str: string): Uint8Array {
+    // Encode the string into a Uint8Array
+    const stringBuffer = new TextEncoder().encode(str);
+
+    // Create a 2-byte buffer for the length
+    const lengthBuffer = new Uint8Array(2);
+    const lengthView = new DataView(lengthBuffer.buffer);
+    lengthView.setUint16(0, stringBuffer.length, false); // Big Endian
+
+    // Concatenate lengthBuffer and stringBuffer
+    const result = new Uint8Array(2 + stringBuffer.length);
+    result.set(lengthBuffer, 0);
+    result.set(stringBuffer, 2);
+
+    return result;
 }
 
 /**
- * Deserializes a string from the given buffer starting at the specified offset.
+ * Deserializes a string from the given Uint8Array starting at the specified offset.
  *
- * @param {Buffer} buffer - The buffer from which the string will be deserialized.
+ * @param {Uint8Array} buffer - The buffer from which the string will be deserialized.
  * @param {number} offset - The offset within the buffer at which to start deserialization.
- * @return {Object} An object containing the deserialized string and the new offset.
+ * @return {{ value: string, newOffset: number }} An object containing the deserialized string and the new offset.
  */
-function deserializeString(buffer: Buffer, offset: number): { value: string; newOffset: number } {
-    const length = buffer.readUInt16BE(offset);
+function deserializeString(buffer: Uint8Array, offset: number): { value: string; newOffset: number } {
+    // Read the length of the string (2 bytes, Big Endian)
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const length = view.getUint16(offset, false); // Big Endian
     offset += 2;
 
+    // Ensure the offset + length is within bounds
     if (offset + length > buffer.length) {
         throw new RangeError(
             `The value of "offset" (${offset + length}) is out of range. It must be >= 0 and <= ${buffer.length}.`,
         );
     }
 
-    const value = buffer.slice(offset, offset + length).toString('utf-8');
+    // Extract the string part and decode it from UTF-8
+    const stringBuffer = buffer.subarray(offset, offset + length);
+    const value = new TextDecoder().decode(stringBuffer);
+
     return { value, newOffset: offset + length };
 }
 
 /**
  * Validates the presence of specified magic bytes at the beginning of a buffer.
  *
- * @param {Buffer} buffer - The buffer in which to validate the magic bytes.
+ * @param {Uint8Array} buffer - The buffer in which to validate the magic bytes.
  * @return {void} - Throws an error if the magic bytes are not found.
  */
-function validateMagicBytes(buffer: Buffer): void {
-    if (!buffer.subarray(0, MAGIC_BYTE.length).equals(MAGIC_BYTE)) {
+function validateMagicBytes(buffer: Uint8Array): void {
+    if (!compareUint8ArraysQuick(buffer.subarray(0, MAGIC_BYTE.length), MAGIC_BYTE)) {
         throw new Error('Magic bytes not found at the start of the distribution map.');
     }
 }
