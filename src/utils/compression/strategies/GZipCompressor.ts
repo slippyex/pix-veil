@@ -21,8 +21,8 @@ export class GZipCompressor implements CompressionStrategy {
     /**
      * Decompresses the given buffer using gzip compression.
      *
-     * @param {Uint8Array} data - The buffer containing compressed data.
-     * @returns {Uint8Array} - The decompressed data as a buffer.
+     * @param {Uint8Array} data - The Uint8Array containing compressed data.
+     * @returns {Uint8Array} - The decompressed data as an Uint8Array.
      */
     public decompress(data: Uint8Array): Uint8Array {
         return gunzip(data);

@@ -1,27 +1,7 @@
 // src/utils/storage/storageUtils.ts
 
-import { Buffer } from 'node:buffer';
 import { dirname, extname, join } from 'jsr:@std/path';
 
-/**
- * Converts a Buffer to Uint8Array.
- *
- * @param {Buffer} buffer - The Buffer to convert.
- * @returns {Uint8Array} - The resulting Uint8Array.
- */
-export function bufferToUint8Array(buffer: Buffer): Uint8Array {
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
-}
-
-/**
- * Converts a Uint8Array to Buffer.
- *
- * @param {Uint8Array} uint8Array - The Uint8Array to convert.
- * @returns {Buffer} - The resulting Buffer.
- */
-export function uint8ArrayToBuffer(uint8Array: Uint8Array): Buffer {
-    return Buffer.from(uint8Array);
-}
 /**
  * Ensures that the specified output directory exists. If the directory
  * does not exist, it creates the directory and any necessary subdirectories.
@@ -37,7 +17,7 @@ export function ensureOutputDirectory(outputFolder: string): void {
  * Writes a buffer to a file at the specified path.
  *
  * @param {string} filePath - The path of the file where the data will be written.
- * @param {Buffer | Uint8Array} data - The buffer containing data to write to the file.
+ * @param {Uint8Array} data - The buffer containing data to write to the file.
  *
  * @return {void}
  */
@@ -49,11 +29,10 @@ export async function writeBufferToFile(filePath: string, data: Uint8Array): Pro
  * Reads the entire contents of a file into a buffer.
  *
  * @param {string} filePath - The file path of the file to be read.
- * @returns {Buffer | Uint8Array} - The contents of the file as a Buffer or Uint8Array.
+ * @returns {Uint8Array} - The contents of the file as a Buffer or Uint8Array.
  */
-export async function readBufferFromFile(filePath: string): Promise<Buffer> {
-    const data = await Deno.readFile(filePath);
-    return uint8ArrayToBuffer(data);
+export async function readBufferFromFile(filePath: string): Promise<Uint8Array> {
+    return await Deno.readFile(filePath);
 }
 
 /**

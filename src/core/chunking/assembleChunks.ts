@@ -3,7 +3,7 @@
 import { IChunk, ILogger } from '../../@types/index.ts';
 
 /**
- * Assembles chunks of encrypted data into a single Buffer.
+ * Assembles chunks of encrypted data into a single Uint8Array.
  *
  * @param {Object[]} encryptedDataArray - An array of objects containing the chunkId and data buffer.
  * @param {number} encryptedDataArray[].chunkId - The unique identifier for the chunk.
@@ -38,7 +38,7 @@ export function assembleChunks(encryptedDataArray: IChunk[], logger: ILogger): U
 /**
  * Verifies that each chunk in the encrypted data array has the correct sequential chunkId.
  *
- * @param {Array} encryptedDataArray - An array of objects containing chunkId and data. Each chunkId should be a number and data should be a Buffer.
+ * @param {Array} encryptedDataArray - An array of objects containing chunkId and data. Each chunkId should be a number and data should be an Uint8Array.
  * @return {void} This function does not return a value. It throws an error if a chunkId is missing or out of order.
  */
 function verifyChunkIds(encryptedDataArray: IChunk[]): void {

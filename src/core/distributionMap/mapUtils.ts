@@ -24,7 +24,7 @@ import { compareUint8ArraysQuick } from '../../utils/misc/uint8arrayHelpers.ts';
  * @param {string} password - The password used for encrypting the distribution map.
  * @param {number} encryptedDataLength - The length of the encrypted data.
  * @param {ILogger} logger - The logger instance for logging information.
- * @returns {Buffer} The encrypted buffer containing the compressed distribution map.
+ * @returns {Uint8Array} The encrypted buffer containing the compressed distribution map.
  */
 export async function prepareDistributionMapForInjection(
     distributionMapEntries: IDistributionMapEntry[],
@@ -77,7 +77,7 @@ export async function readAndProcessDistributionMap(
 /**
  * Processes an encrypted distribution map by decrypting, decompressing, and deserializing it.
  *
- * @param {Buffer} rawDistributionMapEncrypted - The encrypted distribution map data as a Buffer.
+ * @param {Uint8Array} rawDistributionMapEncrypted - The encrypted distribution map data as a Buffer.
  * @param {string} password - The password used to decrypt the distribution map.
  * @param {ILogger} logger - The logger instance used to log relevant information and errors.
  * @return {IDistributionMap} - The resulting distribution map after decryption, decompression, and deserialization.
@@ -108,7 +108,7 @@ async function processDistributionMap(
  * @param {string} originalFilename - The original filename of the data being distributed.
  * @param {string} checksum - A checksum value for data integrity verification.
  * @param {number} encryptedDataLength - The length of the encrypted data.
- * @returns {Buffer} Serialized buffer representation of the distribution map.
+ * @returns {Uint8Array} Serialized buffer representation of the distribution map.
  */
 export function createDistributionMap(
     entries: IDistributionMapEntry[],
@@ -132,7 +132,7 @@ export function createDistributionMap(
  *
  * @param {string} inputFolder - The path to the folder containing PNG images to scan.
  * @param {ILogger} logger - The logger instance used for logging debug, info, and warning messages.
- * @return {Promise<Buffer|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
+ * @return {Promise<Uint8Array|null>} - A promise that resolves to a Buffer containing the distribution map if found, or null otherwise.
  */
 async function scanForAndExtractDistributionMap(inputFolder: string, logger: ILogger): Promise<Uint8Array | null> {
     const carrierPngs = readDirectory(inputFolder).filter((i) => i.endsWith('.png'));

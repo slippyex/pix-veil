@@ -12,7 +12,6 @@ import {
 } from '../../utils/serialization/serializationHelpers.ts';
 import { SupportedCompressionStrategies } from '../../utils/compression/compressionStrategies.ts';
 import { channelFromValue, getChannelOffset } from '../../utils/misc/lookups.ts';
-import { uint8ArrayToBuffer } from '../../utils/storage/storageUtils.ts';
 
 /**
  * Serializes a distribution map into a Buffer.
@@ -77,11 +76,11 @@ function compressionStrategyToValue(strategy: SupportedCompressionStrategies): n
 /**
  * Deserializes a buffer into a distribution map object.
  *
- * @param {Buffer} buffer - The buffer containing the serialized distribution map data.
+ * @param {Uint8Array} bufferIn - The buffer containing the serialized distribution map data.
  * @return {IDistributionMap} The deserialized distribution map object which includes entries, checksum, original filename, encrypted data length, and compression strategy.
  */
 export function deserializeDistributionMap(bufferIn: Uint8Array): IDistributionMap {
-    const buffer = uint8ArrayToBuffer(bufferIn);
+    const buffer = Buffer.from(bufferIn);
     validateMagicBytes(buffer);
 
     const size = buffer.readUInt32BE(MAGIC_BYTE.length);

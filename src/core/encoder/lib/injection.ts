@@ -65,7 +65,7 @@ async function processImage(
  * Injects specified chunks of data into PNG images.
  *
  * @param {IDistributionMapEntry[]} distributionMapEntries - An array of distribution map entries detailing which chunks to inject into which PNG files.
- * @param {Map<number, Buffer>} chunkMap - A map where keys are chunk IDs and values are Buffers containing the chunk data to be injected.
+ * @param {Map<number, Uint8Array>} chunkMap - A map where keys are chunk IDs and values are Buffers containing the chunk data to be injected.
  * @param {string} inputPngFolder - Path to the folder containing input PNG files.
  * @param {string} outputFolder - Path to the folder where output PNG files will be saved after injection.
  * @param {boolean} debugVisual - Flag to indicate whether to enable debugging visuals.
@@ -199,7 +199,7 @@ export async function injectChunksIntoPngs(
  * @param {Object} distributionCarrier - Object containing properties of the carrier file.
  * @param {string} distributionCarrier.file - The name of the carrier PNG file.
  * @param {number} distributionCarrier.capacity - The capacity of the carrier file.
- * @param {Buffer} encryptedMapContent - The encrypted distribution map content to be injected.
+ * @param {Uint8Array} encryptedMapContent - The encrypted distribution map content to be injected.
  * @param {ILogger} logger - Logger instance for logging operations and errors.
  * @return {Promise<void>} Resolves when the injection process is complete.
  */

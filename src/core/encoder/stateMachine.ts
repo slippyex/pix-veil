@@ -19,6 +19,7 @@ import { AbstractStateMachine } from '../../stateMachine/AbstractStateMachine.ts
 import { EncoderStates } from '../../stateMachine/definedStates.ts';
 import { checkPngCapacity } from './lib/capacityChecker.ts';
 import { SupportedCryptoStrategies } from '../../utils/cryptography/cryptoStrategies.ts';
+import { compareUint8ArraysQuick } from '../../utils/misc/uint8arrayHelpers.ts';
 
 export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEncodeOptions> {
     private originalFileData: Uint8Array | null = null;
@@ -417,7 +418,12 @@ export class EncodeStateMachine extends AbstractStateMachine<EncoderStates, IEnc
             });
             const decodedFilePath = path.join(tempDecodedFolder, path.basename(this.options.inputFile));
             const decodedBuffer = await readBufferFromFile(decodedFilePath);
-            if (decodedBuffer.subarray(0, this.originalFileData!.length).equals(this.originalFileData!)) {
+            if (
+                compareUint8ArraysQuick(
+                    decodedBuffer.subarray(0, this.originalFileData!.length),
+                    this.originalFileData!,
+                )
+            ) {
                 logger.success('Verification successful: Decoded data matches original data.');
             } else {
                 throw new Error('Verification failed: Decoded data does not match original data.');

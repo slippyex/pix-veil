@@ -48,7 +48,7 @@ function calculateMinimumPngs(
  * Analyzes the capacity of PNG files in a specified folder to determine if they have sufficient capacity
  * to embed the required number of bits from an input buffer.
  *
- * @param {Buffer} inputBuffer - The buffer containing the data to be embedded.
+ * @param {Uint8Array} inputBuffer - The buffer containing the data to be embedded.
  * @param {string} inputPngFolder - The directory containing PNG files to be analyzed.
  * @param {ILogger} logger - Logger instance for logging information, warnings, and errors.
  * @return {Promise<CapacityCheckResult>} A promise that resolves to a CapacityCheckResult object
