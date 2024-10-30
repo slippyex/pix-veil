@@ -230,6 +230,7 @@ if (import.meta.main) {
         console.clear();
         try {
             await batchProcess();
+            Deno.exit(0);
         } catch (err) {
             console.error(`Unhandled error in batchProcess: ${(err as Error).message}`);
             Deno.exit(1);

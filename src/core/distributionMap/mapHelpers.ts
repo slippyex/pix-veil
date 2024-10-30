@@ -56,7 +56,6 @@ export function serializeDistributionMap(distributionMap: IDistributionMap): Uin
     const sizeBuffer = new Uint8Array(4);
     const sizeBufferView = new DataView(sizeBuffer.buffer);
     sizeBufferView.setUint32(0, mapContent.length, false);
-    //    sizeBuffer.writeUInt32BE(mapContent.length, 0);
 
     return concatUint8Arrays([MAGIC_BYTE, sizeBuffer, mapContent]);
 }

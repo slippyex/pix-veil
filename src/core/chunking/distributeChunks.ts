@@ -2,7 +2,7 @@
 
 import type { IChunk, IChunkDistributionInfo, IChunkDistributionStrategy, ILogger } from '../../@types/index.ts';
 
-import { IFileCapacityInfo } from '../../@types/index.ts';
+import type { IFileCapacityInfo } from '../../@types/index.ts';
 import { ToneAndCapacityChunkDistributor } from './strategies/ToneAndCapacityChunkDistributor.ts';
 
 /**

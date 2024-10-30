@@ -1,6 +1,6 @@
 // src/core/chunking/assembleChunks.ts
 
-import { IChunk, ILogger } from '../../@types/index.ts';
+import type { IChunk, ILogger } from '../../@types/index.ts';
 
 /**
  * Assembles chunks of encrypted data into a single Uint8Array.

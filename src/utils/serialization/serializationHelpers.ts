@@ -22,7 +22,7 @@ export function serializeUInt32(value: number): Uint8Array {
  */
 export function deserializeUInt32(buffer: Uint8Array, offset: number): { value: number; newOffset: number } {
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const value = view.getUint32(offset, false); // false for Big Endian
+    const value = view.getUint32(offset);
     return { value, newOffset: offset + 4 };
 }
 
@@ -35,7 +35,7 @@ export function deserializeUInt32(buffer: Uint8Array, offset: number): { value: 
 export function serializeUInt16(value: number): Uint8Array {
     const buffer = new Uint8Array(2);
     const view = new DataView(buffer.buffer);
-    view.setUint16(0, value, false); // false for Big Endian
+    view.setUint16(0, value);
     return buffer;
 }
 
@@ -90,7 +90,7 @@ export function serializeChecksum(checksum: string): Uint8Array {
     // Create a 2-byte buffer for the length
     const lengthBuffer = new Uint8Array(2);
     const lengthView = new DataView(lengthBuffer.buffer);
-    lengthView.setUint16(0, checksumBuffer.length, false); // false for Big Endian
+    lengthView.setUint16(0, checksumBuffer.length);
 
     // Concatenate the length buffer and checksum buffer
     const result = new Uint8Array(2 + checksumBuffer.length);
@@ -112,7 +112,7 @@ export function serializeChecksum(checksum: string): Uint8Array {
 export function deserializeChecksum(buffer: Uint8Array, offset: number): { checksum: string; newOffset: number } {
     // Read the length as a 16-bit unsigned integer (Big Endian)
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const length = view.getUint16(offset, false); // false for Big Endian
+    const length = view.getUint16(offset);
     offset += 2;
 
     // Extract the checksum and convert it to a hex string
@@ -135,7 +135,7 @@ export function serializeString(str: string): Uint8Array {
     // Create a 2-byte buffer for the length
     const lengthBuffer = new Uint8Array(2);
     const lengthView = new DataView(lengthBuffer.buffer);
-    lengthView.setUint16(0, stringBuffer.length, false); // Big Endian
+    lengthView.setUint16(0, stringBuffer.length);
 
     // Concatenate lengthBuffer and stringBuffer
     const result = new Uint8Array(2 + stringBuffer.length);
@@ -155,7 +155,7 @@ export function serializeString(str: string): Uint8Array {
 export function deserializeString(buffer: Uint8Array, offset: number): { value: string; newOffset: number } {
     // Read the length of the string (2 bytes, Big Endian)
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const length = view.getUint16(offset, false); // Big Endian
+    const length = view.getUint16(offset);
     offset += 2;
 
     // Ensure the offset + length is within bounds
