@@ -3,7 +3,6 @@
 import type { IAssembledImageData, IDistributionMap, IDistributionMapEntry, ILogger } from '../../@types/index.ts';
 
 import { deserializeDistributionMap, serializeDistributionMap } from './mapHelpers.ts';
-import { Buffer } from 'node:buffer';
 import { compressBuffer, decompressBuffer } from '../../utils/compression/compression.ts';
 import { decryptData, encryptData } from '../../utils/cryptography/crypto.ts';
 import { extractDataFromBuffer } from '../decoder/lib/extraction.ts';
@@ -117,7 +116,7 @@ export function createDistributionMap(
     originalFilename: string,
     checksum: string,
     encryptedDataLength: number,
-): Buffer {
+): Uint8Array {
     const distributionMap: IDistributionMap = {
         entries,
         originalFilename,
