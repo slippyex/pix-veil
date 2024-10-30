@@ -1,13 +1,12 @@
 // src/core/chunking/splitChunks.ts
 
 import type { IChunk, ILogger } from '../../@types/index.ts';
-import { Buffer } from 'node:buffer';
 import { config } from '../../config/index.ts';
 
 /**
  * Splits encrypted data into chunks based on a random size within specified min and max chunk sizes.
  *
- * @param {Buffer} encryptedData - The data to be split into chunks.
+ * @param {Uint8Array} encryptedData - The data to be split into chunks.
  * @param {ILogger} logger - The logger object to output verbose information about the splitting process.
  * @return {IChunk[]} An array of chunks with each chunk containing a portion of the encrypted data.
  */
@@ -23,7 +22,7 @@ export function splitDataIntoChunks(encryptedData: Uint8Array, logger: ILogger):
         const size = calculateChunkSize(remaining);
         const chunkData = encryptedData.subarray(offset, offset + size);
 
-        chunks.push({ chunkId: chunkId++, data: Buffer.from(chunkData) });
+        chunks.push({ chunkId: chunkId++, data: new Uint8Array(chunkData) });
         offset += size;
     }
 

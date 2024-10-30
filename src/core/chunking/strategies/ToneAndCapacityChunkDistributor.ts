@@ -16,7 +16,6 @@ import { config } from '../../../config/index.ts';
 import * as path from 'jsr:@std/path';
 import seedrandom from 'seedrandom';
 import { generateChecksum } from '../../../utils/cryptography/crypto.ts';
-import { Buffer } from 'node:buffer';
 import { sortBy } from 'jsr:@std/collections';
 
 export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrategy {
@@ -165,7 +164,7 @@ export class ToneAndCapacityChunkDistributor implements IChunkDistributionStrate
      */
     private async generateDeterministicChannelSequence(chunkId: number): Promise<ChannelSequence[]> {
         // Create a hash from the chunk ID
-        const hash = await generateChecksum(Buffer.from('chunk-' + chunkId));
+        const hash = await generateChecksum(new TextEncoder().encode('chunk-' + chunkId));
         // Convert hash to a seed value
         const seed = parseInt(hash.substring(0, 8), 16);
 

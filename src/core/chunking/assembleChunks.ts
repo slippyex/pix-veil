@@ -1,6 +1,5 @@
 // src/core/chunking/assembleChunks.ts
 
-import { Buffer } from 'node:buffer';
 import { IChunk, ILogger } from '../../@types/index.ts';
 
 /**
@@ -8,18 +7,27 @@ import { IChunk, ILogger } from '../../@types/index.ts';
  *
  * @param {Object[]} encryptedDataArray - An array of objects containing the chunkId and data buffer.
  * @param {number} encryptedDataArray[].chunkId - The unique identifier for the chunk.
- * @param {Buffer} encryptedDataArray[].data - The data buffer for the chunk.
+ * @param {Uint8Array} encryptedDataArray[].data - The data buffer for the chunk.
  * @param {ILogger} logger - The logger instance to log debug messages.
- * @returns {Buffer} - The concatenated buffer containing the assembled encrypted data.
+ * @returns {Uint8Array} - The concatenated buffer containing the assembled encrypted data.
  */
-export function assembleChunks(encryptedDataArray: IChunk[], logger: ILogger): Buffer {
+export function assembleChunks(encryptedDataArray: IChunk[], logger: ILogger): Uint8Array {
     // Sort chunks by chunkId to ensure correct order
     encryptedDataArray.sort((a, b) => a.chunkId - b.chunkId);
 
     verifyChunkIds(encryptedDataArray);
-    // Concatenate all chunks to form the encrypted data
-    const concatenatedEncryptedData = Buffer.concat(encryptedDataArray.map((chunk) => chunk.data));
 
+    // Concatenate all chunks to form the encrypted data
+    const concatenatedEncryptedData = new Uint8Array(
+        encryptedDataArray.reduce((acc, chunk) => acc + chunk.data.length, 0),
+    );
+
+    // Track the offset while copying each Uint8Array chunk
+    let offset = 0;
+    encryptedDataArray.forEach((chunk) => {
+        concatenatedEncryptedData.set(chunk.data, offset);
+        offset += chunk.data.length;
+    });
     logger.debug(
         `All chunks extracted and concatenated successfully. Total encrypted data length: ${concatenatedEncryptedData.length} bytes.`,
     );
