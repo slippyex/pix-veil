@@ -13,3 +13,5 @@ output-pngs
 tests/test_input
 tests/test_output
 deno-kv
+out
+image_processor/target

@@ -5,7 +5,7 @@ import { isBitSet, setBit } from '../bitManipulation/bitUtils.ts';
 import { readDirectory } from '../storage/storageUtils.ts';
 import * as path from 'jsr:/@std/path';
 import { getEntryFromCache, setCacheEntry } from '../cache/cacheHelper.ts';
-import { loadImageData } from './sharpSpecific.ts';
+import { loadImageData } from './wasmImageProcessor.ts';
 
 /**
  * In-memory cache for image tones.

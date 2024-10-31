@@ -4,7 +4,7 @@ export const MAGIC_BYTE = new Uint8Array([0xde, 0xad, 0xfa, 0xce]);
 
 export const config = {
     imageCompression: {
-        compressionLevel: 7,
+        compressionLevel: 6,
         adaptiveFiltering: false,
     },
     chunksDefinition: {
