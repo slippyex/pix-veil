@@ -19,7 +19,7 @@ import { extractBits, insertBits } from '../../../utils/bitManipulation/bitUtils
 import { extractDataFromBuffer } from '../../decoder/lib/extraction.ts';
 import { getChannelOffset } from '../../../utils/misc/lookups.ts';
 import { compareUint8ArraysLex, concatUint8Arrays } from '../../../utils/misc/uint8arrayHelpers.ts';
-import { loadImageData, writeImageData } from '../../../utils/imageProcessing/wasmImageProcessor.ts';
+import { loadImageData, writeImageData } from '../../imageProcessing/processor.ts';
 
 const cpuCount = os.cpus().length;
 

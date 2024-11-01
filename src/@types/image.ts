@@ -23,3 +23,8 @@ export interface Metadata {
 }
 
 export type OutputInfo = Required<Metadata>;
+
+export interface ImageProcessor {
+    loadImageData(pngPath: string): Promise<IAssembledImageData>;
+    writeImageData(imageData: Uint8Array, info: OutputInfo, outputPngPath: string): Promise<void>;
+}
