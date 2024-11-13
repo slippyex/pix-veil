@@ -47,7 +47,6 @@ Deno.test('should handle files without extensions', () => {
     expect(isCompressed('.gitignore')).toBe(false);
 });
 
-
 Deno.test('should find the project root based on marker files', () => {
     const tempFolder = Deno.makeTempDirSync();
     const startPath = path.join(tempFolder, 'src');
