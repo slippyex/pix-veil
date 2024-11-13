@@ -3,10 +3,10 @@ import { expect } from 'jsr:@std/expect';
 import { findProjectRoot, isCompressed } from '../src/utils/storage/storageUtils.ts';
 import * as path from 'jsr:@std/path';
 
-const markerFiles = ['deno.json', 'package.json', '.git'];
+Deno.test('Utility Functions', async (t: Deno.TestContext) => {
+    const markerFiles = ['deno.json', 'package.json', '.git'];
 
-Deno.test('Utility Functions', async (t) => {
-    await t.step('isCompressed', async (t) => {
+    await t.step('isCompressed', async (t: Deno.TestContext) => {
         await t.step('should return true for compressed file extensions', () => {
             const compressedFiles = [
                 'archive.zip',
@@ -50,7 +50,7 @@ Deno.test('Utility Functions', async (t) => {
         });
     });
 
-    await t.step('findProjectRoot', async (t) => {
+    await t.step('findProjectRoot', async (t: Deno.TestContext) => {
         await t.step('should find the project root based on marker files', () => {
             const tempFolder = Deno.makeTempDirSync();
             const startPath = path.join(tempFolder, 'src');

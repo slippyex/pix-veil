@@ -9,7 +9,8 @@ import { deserializeDistributionMap } from '../src/core/distributionMap/mapHelpe
 import { SupportedCompressionStrategies } from '../src/utils/compression/compressionStrategies.ts';
 
 Deno.env.set('ENVIRONMENT', 'test');
-Deno.test('Distribution Map Serialization', async (t) => {
+
+Deno.test('Distribution Map Serialization', async (t: Deno.TestContext) => {
     await t.step('should serialize and deserialize distribution map correctly', () => {
         const originalFilename = 'file.ext';
         const entries: IDistributionMapEntry[] = [

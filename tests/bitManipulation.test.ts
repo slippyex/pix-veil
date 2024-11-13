@@ -4,8 +4,8 @@ import { expect } from 'jsr:@std/expect';
 
 import { extractBits, insertBits, isBitSet, setBit } from '../src/utils/bitManipulation/bitUtils.ts';
 
-Deno.test('Bit manipulation Utilities', async (t) => {
-    await t.step('extractBits', async (t) => {
+Deno.test('Bit manipulation Utilities', async (t: Deno.TestContext) => {
+    await t.step('extractBits', async (t: Deno.TestContext) => {
         await t.step('should extract correct bits', () => {
             const byte = 0b10101100; // 172
             expect(extractBits(byte, 0, 4)).toBe(0b1100); // 12
@@ -14,7 +14,7 @@ Deno.test('Bit manipulation Utilities', async (t) => {
         });
     });
 
-    await t.step('insertBits', async (t) => {
+    await t.step('insertBits', async (t: Deno.TestContext) => {
         await t.step('should insert bits correctly', () => {
             const byte = 0b00000000;
             const bitsToInsert = 0b101;
@@ -39,7 +39,7 @@ Deno.test('Bit manipulation Utilities', async (t) => {
             expect(resultEnd).toBe(0b11000000); // 192
         });
     });
-    await t.step('setBit and isBitSet', async (t) => {
+    await t.step('setBit and isBitSet', async (t: Deno.TestContext) => {
         await t.step('should set and check bits correctly', () => {
             const bitmask = new Uint8Array(1); // 8 bits
             setBit(bitmask, 0); // Set first bit

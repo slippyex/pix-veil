@@ -14,7 +14,7 @@ import { closeKv } from '../src/utils/cache/cacheHelper.ts';
 
 Deno.env.set('ENVIRONMENT', 'test');
 
-Deno.test('Codec tests', async (t) => {
+Deno.test('Codec tests', async (t: Deno.TestContext) => {
     const logger = getLogger('test-cases', NoopLogFacility, false);
     const fileUnderSubject = 'secret.pdf';
     const rootFolder = findProjectRoot(Deno.cwd()) as string;
@@ -56,7 +56,7 @@ Deno.test('Codec tests', async (t) => {
     });
 });
 
-Deno.test('Chunk testing', async (t) => {
+Deno.test('Chunk testing', async (t: Deno.TestContext) => {
     await t.step('should correctly map chunkId to chunk data', () => {
         const te = new TextEncoder();
         const chunks: IChunk[] = [
